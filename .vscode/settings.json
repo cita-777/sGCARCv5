@@ -1,0 +1,10 @@
+{
+    "cmake.sourceDirectory": "D:/05_FullProject/13_9607_CarProj/01_Software/GCARCv4/sLIB/CMSIS/NN",
+    "workbench.colorCustomizations": {
+        "editor.lineHighlightBackground": "#1073cf2d",
+        "editor.lineHighlightBorder": "#9fced11f",
+        "activityBar.background": "#1D1C80",
+        "titleBar.activeBackground": "#2928B3",
+        "titleBar.activeForeground": "#FBFBFE"
+    }
+}
