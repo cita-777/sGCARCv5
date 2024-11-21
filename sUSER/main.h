@@ -3,8 +3,8 @@
 
 #include "stm32f4xx_hal.h"
 
-#include "sGCARCv4_hal_msp.h"
-#include "sGCARCv4_Def.h"
+#include "sGCARC_hal_msp.h"
+#include "sGCARC_Def.h"
 
 #include "arm_math.h"
 #include "math.h"
@@ -66,7 +66,7 @@
 #include "sBSP_DMA.h"
 
 
-#define APPNAME                        "GCARCv4"
+#define APPNAME                        "sGCARCv5"
 #define HARDWARE_VERSION               "V5"
 #define SOFTWARE_VERSION               "V1.0"
 

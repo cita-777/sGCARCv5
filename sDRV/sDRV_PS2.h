@@ -6,7 +6,7 @@ extern "C" {
 
 #include "stm32f4xx_hal.h"
 #include "sBSP_SPI.h"
-#include "sGCARCv4_Def.h"
+#include "sGCARC_Def.h"
 #include <stdbool.h>
 
 

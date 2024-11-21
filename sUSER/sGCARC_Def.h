@@ -1,6 +1,6 @@
 #pragma once
 
-/*This file is used to define the pin assignments for the sGCARCv4*/
+/*This file is used to define the pin assignments for the sGCARC*/
 
 
 

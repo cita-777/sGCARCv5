@@ -2,10 +2,11 @@
 
 #include "sDBG_Debug.h"
 
-#include "sGCARCv4_Def.h"
+#include "sGCARC_Def.h"
 
 //sBSP_SPI.c 20241009 v1
-//used for sGCARCv4
+//used for sGCARC
+//20241120 v1.1 sGCARCv5
 
 
 

@@ -2,11 +2,11 @@
 
 #include "sDBG_Debug.h"
 
-#include "sGCARCv4_hal_msp.h"
+#include "sGCARC_hal_msp.h"
 
 
-//first modify at 241009 PM08:17 sGCARCv4
-////completed at 241009 PM08:17 sGCARCv4
+//first modify at 241009 PM08:17 sGCARC
+////completed at 241009 PM08:17 sGCARC
 //update at 241011 PM05:10
 //bySightseer. inHNIP9607
 

@@ -1,6 +1,6 @@
-#include "sGCARCv4_hal_msp.h"
+#include "sGCARC_hal_msp.h"
 #include "sDBG_Debug.h"
-#include "sGCARCv4_Def.h"
+#include "sGCARC_Def.h"
 
 
 extern UART_HandleTypeDef uart1;
