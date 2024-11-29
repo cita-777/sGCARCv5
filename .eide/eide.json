@@ -34,7 +34,8 @@
         "sMID/FreeRTOS/portable/MemMang/heap_2.c",
         "sMID/FreeRTOS/portable/MemMang/heap_1.c",
         "sMID/cm_backtrace/fault_handler/gcc",
-        "sMID/cm_backtrace/fault_handler/iar"
+        "sMID/cm_backtrace/fault_handler/iar",
+        "sMID/sBinOutDrv/sBinOutDev - 副本.cpp"
       ],
       "toolchain": "AC6",
       "compileConfig": {

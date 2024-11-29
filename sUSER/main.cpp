@@ -17,7 +17,7 @@ void uart_recied(char* pReciData,uint16_t length){
 
 sBinOutDrv bod;
 
-void output(GPIO_TypeDef* group,uint16_t pin,sBD_Level_t lv){
+void output(GPIO_TypeDef* group,uint16_t pin,GPIO_PinState lv){
     HAL_GPIO_WritePin(group,pin,(GPIO_PinState)lv);
 }
 
@@ -58,8 +58,18 @@ int main(){
     bod.init();
     bod.regOutputCb(output);
     bod.regGetTick(HAL_GetTick);
-    bod.addDev(GPIOC,GPIO_PIN_13,LED_ID,sBD_DevDir_t::OUTPUT);
-    bod.confDevMode(LED_ID,sBD_DevMode_t::SYMMETRIC_TOGGLE,false);
+    bod.addDev(GPIOC,GPIO_PIN_13,LED_ID);
+    bod.addDev(GPIOC,GPIO_PIN_13,5,false);
+    bod.addDev(GPIOC,GPIO_PIN_13,5,false);
+    bod.addDev(GPIOC,GPIO_PIN_13,5,false);
+    bod.addDev(GPIOC,GPIO_PIN_13,5,false);
+    bod.addDev(GPIOC,GPIO_PIN_13,5,false);
+    bod.addDev(GPIOC,GPIO_PIN_13,5,false);
+    bod.addDev(GPIOC,GPIO_PIN_13,5,false);
+    bod.addDev(GPIOC,GPIO_PIN_13,5,false);
+    bod.addDev(GPIOC,GPIO_PIN_13,5,false);
+    
+    bod.confDevMode(LED_ID,sBinOutDrv::dev_mode_t::SYMMETRIC_TOGGLE,false);
     bod.confTime(LED_ID,1000,100);
 
     sAPP_Tasks_CreateAll();
@@ -70,7 +80,10 @@ int main(){
 
     // while(1);
     while(1){
+        sBSP_DWT_MeasureStart();
         bod.handler();
+        sBSP_DWT_MeasureEnd();
+        sBSP_UART_Debug_Printf("%uus\n",sBSP_DWT_GetMeasure_us());
         HAL_Delay(20);
 
         // oled.printf(10,50,"%u",i);
