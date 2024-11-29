@@ -84,8 +84,8 @@ void HAL_UART_MspInit(UART_HandleTypeDef* huart){
         gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH;
         gpio.Alternate = GPIO_AF7_USART3;
         HAL_GPIO_Init(GPIOB, &gpio);
-        HAL_NVIC_SetPriority(USART3_IRQn,4,0);
-        HAL_NVIC_EnableIRQ(USART3_IRQn);
+        // HAL_NVIC_SetPriority(USART3_IRQn,4,0);
+        // HAL_NVIC_EnableIRQ(USART3_IRQn);
     }
     else if(huart->Instance == USART6){
         __GPIOC_CLK_ENABLE();

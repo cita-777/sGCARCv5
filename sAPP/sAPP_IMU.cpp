@@ -7,6 +7,15 @@ sAPP_IMU imu;
 #include "sBSP_SPI.h"
 
 
+/**
+ * sAPP_AHRS.cpp
+ * 用于获取IMU的数据
+ * 
+ */
+
+
+
+
 sAPP_IMU::sAPP_IMU(){
 
 }
@@ -17,6 +26,7 @@ sAPP_IMU::~sAPP_IMU(){
 
 
 int sAPP_IMU::init(){
+
     this->icm  = &g_icm;
     this->lis3 = &g_lis3;
 
@@ -42,7 +52,6 @@ int sAPP_IMU::init(){
     if(sDRV_LIS3_Init() != 0){
         return -2;
     }
-
 
     return 0;
 }

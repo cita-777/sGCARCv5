@@ -2,15 +2,7 @@
 
 
 
-//128+64K SRAM
-//1024K FLASH
-//168MHz 210DMIPS
 
-//compile env:
-//AC6 C++14
-
-
-void parseSerialData(const char* data);
 
 void uart_recied(char* pReciData,uint16_t length){
     sBSP_UART_Debug_SendBytes((uint8_t*)pReciData,length);
@@ -23,12 +15,17 @@ void uart_recied(char* pReciData,uint16_t length){
 
 
 
+sBinOutDrv bod;
 
+void output(GPIO_TypeDef* group,uint16_t pin,sBD_Level_t lv){
+    HAL_GPIO_WritePin(group,pin,(GPIO_PinState)lv);
+}
 
 
 int main(){
     car.initSys();
     car.initBoard();
+
 
     //sBSP_UART_Debug_RecvBegin(uart_recied);
     //sBSP_UART_Top_RecvBegin(uart_recied);
@@ -41,57 +38,64 @@ int main(){
     oled.init();
     oled.setFPSMode(sG2D::DIGITS2);
 
+    ahrs.init();
     
-    sDRV_JY901S_Init();
-    sBSP_UART_IMU_RecvBegin(sDRV_JY901S_Handler);
-    //sBSP_UART_IMU_RecvBegin(uart_recied);
-    HAL_Delay(3000);
-    sDRV_JY901S_SetRRATE10Hz();
-
-
-
 
     int i = 0;
 
-    size_t freeHeapSize = 0;
-    freeHeapSize = xPortGetFreeHeapSize();
-    sDBG_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)freeHeapSize);
+    sAPP_BlcCtrl_Init();
+
+    sDRV_PS2_Init();
+    sDRV_PL_Init();
+    sDRV_PL_SetBrightness(50);
 
 
-    // sAPP_Tasks_CreateAll();
-    // sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
-    // vTaskStartScheduler();    
+    // sBSP_DWT_MeasureStart();
+    // sBSP_DWT_MeasureEnd();
+    // sBSP_UART_Debug_Printf("%uus\n",sBSP_DWT_GetMeasure_us());
+
+    #define LED_ID 0
+    bod.init();
+    bod.regOutputCb(output);
+    bod.regGetTick(HAL_GetTick);
+    bod.addDev(GPIOC,GPIO_PIN_13,LED_ID,sBD_DevDir_t::OUTPUT);
+    bod.confDevMode(LED_ID,sBD_DevMode_t::SYMMETRIC_TOGGLE,false);
+    bod.confTime(LED_ID,1000,100);
+
+    sAPP_Tasks_CreateAll();
+    sDBG_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
+    sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
+    //vTaskStartScheduler();    
     
 
-    //while(1);
+    // while(1);
     while(1){
-        oled.printf(10,50,"%u",i);
-        i++;
-        //sBSP_DWT_MeasureStart();
-        oled.handler();
-        oled.setAll(0);
-        sBSP_UART_Top_Printf("Hello,ros2,this is stm32f405,i=%u\n",i);
-                // sBSP_DWT_MeasureEnd();
-        //sBSP_UART_Debug_Printf("%uus\n",sBSP_DWT_GetMeasure_us());
+        bod.handler();
+        HAL_Delay(20);
 
-        //sBSP_UART_Debug_Printf("q0:%.2f, q1:%.2f, q2:%.2f, q3:%.2f\n",\
-        (float)sensorData.data1, (float)sensorData.data2, (float)sensorData.data3, (float)sensorData.data4);
+        // oled.printf(10,50,"%u",i);
+        // i++;
+        // //sBSP_DWT_MeasureStart();
+        // oled.handler();
+        // oled.setAll(0);
+        // sBSP_UART_Top_Printf("Hello,ros2,this is stm32f405,i=%u\n",i);
+
+        // ahrs.update();
+
+
+        //         // sBSP_DWT_MeasureEnd();
+        // //sBSP_UART_Debug_Printf("%uus\n",sBSP_DWT_GetMeasure_us());
+
+        // //sBSP_UART_Debug_Printf("q0:%.2f, q1:%.2f, q2:%.2f, q3:%.2f\n",\
+        // (float)sensorData.data1, (float)sensorData.data2, (float)sensorData.data3, (float)sensorData.data4);
         
 
 
-
-        // sBSP_UART_Debug_Printf("TYPE: 0x%02X", sensorData.type);
-        // sBSP_UART_Debug_Printf(" DATA1: %.2f", (float)sensorData.data1 / 32768 * 16 * 9.81);
-        // sBSP_UART_Debug_Printf(" DATA2: %.2f", (float)sensorData.data2 / 32768 * 16 * 9.81);
-        // sBSP_UART_Debug_Printf(" DATA3: %.2f", (float)sensorData.data3 / 32768 * 16 * 9.81);
-        // sBSP_UART_Debug_Printf(" DATA4: %.2f", (float)sensorData.data4 / 100);
-        // sBSP_UART_Debug_Printf(" SUMCRC: 0x%02X\n", sensorData.sum_crc);
+        // led.toggle();
 
 
-        led.toggle();
-
-
-        HAL_Delay(100);
+        // HAL_Delay(50);
+        
 
         
 

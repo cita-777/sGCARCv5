@@ -9,13 +9,25 @@ void sAPP_Tasks_AHRS(void* param){
     for(;;){
         ahrs.update();
         motor.update();
-
-
-
         sAPP_BlcCtrl_Handler();
+
+        // sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
 
         //高精确度延时10ms
         xTaskDelayUntil(&xLastWakeTime,10 / portTICK_PERIOD_MS);
+    }
+}
+
+void sAPP_Tasks_OLEDHdr(void* param){
+    for(;;){
+        oled.printf(10,20,"%6.2f deg",ahrs.pitch);
+        oled.printf(10,30,"%6.2f deg",ahrs.roll);
+        oled.printf(10,40,"%6.2f deg",ahrs.yaw);
+
+        oled.handler();
+        oled.setAll(0);
+
+        vTaskDelay(50 / portTICK_PERIOD_MS);
     }
 }
 
@@ -41,10 +53,12 @@ void sAPP_Tasks_500ms(void* param){
 
 
 void sAPP_Tasks_CreateAll(){
-    xTaskCreate(sAPP_Tasks_AHRS         , "AHRS"       , 2048 / 4, NULL, 2, NULL);
-
-    xTaskCreate(sAPP_Tasks_BtnHdr       , "BtnHdr"     ,  512 / 4, NULL, 1, NULL);
-    xTaskCreate(sAPP_Tasks_500ms        , "500ms"      ,  512 / 4, NULL, 1, NULL);
+    //姿态估计算法 100Hz
+    xTaskCreate(sAPP_Tasks_AHRS         , "AHRS"       , 2048 / sizeof(int), NULL, 2, NULL);
+    //OLED刷屏 20Hz
+    xTaskCreate(sAPP_Tasks_OLEDHdr      , "OLED"       , 2048 / sizeof(int), NULL, 1, NULL);
+    xTaskCreate(sAPP_Tasks_BtnHdr       , "BtnHdr"     ,  512 / sizeof(int), NULL, 1, NULL);
+    xTaskCreate(sAPP_Tasks_500ms        , "500ms"      ,  512 / sizeof(int), NULL, 1, NULL);
     
 }
 

@@ -16,6 +16,7 @@
 
 
 #include "sG2D.hpp"
+#include "sBinOutDev.hpp"
 
 
 /*APP*/

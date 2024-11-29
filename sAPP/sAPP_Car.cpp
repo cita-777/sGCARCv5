@@ -49,11 +49,11 @@ int sAPP_Car::initBoard(){
     sBSP_I2C1_Init(400000);
 
     //初始化IMU
-    //imu.init();
+    imu.init();
     //初始化电机
-    //motor.init();
+    motor.init();
     //初始化按键
-    //sAPP_Btns_Init();
+    sAPP_Btns_Init();
     //初始化LED
     led.init();
     led.set(false);

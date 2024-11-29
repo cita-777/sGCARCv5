@@ -126,7 +126,8 @@
           "sMID/FreeRTOS/include",
           "sMID/FreeRTOS/portable/GCC",
           "sMID/FreeRTOS",
-          "sMID/cm_backtrace"
+          "sMID/cm_backtrace",
+          "sMID/sBinOutDrv"
         ],
         "libList": [],
         "defineList": [

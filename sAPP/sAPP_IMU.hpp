@@ -4,6 +4,7 @@
 
 #include "sDRV_ICM42688.h"
 #include "sDRV_LIS3MDLTR.h"
+#include "sDRV_JY901S.h"
 
 
 
@@ -17,10 +18,12 @@ typedef struct{
 
 
 
+
 class sAPP_IMU{
 public:
     sAPP_IMU();
     ~sAPP_IMU();
+
 
     float gyr_x,gyr_y,gyr_z;
     float acc_x,acc_y,acc_z;

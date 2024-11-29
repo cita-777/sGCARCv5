@@ -1,6 +1,7 @@
 #pragma once
 
 
+#include "sDRV_JY901S.h"
 
 
 class sAPP_AHRS{
@@ -33,13 +34,6 @@ private:
 
 
 extern sAPP_AHRS ahrs;
-
-
-
-void sAPP_AHRS_Init();
-
-
-void sAPP_AHRS_Update();
 
 
 

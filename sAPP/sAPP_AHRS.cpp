@@ -1,9 +1,16 @@
 #include "sAPP_AHRS.hpp"
 
 
+/**
+ * sAPP_AHRS.cpp
+ * 用于姿态估计
+ * 
+ */
+
+//选择数据来源,默认选择维特智能的IMU,取消这个宏将会选择ICM+LIS3惯导(互补滤波姿态解算)
+#define USE_DATASOURCE_WITIMU
 
 
-/*sAPP_AHRS.cpp 用于姿态估计*/
 #include "main.h"
 
 sAPP_AHRS ahrs;
@@ -11,6 +18,14 @@ sAPP_AHRS ahrs;
 
 
 int sAPP_AHRS::init(){
+    #ifdef USE_DATASOURCE_WITIMU
+        sDRV_JY901S_Init();
+        HAL_NVIC_SetPriority(USART3_IRQn,4,0);
+        HAL_NVIC_EnableIRQ(USART3_IRQn);
+
+    #else
+        imu.init();
+    #endif
     
     return 0;
 }
@@ -62,35 +77,53 @@ sLIB_6AXIS_INPUT_t input;
 sLIB_ATTITUDE_RESULT_t result;
 
 int sAPP_AHRS::update(){
-    //更新IMU采集的数据
-    imu.update();
+    #ifdef USE_DATASOURCE_WITIMU
+        sDRV_JY901S_Handler();
+        ahrs.acc_x = g_jy901s.acc_x;
+        ahrs.acc_y = g_jy901s.acc_y;
+        ahrs.acc_z = g_jy901s.acc_z;
+        ahrs.gyr_x = g_jy901s.gyr_x;
+        ahrs.gyr_y = g_jy901s.gyr_y;
+        ahrs.gyr_z = g_jy901s.gyr_z;
+        ahrs.mag_x = g_jy901s.mag_x;
+        ahrs.mag_y = g_jy901s.mag_y;
+        ahrs.mag_z = g_jy901s.mag_z;
+        ahrs.pitch = g_jy901s.pitch;
+        ahrs.roll  = g_jy901s.roll;
+        ahrs.yaw   = g_jy901s.yaw;
+        ahrs.q0    = g_jy901s.q0;
+        ahrs.q1    = g_jy901s.q1;
+        ahrs.q2    = g_jy901s.q2;
+        ahrs.q3    = g_jy901s.q3;
+    #else
+        imu.update();
+        input.acc_x = imu.acc_x - bias_acc_x;
+        input.acc_y = imu.acc_y - bias_acc_y;
+        input.acc_z = imu.acc_z - bias_acc_z;
+        input.gyro_x = imu.gyr_x - bias_gyro_x;
+        input.gyro_y = imu.gyr_y - bias_gyro_y;
+        input.gyro_z = imu.gyr_z - bias_gyro_z;
+        //融合算法
+        sLib_6AxisCompFilter(&input, &result);
+        ahrs.acc_x = imu.acc_x;
+        ahrs.acc_y = imu.acc_y;
+        ahrs.acc_z = imu.acc_z;
+        ahrs.gyr_x = imu.gyr_x;
+        ahrs.gyr_y = imu.gyr_y;
+        ahrs.gyr_z = imu.gyr_z;
 
-    input.acc_x = imu.acc_x - bias_acc_x;
-    input.acc_y = imu.acc_y - bias_acc_y;
-    input.acc_z = imu.acc_z - bias_acc_z;
-    input.gyro_x = imu.gyr_x - bias_gyro_x;
-    input.gyro_y = imu.gyr_y - bias_gyro_y;
-    input.gyro_z = imu.gyr_z - bias_gyro_z;
+        ahrs.pitch = result.pitch;
+        ahrs.roll = result.roll;
+        ahrs.yaw = result.yaw;
+        ahrs.q0 = result.q0;
+        ahrs.q1 = result.q1;
+        ahrs.q2 = result.q2;
+        ahrs.q3 = result.q3;
+    #endif
 
-    //融合算法
-    sLib_6AxisCompFilter(&input, &result);
+    
 
-    ahrs.acc_x = imu.acc_x;
-    ahrs.acc_y = imu.acc_y;
-    ahrs.acc_z = imu.acc_z;
-    ahrs.gyr_x = imu.gyr_x;
-    ahrs.gyr_y = imu.gyr_y;
-    ahrs.gyr_z = imu.gyr_z;
-
-    ahrs.pitch = result.pitch;
-    ahrs.roll = result.roll;
-    ahrs.yaw = result.yaw;
-    ahrs.q0 = result.q0;
-    ahrs.q1 = result.q1;
-    ahrs.q2 = result.q2;
-    ahrs.q3 = result.q3;
-
-    //dbg.printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
+    // sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
 
     return 0;
 }

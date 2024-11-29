@@ -1,0 +1,9 @@
+128+64K SRAM
+
+1024K FLASH
+
+168MHz 210DMIPS
+
+
+
+compile env:AC6 C++14

@@ -45,6 +45,7 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
             
         }
         else if(btn_ev == ev_pres){
+            sBSP_UART_Debug_Printf("TOG EN");
             g_ctrl.blc_en = !g_ctrl.blc_en;
         }
     }

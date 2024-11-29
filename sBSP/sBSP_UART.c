@@ -122,6 +122,7 @@ int sBSP_UART_IMU_Init(uint32_t bandrate){
     if (HAL_UART_Init(&uart3) != HAL_OK){
         return -1;
     }
+    
     return 0;
 }
 
