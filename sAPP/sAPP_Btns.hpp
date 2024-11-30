@@ -7,7 +7,9 @@ extern "C" {
 #include "stm32f4xx_hal.h"
 #include "stdbool.h"
 #include "sGenBtnDrv2.h"
+#include "sBinOutDev.hpp"
 #include "sDBG_UART.hpp"
+#include "sAPP_BinOutDev.hpp"
 
 
 #define SGBD_KEY_UP_ID   0

@@ -32,9 +32,12 @@ void sAPP_Tasks_OLEDHdr(void* param){
 }
 
 
-void sAPP_Tasks_BtnHdr(void* param){
+void sAPP_Tasks_20ms(void* param){
     for(;;){
+        //处理按键
         sGBD_Handler();
+        //处理二值化设备
+        BinOutDrv.update();
 
         vTaskDelay(20 / portTICK_PERIOD_MS);
     }
@@ -44,7 +47,7 @@ void sAPP_Tasks_BtnHdr(void* param){
 void sAPP_Tasks_500ms(void* param){
 
     for(;;){
-        led.toggle();
+        // led.toggle();
 
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
@@ -54,10 +57,10 @@ void sAPP_Tasks_500ms(void* param){
 
 void sAPP_Tasks_CreateAll(){
     //姿态估计算法 100Hz
-    xTaskCreate(sAPP_Tasks_AHRS         , "AHRS"       , 2048 / sizeof(int), NULL, 2, NULL);
+    //xTaskCreate(sAPP_Tasks_AHRS         , "AHRS"       , 2048 / sizeof(int), NULL, 2, NULL);
     //OLED刷屏 20Hz
     xTaskCreate(sAPP_Tasks_OLEDHdr      , "OLED"       , 2048 / sizeof(int), NULL, 1, NULL);
-    xTaskCreate(sAPP_Tasks_BtnHdr       , "BtnHdr"     ,  512 / sizeof(int), NULL, 1, NULL);
+    xTaskCreate(sAPP_Tasks_20ms         , "20ms"       ,  512 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_500ms        , "500ms"      ,  512 / sizeof(int), NULL, 1, NULL);
     
 }

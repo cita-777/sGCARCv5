@@ -18,16 +18,18 @@
 #include "sG2D.hpp"
 #include "sBinOutDev.hpp"
 
+#include "sAPP_BinOutDev.hpp"
 
 /*APP*/
 #include "sAPP_IMU.hpp"
 #include "sAPP_Car.hpp"
-#include "sAPP_Btns.h"
+#include "sAPP_Btns.hpp"
 #include "sAPP_Motor.hpp"
 #include "sAPP_BlcCtrl.hpp"
 #include "sAPP_Tasks.hpp"
 #include "sAPP_AHRS.hpp"
 #include "sAPP_BlcCtrl.hpp"
+
 
 /*MID*/
 // #include "sGraphic2D.h"

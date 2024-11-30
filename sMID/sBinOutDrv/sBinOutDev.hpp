@@ -3,13 +3,13 @@
 #include "stm32f4xx_hal.h"
 
 #include <stdbool.h>
-#include <forward_list>
-
+#include <stdio.h>
+#include <string.h>
 
 #include "sBSP_UART.h"
 
 
-
+#define SBOD_MAX_DEVICES 8
 
 
 
@@ -18,12 +18,8 @@
 
 class sBinOutDrv{
 public:
-    //输出回调
-    using sBD_OutputCb_t = void(*)(GPIO_TypeDef* group,uint16_t pin,GPIO_PinState lv);
-    //获取滴答定时器回调
-    using sBD_GetTick_t = uint32_t(*)();
 
-    enum class dev_mode_t{
+    enum class DEV_MODE{
         FOREVER_LOW       = 0, //永远为低电平
         FOREVER_HIGH      = 1, //永远为高电平
         SYMMETRIC_TOGGLE  = 2, //对称周期翻转
@@ -32,70 +28,84 @@ public:
         PULSE_HIGH        = 5, //高电平脉冲模式,不触发时为低
     };
 
+    enum class LEVEL{
+        LOW = 0,
+        HIGH = 1,
+    };
+
+    
+
+
+
 
     sBinOutDrv();
     ~sBinOutDrv();
 
     void init();
 
-    void regOutputCb(sBD_OutputCb_t reg_out_ev_cb);
-    // void regInputCb (sBD_InputEventCb_t reg_in_ev_cb);
-    void regGetTick(sBD_GetTick_t _get_tick);
-    int addDev(GPIO_TypeDef* _group,uint16_t _pin,uint16_t _id);
-    int addDev(GPIO_TypeDef* _group,uint16_t _pin,uint16_t _id,bool _is_active);
-    int confDevMode(uint16_t _id,dev_mode_t _mode,bool _is_default_high);
+    int addDev(uint16_t _id,GPIO_TypeDef* _group,uint16_t _pin);
+    int addDev(uint16_t _id,GPIO_TypeDef* _group,uint16_t _pin,bool _is_activate);
+    int confDevMode(uint16_t _id,DEV_MODE _mode,LEVEL _init_level);
     int confTime(uint16_t _id,uint32_t _period,uint32_t _high_period);
+
+    int startPulse(uint16_t _id);
 
 
     
-    void handler();
-
-
+    void update();
 
 
 private:
-    
+    //GPIO
     typedef struct{
         GPIO_TypeDef* group;
         uint16_t pin;
-    }gpio_t;
-
+    }GPIO;
+    //时间戳
     typedef struct{
         uint32_t period;        //时长
         uint32_t high_period;   //高电平时长
+        uint32_t prev_toggle;   //上一次翻转的时间戳
         uint32_t next_toggle;   //下一次翻转的时间戳
-    }timestamp_t;
-
+    }TIMESTAMP;
+    //器件
     typedef struct{
-        gpio_t gpio;        //GPIO
-        timestamp_t ts;     //时间戳
-        bool is_active;     //是否激活
-        bool is_reverse;    //是否翻转输出
-        bool is_init_high;  //是否初始输出高
-        bool out_level;     //需要输出的电平
+        GPIO gpio;        //GPIO
+        TIMESTAMP ts;     //时间戳
+        bool is_activate;     //是否激活
+        LEVEL init_level;  //初始输出电平
+        LEVEL out_level;     //需要输出的电平
         bool is_need_change;//电平是否变化
-        bool now_level;     //当前电平
-        uint16_t id;        //ID
-        dev_mode_t mode;    //设备模式
-    }device_t;
+        LEVEL now_level;     //用于跟踪当前电平
+        DEV_MODE mode;    //设备模式
+        uint16_t pulse_count; //脉冲计数
+    
+    }DEVICE;
 
-    //存储器件的单向链表
-    std::forward_list<device_t> list;
-
-
-    //输出回调
-    sBD_OutputCb_t out_cb;
-    //获取滴答定时器回调
-    sBD_GetTick_t get_tick;
+    //存储器件的数组
+    DEVICE list[SBOD_MAX_DEVICES];
 
     
+    void output(uint16_t id,GPIO_TypeDef* group,uint16_t pin,GPIO_PinState lv);
+    uint32_t getTick();
+    void devGPIOInit(GPIO_TypeDef* group,uint16_t pin);
 
-    void mode_process(device_t& _dev);
-    void symmetricToggleProcess(device_t& _dev);
+    void mode_process(uint16_t id);
+
+    void foreverLowProcess(uint16_t id);
+    void foreverHighProcess(uint16_t id);
+    void symmetricToggleProcess(uint16_t id);
+    void asymmetricToggleProcess(uint16_t id);
+    void pulseLowProcess(uint16_t id);
+    void pulseHighProcess(uint16_t id);
 
 };
 
 
+//给sBinOutDev起一个别名sBOD
+using sBOD = sBinOutDrv;
 
+
+extern sBinOutDrv BinOutDrv;
 
 

@@ -1,4 +1,4 @@
-#include "sAPP_Btns.h"
+#include "sAPP_Btns.hpp"
 
 
 
@@ -45,7 +45,7 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
             
         }
         else if(btn_ev == ev_pres){
-            sBSP_UART_Debug_Printf("TOG EN");
+            // sBSP_UART_Debug_Printf("TOG EN");
             g_ctrl.blc_en = !g_ctrl.blc_en;
         }
     }
@@ -53,7 +53,7 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
 
     //打印按键id的事件
     if(btn_ev == ev_pres){
-        //sHMI_BUZZER_StartSinglePulse();
+        BinOutDrv.startPulse(BOD_BUZZER_ID);
         //dbg.printf("KEY%d:按键按下\n",btn_id + 1);
     }
     else if(btn_ev == ev_rlsd){
