@@ -44,7 +44,7 @@
         "cpuType": "Cortex-M4",
         "floatingPointHardware": "single",
         "useCustomScatterFile": true,
-        "scatterFilePath": "${OutDir}/sGCARCv5.sct",
+        "scatterFilePath": "${OutDir}/../sGCARCv5.sct",
         "storageLayout": {
           "RAM": [
             {

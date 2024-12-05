@@ -53,7 +53,9 @@ int main(){
     // sBSP_DWT_MeasureEnd();
     // sBSP_UART_Debug_Printf("%uus\n",sBSP_DWT_GetMeasure_us());
 
-
+    // sDRV_MB85RCxx_WriteByte(0x10,0xAB);
+    // uint8_t tmp = sDRV_MB85RCxx_ReadByte(0x10);
+    // sBSP_UART_Debug_Printf("tmp: 0x%02X\n",tmp);
     
     
     // sAPP_Tasks_CreateAll();
