@@ -3,6 +3,8 @@
 
 sAPP_IMU imu;
 
+
+
 #include "sGCARC_Def.h"
 #include "sBSP_SPI.h"
 
@@ -14,6 +16,8 @@ sAPP_IMU imu;
  */
 
 
+//#define USE_ICM42688
+#define USE_ICM45686
 
 
 sAPP_IMU::sAPP_IMU(){
@@ -28,6 +32,7 @@ sAPP_IMU::~sAPP_IMU(){
 int sAPP_IMU::init(){
 
     this->icm  = &g_icm;
+    this->icm45686 = &g_icm45686;
     this->lis3 = &g_lis3;
 
     /*把IMU的2个CS都上拉*/
@@ -44,10 +49,17 @@ int sAPP_IMU::init(){
     /*SPI2 <-> IMU_SPI*/
     sBSP_SPI_IMU_Init(SPI_BAUDRATEPRESCALER_4);   //11.25MBits/s
 
-
-    if(sDRV_ICM_Init() != 0){
-        return -1;
-    }
+    #ifdef USE_ICM42688
+        if(sDRV_ICM_Init() != 0){
+            return -1;
+        }
+    #endif
+    #ifdef USE_ICM45686
+        if(sDRV_ICM45686_Init() != 0){
+            return -1;
+        }
+    #endif
+    
 
     if(sDRV_LIS3_Init() != 0){
         return -2;
@@ -58,20 +70,39 @@ int sAPP_IMU::init(){
 
 
 int sAPP_IMU::update(){
-    sDRV_ICM_GetData();
+    
+    #ifdef USE_ICM42688
+        sDRV_ICM_GetData();
+    #endif
+    #ifdef USE_ICM45686
+        sDRV_ICM45686_GetData();
+    #endif
+
     sDRV_LIS3_GetData();
 
 
-    acc_x = icm->acc_x;
-    acc_y = icm->acc_y;
-    acc_z = icm->acc_z;
-    gyr_x = icm->gyro_x;
-    gyr_y = icm->gyro_y;
-    gyr_z = icm->gyro_z;
+    #ifdef USE_ICM42688
+        acc_x = icm->acc_x;
+        acc_y = icm->acc_y;
+        acc_z = icm->acc_z;
+        gyr_x = icm->gyro_x;
+        gyr_y = icm->gyro_y;
+        gyr_z = icm->gyro_z;
+        icm_temp = icm->temp;
+    #endif
+    #ifdef USE_ICM45686
+        acc_x = icm45686->acc_x;
+        acc_y = icm45686->acc_y;
+        acc_z = icm45686->acc_z;
+        gyr_x = icm45686->gyro_x;
+        gyr_y = icm45686->gyro_y;
+        gyr_z = icm45686->gyro_z;
+        icm_temp = icm45686->temp;
+    #endif
+
     mag_x = lis3->mag_x;
     mag_y = lis3->mag_y;
     mag_z = lis3->mag_z;
-    icm_temp = icm->temp;
     lis3_temp = lis3->temp;
     tick = icm->tick;
 

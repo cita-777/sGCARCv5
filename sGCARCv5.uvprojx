@@ -341,7 +341,7 @@
               <MiscControls></MiscControls>
               <Define>STM32F405xx,USE_HAL_DRIVER,ARM_MATH_CM4</Define>
               <Undefine></Undefine>
-              <IncludePath>.;sAPP;sBSP;sDBG;sDRV;sMID;sUSER;sLIB\STM32F4xx_HAL_Driver\Inc;sLIB\CMSIS\Include;sLIB\CMSIS\Device\ST\STM32F4xx\Include;sLIB\CMSIS\Core\Include;sLIB\CMSIS\DSP\Include;sMID\sGenBtnDrv2;sMID\sLib;sMID\sGraphic2D;sMID\FreeRTOS\include;sMID\FreeRTOS\portable\GCC;sMID\FreeRTOS;sMID\cm_backtrace;sMID\sBinOutDrv</IncludePath>
+              <IncludePath>.;sAPP;sBSP;sDBG;sDRV;sMID;sUSER;sLIB\STM32F4xx_HAL_Driver\Inc;sLIB\CMSIS\Include;sLIB\CMSIS\Device\ST\STM32F4xx\Include;sLIB\CMSIS\Core\Include;sLIB\CMSIS\DSP\Include;sMID\sGenBtnDrv2;sMID\sLib;sMID\sGraphic2D;sMID\FreeRTOS\include;sMID\FreeRTOS\portable\GCC;sMID\FreeRTOS;sMID\cm_backtrace;sMID\sBinOutDrv;sMID\sLittleMenu;sMID\sDWTLib</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -389,6 +389,11 @@
               <FileName>sAPP_AHRS.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>sAPP/sAPP_AHRS.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>sAPP_BinOutDev.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>sAPP/sAPP_BinOutDev.cpp</FilePath>
             </File>
             <File>
               <FileName>sAPP_BlcCtrl.cpp</FileName>
@@ -485,11 +490,6 @@
               <FileType>1</FileType>
               <FilePath>sDBG/sDBG_Debug.c</FilePath>
             </File>
-            <File>
-              <FileName>sDBG_UART.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>sDBG/sDBG_UART.cpp</FilePath>
-            </File>
           </Files>
         </Group>
         <Group>
@@ -509,6 +509,11 @@
               <FileName>sDRV_ICM42688.c</FileName>
               <FileType>1</FileType>
               <FilePath>sDRV/sDRV_ICM42688.c</FilePath>
+            </File>
+            <File>
+              <FileName>sDRV_ICM45686.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>sDRV/sDRV_ICM45686.c</FilePath>
             </File>
             <File>
               <FileName>sDRV_INA219.c</FileName>
@@ -549,6 +554,21 @@
               <FileName>sDRV_TrackTube8.c</FileName>
               <FileType>1</FileType>
               <FilePath>sDRV/sDRV_TrackTube8.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>SMID/SLITTLEMENU</GroupName>
+          <Files>
+            <File>
+              <FileName>cot_menu.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>sMID/sLittleMenu/cot_menu.c</FilePath>
+            </File>
+            <File>
+              <FileName>sLittleMenu.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>sMID/sLittleMenu/sLittleMenu.cpp</FilePath>
             </File>
           </Files>
         </Group>
@@ -618,12 +638,27 @@
           </Files>
         </Group>
         <Group>
+          <GroupName>SMID/SDWTLIB</GroupName>
+          <Files>
+            <File>
+              <FileName>sDWTLib.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>sMID/sDWTLib/sDWTLib.cpp</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
           <GroupName>SMID/SBINOUTDRV</GroupName>
           <Files>
             <File>
-              <FileName>sBinOutDev - 副本.cpp</FileName>
+              <FileName>sBinOutDev.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>sMID/sBinOutDrv/sBinOutDev - 副本.cpp</FilePath>
+              <FilePath>sMID/sBinOutDrv/sBinOutDev.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>sBinOutDev_std.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>sMID/sBinOutDrv/sBinOutDev_std.cpp</FilePath>
               <FileOption>
                 <CommonProperty>
                   <UseCPPCompiler>2</UseCPPCompiler>
@@ -675,11 +710,6 @@
                   </Cads>
                 </FileArmAds>
               </FileOption>
-            </File>
-            <File>
-              <FileName>sBinOutDev.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>sMID/sBinOutDrv/sBinOutDev.cpp</FilePath>
             </File>
           </Files>
         </Group>

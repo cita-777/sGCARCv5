@@ -67,13 +67,16 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
         //dbg.printf("KEY%d:双击松手\n",btn_id + 1);
     }
     else if(btn_ev == ev_lp){
+        
         //sHMI_BUZZER_StartSinglePulse();
         //dbg.printf("KEY%d:长按触发\n",btn_id + 1);
     }
     else if(btn_ev == ev_lp_rlsd){
+        
         //dbg.printf("KEY%d:长按松手\n",btn_id + 1);
     }
     else if(btn_ev == ev_lp_loop){
+        BinOutDrv.startPulse(BOD_BUZZER_ID,100);
         //dbg.printf("KEY%d:长按循环触发\n",btn_id + 1);
     }
     //sHMI_Debug_Printf("btn_id:%d,btn_ev:%d\n",btn_id,btn_ev);

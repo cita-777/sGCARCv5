@@ -6,6 +6,8 @@
 #include "sDRV_LIS3MDLTR.h"
 #include "sDRV_JY901S.h"
 
+#include "sDRV_ICM45686.h"
+
 
 
 typedef struct{
@@ -38,6 +40,7 @@ public:
 private:
 
     sDRV_ICM_Data_t*  icm;
+    sDRV_ICM45686_Data_t*  icm45686;
     sDRV_LIS3_Data_t* lis3;
 
 

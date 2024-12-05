@@ -49,7 +49,7 @@ public:
     int confTime(uint16_t _id,uint32_t _period,uint32_t _high_period);
 
     int startPulse(uint16_t _id);
-
+    int startPulse(uint16_t _id,uint32_t period);
 
     
     void update();

@@ -28,7 +28,7 @@ int sAPP_Car::initSys(){
     //获取时钟频率
     coreClk = HAL_RCC_GetSysClockFreq();
     //初始化DWT
-    sBSP_DWT_Init(car.coreClk);
+    dwt.init(coreClk);
 
     //初始化调试串口
     sBSP_UART_Debug_Init(115200);
@@ -49,20 +49,19 @@ int sAPP_Car::initBoard(){
     sBSP_I2C1_Init(400000);
 
     //初始化IMU
-    imu.init();
+    // imu.init();
     //初始化电机
     motor.init();
     //初始化按键
     sAPP_Btns_Init();
-    //初始化LED
-    led.init();
-    led.set(false);
+    //初始化二值输出设备
+    sAPP_BOD_Init();
     //大功率灯初始化
-    //sDRV_PL_Init();
-
-    //sBSP_ADC_Init();
-
-    //sDRV_GenOLED_Init();
+    sDRV_PL_Init();
+    //初始化屏幕
+    sDRV_GenOLED_Init();
+    oled.init();
+    oled.setFPSMode(sG2D::DIGITS2);
 
 
     return 0;

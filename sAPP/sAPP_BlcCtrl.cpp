@@ -108,7 +108,7 @@ void sAPP_BlcCtrl_Handler(){
         //电机设置开路
         motor.setLBrake();
         motor.setRBrake();
-        sBSP_UART_Debug_Printf("NO\n");
+        //sBSP_UART_Debug_Printf("NO\n");
         goto PRINT;
         //return;
     }
@@ -174,7 +174,7 @@ void sAPP_BlcCtrl_Handler(){
     (void)0;
 
     //调试:平衡
-    sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",ahrs.pitch,ahrs.gyr_x,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
+    //sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",ahrs.pitch,ahrs.gyr_x,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
     //dbg.printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",ahrs.pitch,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
 
 

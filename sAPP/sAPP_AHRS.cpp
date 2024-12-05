@@ -8,7 +8,7 @@
  */
 
 //选择数据来源,默认选择维特智能的IMU,取消这个宏将会选择ICM+LIS3惯导(互补滤波姿态解算)
-#define USE_DATASOURCE_WITIMU
+//#define USE_DATASOURCE_WITIMU
 
 
 #include "main.h"
@@ -39,7 +39,7 @@ float bias_gyro_y;
 float bias_gyro_z;
 
 int sAPP_AHRS::calcBias(){
-    #define POINT_COUNT 1000
+    #define POINT_COUNT 10000
 
 
     HAL_Delay(1000);
@@ -60,7 +60,7 @@ int sAPP_AHRS::calcBias(){
 		gyro_x_accu += imu.gyr_x;
 		gyro_y_accu += imu.gyr_y;
 		gyro_z_accu += imu.gyr_z;
-		HAL_Delay(1);
+		// HAL_Delay(1);
 	}
 	bias_acc_x  = acc_x_accu  / POINT_COUNT;
 	bias_acc_y  = acc_y_accu  / POINT_COUNT;
@@ -97,12 +97,25 @@ int sAPP_AHRS::update(){
         ahrs.q3    = g_jy901s.q3;
     #else
         imu.update();
+
+
         input.acc_x = imu.acc_x - bias_acc_x;
         input.acc_y = imu.acc_y - bias_acc_y;
         input.acc_z = imu.acc_z - bias_acc_z;
         input.gyro_x = imu.gyr_x - bias_gyro_x;
         input.gyro_y = imu.gyr_y - bias_gyro_y;
         input.gyro_z = imu.gyr_z - bias_gyro_z;
+
+        // if(input.gyro_x < 0.1 && input.gyro_z > -0.1){
+        //     input.gyro_x = 0;
+        // }
+        // if(input.gyro_y < 0.1 && input.gyro_y > -0.1){
+        //     input.gyro_y = 0;
+        // }
+        // if(input.gyro_z < 0.1 && input.gyro_z > -0.1){
+        //     input.gyro_z = 0;
+        // }
+
         //融合算法
         sLib_6AxisCompFilter(&input, &result);
         ahrs.acc_x = imu.acc_x;
@@ -123,7 +136,7 @@ int sAPP_AHRS::update(){
 
     
 
-    // sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
+    sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
 
     return 0;
 }

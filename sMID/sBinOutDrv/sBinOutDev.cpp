@@ -161,6 +161,30 @@ int sBinOutDrv::startPulse(uint16_t _id){
     return 0;
 }
 
+int sBinOutDrv::startPulse(uint16_t _id,uint32_t period){
+    //合法性检查
+    if(_id > SBOD_MAX_DEVICES){return -1;}
+    DEVICE& dev = list[_id];
+    if(dev.mode != DEV_MODE::PULSE_LOW && dev.mode != DEV_MODE::PULSE_HIGH){
+        return -2;
+    }
+
+    dev.ts.period = period;
+    dev.ts.high_period = period;
+
+    if(dev.mode == DEV_MODE::PULSE_LOW){
+        dev.now_level = LEVEL::HIGH;
+        dev.pulse_count = 0;
+    }
+    else if(dev.mode == DEV_MODE::PULSE_HIGH){
+        dev.now_level = LEVEL::LOW;
+        dev.pulse_count = 0;
+    }
+    return 0;
+}
+
+
+
 void sBinOutDrv::foreverLowProcess(uint16_t id){
     //如果需要改变电平,则调用处理函数处理
     if(list[id].is_need_change == true){

@@ -11,12 +11,13 @@
 
 char fmt_buf[256];
 
+//!可变参数有问题
 void sDBG_Debug_Printf(const char *fmt,...){
 
     sBSP_UART_Debug_Printf(fmt);
 }
 
-
+//!可变参数有问题
 void sDBG_Debug_Warning(const char *fmt,...){
     sDBG_Debug_Printf("[WARN]警告:");
     sDBG_Debug_Printf(fmt);

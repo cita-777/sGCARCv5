@@ -22,7 +22,6 @@ int main(){
     car.initSys();
     car.initBoard();
 
-
     //sBSP_UART_Debug_RecvBegin(uart_recied);
     //sBSP_UART_Top_RecvBegin(uart_recied);
 
@@ -30,20 +29,24 @@ int main(){
     sBSP_UART_Debug_Printf("Hello,STM32F405RGT6    BySightseer.\n");
     sBSP_UART_Debug_Printf("sGCARC初始化完成\n");
 
-    sDRV_GenOLED_Init();
-    oled.init();
-    oled.setFPSMode(sG2D::DIGITS2);
+    
 
     ahrs.init();
+
+    
+    //ahrs.calcBias();
     
 
     int i = 0;
 
-    sAPP_BlcCtrl_Init();
+    //sAPP_BlcCtrl_Init();
 
-    sDRV_PS2_Init();
-    sDRV_PL_Init();
-    sDRV_PL_SetBrightness(50);
+    // sDRV_PS2_Init();
+
+
+    // sDRV_PL_SetBrightness(50);
+
+    // dwt.init(HAL_RCC_GetSysClockFreq());
 
 
     // sBSP_DWT_MeasureStart();
@@ -51,26 +54,28 @@ int main(){
     // sBSP_UART_Debug_Printf("%uus\n",sBSP_DWT_GetMeasure_us());
 
 
-    sAPP_BOD_Init();
     
-    sAPP_Tasks_CreateAll();
-    sDBG_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
-    sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
-    vTaskStartScheduler();
+    
+    // sAPP_Tasks_CreateAll();
+    // sDBG_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
+    // sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
+    //vTaskStartScheduler();
     
 
     // while(1);
     while(1){
-        sBSP_DWT_MeasureStart();
-        sBSP_DWT_MeasureEnd();
-        // sBSP_UART_Debug_Printf("%uus\n",sBSP_DWT_GetMeasure_us());
-        HAL_Delay(10);
-        i++;
+        
+        ahrs.update();
+
         // oled.printf(10,50,"%u",i);
         // i++;
-        // //sBSP_DWT_MeasureStart();
+        // dwt.start();
         // oled.handler();
         // oled.setAll(0);
+        // dwt.end();
+        // sDBG_Debug_Printf("%uus\n",dwt.get_us());
+
+        HAL_Delay(20);
         // sBSP_UART_Top_Printf("Hello,ros2,this is stm32f405,i=%u\n",i);
 
         // ahrs.update();

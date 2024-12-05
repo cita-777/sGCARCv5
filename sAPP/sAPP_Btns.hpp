@@ -8,7 +8,6 @@ extern "C" {
 #include "stdbool.h"
 #include "sGenBtnDrv2.h"
 #include "sBinOutDev.hpp"
-#include "sDBG_UART.hpp"
 #include "sAPP_BinOutDev.hpp"
 
 
