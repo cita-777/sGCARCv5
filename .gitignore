@@ -6,7 +6,8 @@
 /.pack
 
 # project out
-/build
+/build/Debug
+/build/Keil
 /bin
 /obj
 /out
