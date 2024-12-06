@@ -31,7 +31,7 @@ int main(){
 
     
 
-    ahrs.init();
+    // ahrs.init();
 
     
     //ahrs.calcBias();
@@ -42,6 +42,8 @@ int main(){
     //sAPP_BlcCtrl_Init();
 
     // sDRV_PS2_Init();
+    
+    sBSP_RNG_Init();
 
 
     // sDRV_PL_SetBrightness(50);
@@ -67,7 +69,10 @@ int main(){
     // while(1);
     while(1){
         
-        ahrs.update();
+        // ahrs.update();
+
+        // sBSP_UART_Debug_Printf("%u\n",sBSP_RNG_GetU8());
+        sBSP_UART_Debug_Printf("%.2f\n",sBSP_RNG_GetRangeFloat(0,100));
 
         // oled.printf(10,50,"%u",i);
         // i++;
@@ -77,7 +82,7 @@ int main(){
         // dwt.end();
         // sDBG_Debug_Printf("%uus\n",dwt.get_us());
 
-        HAL_Delay(20);
+        HAL_Delay(30);
         // sBSP_UART_Top_Printf("Hello,ros2,this is stm32f405,i=%u\n",i);
 
         // ahrs.update();

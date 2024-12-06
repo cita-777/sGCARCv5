@@ -73,6 +73,7 @@
 #include "sBSP_ADC.h"
 #include "sBSP_UART.h"
 #include "sBSP_DMA.h"
+#include "sBSP_RNG.h"
 
 
 #define APPNAME                        "sGCARCv5"
