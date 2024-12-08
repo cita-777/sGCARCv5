@@ -74,7 +74,10 @@
             "string_view": "cpp",
             "system_error": "cpp",
             "forward_list": "cpp",
-            "list": "cpp"
+            "list": "cpp",
+            "__memory": "cpp",
+            "type_traits": "cpp",
+            "utility": "cpp"
         },
         "[yaml]": {
             "editor.insertSpaces": true,

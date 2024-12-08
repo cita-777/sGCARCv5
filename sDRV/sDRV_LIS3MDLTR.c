@@ -254,7 +254,8 @@ int sDRV_LIS3_Init(){
     //检查通信是否正常
     uint8_t who_am_i = read_reg(ADDR_WHOAMI);
     if(who_am_i != 0x3D){
-        //sHMI_Debug_Printf("[ERR ]LIS3MDLTR初始化失败:0x%0X\n",who_am_i);
+        #include "sBSP_UART.h"
+        sBSP_UART_Debug_Printf("[ERR ]LIS3MDLTR初始化失败:0x%0X\n",who_am_i);
         return -1;
     }
 

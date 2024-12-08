@@ -372,7 +372,7 @@
             <TextAddressRange>0x08000000</TextAddressRange>
             <DataAddressRange>0x20000000</DataAddressRange>
             <pXoBase></pXoBase>
-            <ScatterFile>build/Debug/sGCARCv5.sct</ScatterFile>
+            <ScatterFile>build/sGCARCv5.sct</ScatterFile>
             <IncludeLibs></IncludeLibs>
             <IncludeLibsPath></IncludeLibsPath>
             <Misc></Misc>
@@ -461,6 +461,11 @@
               <FilePath>sBSP/sBSP_RCC.c</FilePath>
             </File>
             <File>
+              <FileName>sBSP_RNG.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>sBSP/sBSP_RNG.c</FilePath>
+            </File>
+            <File>
               <FileName>sBSP_SPI.c</FileName>
               <FileType>1</FileType>
               <FilePath>sBSP/sBSP_SPI.c</FilePath>
@@ -501,6 +506,11 @@
               <FilePath>sDRV/sDRV_DRV8870.c</FilePath>
             </File>
             <File>
+              <FileName>sDRV_Flash.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>sDRV/sDRV_Flash.c</FilePath>
+            </File>
+            <File>
               <FileName>sDRV_GMR.c</FileName>
               <FileType>1</FileType>
               <FilePath>sDRV/sDRV_GMR.c</FilePath>
@@ -539,6 +549,11 @@
               <FileName>sDRV_MB85RCxx.c</FileName>
               <FileType>1</FileType>
               <FilePath>sDRV/sDRV_MB85RCxx.c</FilePath>
+            </File>
+            <File>
+              <FileName>sDRV_NTC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>sDRV/sDRV_NTC.c</FilePath>
             </File>
             <File>
               <FileName>sDRV_PS2.c</FileName>

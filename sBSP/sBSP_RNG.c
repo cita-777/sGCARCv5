@@ -26,7 +26,7 @@ uint32_t sBSP_RNG_GetU32(){
 }
 
 int32_t sBSP_RNG_Get32(){
-
+    return 0;
 }
 
 uint16_t sBSP_RNG_GetU16(){
@@ -36,7 +36,7 @@ uint16_t sBSP_RNG_GetU16(){
 }
 
 int16_t sBSP_RNG_Get16(){
-
+    return 0;
 }
 
 uint8_t sBSP_RNG_GetU8(){
@@ -46,7 +46,7 @@ uint8_t sBSP_RNG_GetU8(){
 }
 
 int8_t sBSP_RNG_Get8(){
-
+    return 0;
 }
 
 float sBSP_RNG_GetRangeFloat(float min,float max){

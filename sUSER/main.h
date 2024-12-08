@@ -63,6 +63,7 @@
 #include "sDRV_LED.hpp"
 #include "sDRV_PS2.h"
 #include "sDRV_JY901S.h"
+#include "sDRV_NTC.h"
 
 /*BSP*/
 #include "sBSP_RCC.h"

@@ -16,7 +16,7 @@ sAPP_IMU imu;
  */
 
 
-//#define USE_ICM42688
+// #define USE_ICM42688
 #define USE_ICM45686
 
 

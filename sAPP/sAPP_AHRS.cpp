@@ -24,22 +24,19 @@ int sAPP_AHRS::init(){
         HAL_NVIC_EnableIRQ(USART3_IRQn);
 
     #else
-        imu.init();
+        if(imu.init() != 0){
+            //while(1);
+        }
     #endif
     
     return 0;
 }
 
 
-float bias_acc_x ;
-float bias_acc_y ;
-float bias_acc_z ;
-float bias_gyro_x;
-float bias_gyro_y;
-float bias_gyro_z;
+
 
 int sAPP_AHRS::calcBias(){
-    #define POINT_COUNT 10000
+    #define POINT_COUNT 30000
 
 
     HAL_Delay(1000);
@@ -60,6 +57,7 @@ int sAPP_AHRS::calcBias(){
 		gyro_x_accu += imu.gyr_x;
 		gyro_y_accu += imu.gyr_y;
 		gyro_z_accu += imu.gyr_z;
+        dwt.delay_us(10);
 		// HAL_Delay(1);
 	}
 	bias_acc_x  = acc_x_accu  / POINT_COUNT;
@@ -118,12 +116,16 @@ int sAPP_AHRS::update(){
 
         //融合算法
         sLib_6AxisCompFilter(&input, &result);
-        ahrs.acc_x = imu.acc_x;
-        ahrs.acc_y = imu.acc_y;
-        ahrs.acc_z = imu.acc_z;
-        ahrs.gyr_x = imu.gyr_x;
-        ahrs.gyr_y = imu.gyr_y;
-        ahrs.gyr_z = imu.gyr_z;
+        ahrs.acc_x = input.acc_x;
+        ahrs.acc_y = input.acc_y;
+        ahrs.acc_z = input.acc_z;
+        ahrs.gyr_x = input.gyro_x;
+        ahrs.gyr_y = input.gyro_y;
+        ahrs.gyr_z = input.gyro_z;
+
+        ahrs.mag_x = g_lis3.mag_x;
+        ahrs.mag_y = g_lis3.mag_y;
+        ahrs.mag_z = g_lis3.mag_z;
 
         ahrs.pitch = result.pitch;
         ahrs.roll = result.roll;
@@ -136,7 +138,7 @@ int sAPP_AHRS::update(){
 
     
 
-    sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
+    // sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
 
     return 0;
 }

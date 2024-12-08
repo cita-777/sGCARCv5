@@ -2,7 +2,7 @@
 
 
 #include "sDRV_JY901S.h"
-
+#include "sDRV_MB85RCxx.h"
 
 class sAPP_AHRS{
 public:
@@ -22,6 +22,13 @@ public:
     float yaw;
 
     float q0,q1,q2,q3;
+
+    float bias_acc_x ;
+    float bias_acc_y ;
+    float bias_acc_z ;
+    float bias_gyro_x;
+    float bias_gyro_y;
+    float bias_gyro_z;
 
 
     int init();

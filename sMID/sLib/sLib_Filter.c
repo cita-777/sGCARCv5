@@ -22,6 +22,8 @@ void sLib_6AxisCompFilter(sLIB_6AXIS_INPUT_t* input,sLIB_ATTITUDE_RESULT_t* resu
 
 	const float Kp = 0.4f;
 	const float Ki = 0.001f;
+    // const float Kp = 0.3f;
+	// const float Ki = 0.0008f;
 	//四元数
 	static float q0 = 1.0f;
 	static float q1 = 0.0f;

@@ -567,6 +567,10 @@ void sDRV_ICM_GetData(){
         g_icm.gyro_y *= (15.625f / 32768.0f);
         g_icm.gyro_z *= (15.625f / 32768.0f);
 	}
+    #include "sBSP_UART.h"
+
+    sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",g_icm.acc_x,g_icm.acc_y,g_icm.acc_z);
+    sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f\n",g_icm.gyro_x,g_icm.gyro_y,g_icm.gyro_z);
 
 
 }
