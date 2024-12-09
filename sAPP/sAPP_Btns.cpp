@@ -44,32 +44,33 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
     
 
 
-    if(btn_id == SGBD_KEY_UP_ID){
-        if(btn_ev == ev_dp){
-            
+    if(btn_ev == ev_dp){
+        
+    }
+    else if(btn_ev == ev_pres){
+        if(btn_id == SGBD_KEY_UP_ID){
+            lm.opPrev();
         }
-        else if(btn_ev == ev_pres){
-            // sBSP_UART_Debug_Printf("TOG EN");
-            // g_ctrl.blc_en = !g_ctrl.blc_en;
+        else if(btn_id == SGBD_KEY_DN_ID){
+            lm.opNext();
         }
+        else if(btn_id == SGBD_KEY_ET_ID){
+            lm.opEnter();
+        }
+        else if(btn_id == SGBD_KEY_BK_ID){
+            lm.opBack();
+        }
+        
+        
     }
 
-    if(btn_id == SGBD_KEY_UP_ID){
-        lm.opPrev();
-    }
-    else if(btn_id == SGBD_KEY_DN_ID){
-        lm.opNext();
-    }
-    else if(btn_id == SGBD_KEY_ET_ID){
-        lm.opEnter();
-    }
-    else if(btn_id == SGBD_KEY_BK_ID){
-        lm.opBack();
-    }
+    
 
 
     //打印按键id的事件
     if(btn_ev == ev_pres){
+        lm.root->printTree(0,printMenuItemData);
+
         BinOutDrv.startPulse(BOD_BUZZER_ID,50);
         //dbg.printf("KEY%d:按键按下\n",btn_id + 1);
     }
@@ -103,17 +104,7 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
     //sHMI_Debug_Printf("btn_id:%d,btn_ev:%d\n",btn_id,btn_ev);
 
 
-    const sLM_MenuItemData* item = reinterpret_cast<const sLM_MenuItemData*>(lm.curr_page->data);
-        sBSP_UART_Debug_Printf("- ID: %u,text:%s",item->id,item->text);
-        if(item->show_para_type == sLM_ISPType::STRING){
-            sBSP_UART_Debug_Printf(", String: %s \n",item->para_str);
-        }
-        else if(item->show_para_type == sLM_ISPType::FLOAT){
-            sBSP_UART_Debug_Printf(", Float: %f \n",item->para_float);
-        }
-        else if(item->show_para_type == sLM_ISPType::INT32_NUM){
-            sBSP_UART_Debug_Printf(", Int32_Num: %d \n",item->para_int);
-        }
+    
 }
 
 
@@ -143,7 +134,7 @@ void sAPP_Btns_Init(){
 
     btn_init.en = 1;                //使能此按键
     btn_init.lv_rev = lv_non_reverse;   //空闲时的电平反转
-    btn_init.dp_mode = dp_enable;   //禁用双击,可提高连续单击速度
+    btn_init.dp_mode = dp_disable;   //禁用双击,可提高连续单击速度
     btn_init.lp_loop_pridt = 300;   //设置长按循环触发间隔每500ms触发一次
     btn_init.lp_trig_waitt = 1000;  //设置长按触发时间2000ms
     btn_init.dp_prid_waitt = 200;   //设置最大等待双击时间

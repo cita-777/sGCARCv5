@@ -22,6 +22,7 @@
 // 基础树节点类
 class sLM_TreeNode{
 protected:
+    sLM_TreeNode(){}
 
     //构造函数设为protected 防止直接new 需要使用createNode分配内存
     sLM_TreeNode(size_t dsize) : \

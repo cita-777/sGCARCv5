@@ -80,43 +80,136 @@ int main(){
     sBSP_RNG_Init();
 
     sDRV_NTC_Init();
+    
+    oled.setAll(0);
+    oled.handler();
 
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
 
-    
+    sLM::MenuItemData p_item = {.id = 1,
+                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
+                                    .param.cb = sLM::param_change,
+                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
+                                    .param.i_val = 10,
+                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
+                                    .param.i_dn_val = -10,
+                                    .param.i_up_val = 15,
+                                    .param.i_increment = 1,
+                                    .param.i_decrement = 1,
+                                    .text = "P:"};
+    sLM::MenuItemData i_item = {.id = 2,
+                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
+                                    .param.cb = nullptr,
+                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
+                                    .param.type = sLM::Item_ParamType::INT,
+                                    .param.i_val = 0,
+                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
+                                    .param.i_dn_val = -10,
+                                    .param.i_up_val = 15,
+                                    .param.i_increment = 2,
+                                    .param.i_decrement = 2,
+                                    .text = "I:"};
+    sLM::MenuItemData d_item = {.id = 3,
+                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
+                                    .param.cb = nullptr,
+                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
+                                    .param.type = sLM::Item_ParamType::INT,
+                                    .param.i_val = 0,
+                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
+                                    .param.i_dn_val = -10,
+                                    .param.i_up_val = 15,
+                                    .param.i_increment = 2,
+                                    .param.i_decrement = 2,
+                                    .text = "D:"};
+    sLM::MenuItemData bri_item = {.id = 4,
+                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
+                                    .param.cb = nullptr,
+                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
+                                    .param.type = sLM::Item_ParamType::INT,
+                                    .param.i_val = 0,
+                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
+                                    .param.i_dn_val = -10,
+                                    .param.i_up_val = 15,
+                                    .param.i_increment = 2,
+                                    .param.i_decrement = 2,
+                                    .text = "Bri:"};
 
-    sLM_MenuItemData rootData = {.id = 0,.text = "Root",.show_para_type = sLM_ISPType::STRING,.para_str = "LittleMenu"};
-    sLM_MenuItemData settingsData = {.id = 1,.text = "Settings",.show_para_type = sLM_ISPType::STRING,.para_str = "进入"};
-    sLM_MenuItemData aboutData = {.id = 2,.text = "About",.show_para_type = sLM_ISPType::STRING,.para_str = "bySightseer"};
-    sLM_MenuItemData displayData = {.id = 3,.text = "Display",.show_para_type = sLM_ISPType::FLOAT,.para_float = 17.568};
-    sLM_MenuItemData soundData = {.id = 4,.text = "Sound",.show_para_type = sLM_ISPType::INT32_NUM,.para_int = -58};
-    sLM_MenuItemData versionData = {.id = 5,.text = "Version",.show_para_type = sLM_ISPType::STRING,.para_str = "v1.0"};
+    sLM::MenuItemData sec_item = {.id = 5,
+                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
+                                    .param.cb = nullptr,
+                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
+                                    .param.type = sLM::Item_ParamType::INT,
+                                    .param.i_val = 0,
+                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
+                                    .param.i_dn_val = -10,
+                                    .param.i_up_val = 15,
+                                    .param.i_increment = 2,
+                                    .param.i_decrement = 2,
+                                    .text = "brightness:"};
+    sLM::MenuItemData sec_item2 = {.id = 6,
+                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
+                                    .param.cb = nullptr,
+                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
+                                    .param.type = sLM::Item_ParamType::INT,
+                                    .param.i_val = 0,
+                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
+                                    .param.i_dn_val = -10,
+                                    .param.i_up_val = 15,
+                                    .param.i_increment = 2,
+                                    .param.i_decrement = 2,
+                                    .text = "buzzer:"};
+    sLM::MenuItemData sec_item3 = {.id = 7,
+                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
+                                    .param.cb = nullptr,
+                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
+                                    .param.type = sLM::Item_ParamType::INT,
+                                    .param.i_val = 0,
+                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
+                                    .param.i_dn_val = -10,
+                                    .param.i_up_val = 15,
+                                    .param.i_increment = 2,
+                                    .param.i_decrement = 2,
+                                    .text = "time:"};
+    sLM::MenuItemData sec_item4 = {.id = 8,
+                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
+                                    .param.cb = nullptr,
+                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
+                                    .param.type = sLM::Item_ParamType::INT,
+                                    .param.i_val = 0,
+                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
+                                    .param.i_dn_val = -10,
+                                    .param.i_up_val = 15,
+                                    .param.i_increment = 2,
+                                    .param.i_decrement = 2,
+                                    .text = "percent:"};
 
-    sLM_TreeNode* root      = sLM_TreeNode::createNode((const void*)&rootData,sizeof(rootData));
-    sLM_TreeNode* settings  = sLM_TreeNode::createNode((const void*)&settingsData,sizeof(settingsData));
-    sLM_TreeNode* about     = sLM_TreeNode::createNode((const void*)&aboutData,sizeof(aboutData));
-    sLM_TreeNode* display   = sLM_TreeNode::createNode((const void*)&displayData,sizeof(displayData));
-    sLM_TreeNode* sound     = sLM_TreeNode::createNode((const void*)&soundData,sizeof(soundData));
-    sLM_TreeNode* version   = sLM_TreeNode::createNode((const void*)&versionData,sizeof(versionData));
-    sLM_TreeNode* version1  = sLM_TreeNode::createNode((const void*)&versionData,sizeof(versionData));
 
-    // // 构建菜单结构
-    // root->addChild(settings);
-    // root->addChild(about);
-    // settings->addChild(display);
-    // settings->addChild(sound);
-    // about->addChild(version);
-    // about->addChild(version1);
+    sLM_TreeNode* p      = sLM_TreeNode::createNode((const void*)&p_item,sizeof(p_item));
+    sLM_TreeNode* in  = sLM_TreeNode::createNode((const void*)&i_item,sizeof(i_item));
+    sLM_TreeNode* d  = sLM_TreeNode::createNode((const void*)&d_item,sizeof(d_item));
+    sLM_TreeNode* bri  = sLM_TreeNode::createNode((const void*)&bri_item,sizeof(bri_item));
+    sLM_TreeNode* sec  = sLM_TreeNode::createNode((const void*)&sec_item,sizeof(sec_item));
+    sLM_TreeNode* sec2  = sLM_TreeNode::createNode((const void*)&sec_item2,sizeof(sec_item2));
+    sLM_TreeNode* sec3  = sLM_TreeNode::createNode((const void*)&sec_item3,sizeof(sec_item3));
+    sLM_TreeNode* sec4  = sLM_TreeNode::createNode((const void*)&sec_item4,sizeof(sec_item4));
 
-    
     lm.init();
-    lm.addSubMenu(lm.root,settings);
-    lm.addSubMenu(lm.root,about);
-    lm.addSubMenu(lm.root,display);
-    lm.addSubMenu(lm.root,sound);
+    lm.addSubMenu(lm.root,p);
+    lm.addSubMenu(lm.root,in);
+    lm.addSubMenu(lm.root,d);
+    lm.addSubMenu(lm.root,bri);
 
-    lm.addSubMenu(display,version);
-    lm.addSubMenu(display,version1);
+    lm.addSubMenu(bri,sec);
+    lm.addSubMenu(bri,sec2);
+    lm.addSubMenu(bri,sec3);
+    lm.addSubMenu(bri,sec4);
+
+
+    oled.setAll(0);
+    sLM_Show::showList(lm.root);
+    oled.handler();
+
+
 
     
     
@@ -126,7 +219,7 @@ int main(){
     // 打印菜单结构
     sBSP_UART_Debug_Printf("菜单结构：\n");
     lm.root->printTree(0,printMenuItemData);
-    delete lm.root;
+    // delete lm.root;
 
 
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());

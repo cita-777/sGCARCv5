@@ -171,6 +171,13 @@ void sG2D::drawHLine(uint16_t x0, uint16_t x1,uint16_t y, bool dot_en){
     }
 }
 
+//绘制三角形
+void sG2D::drawTriangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, bool dot_en){
+    drawLine(x0, y0, x1, y1, dot_en);
+    drawLine(x1, y1, x2, y2, dot_en);
+    drawLine(x2, y2, x0, y0, dot_en);
+}
+
 //绘制矩形
 void sG2D::drawRectangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, bool is_fill){
     if (is_fill) {
