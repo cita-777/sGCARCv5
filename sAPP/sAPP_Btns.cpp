@@ -38,7 +38,7 @@ static bool get_lv(uint8_t btn_id){
 }
 
 #include "main.h"
-extern sLittleMenu lm;
+
 
 static void trig(uint8_t btn_id,ev_flag_t btn_ev){
     
@@ -54,7 +54,10 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
         }
     }
 
-    if(btn_id == SGBD_KEY_DN_ID){
+    if(btn_id == SGBD_KEY_UP_ID){
+        lm.opPrev();
+    }
+    else if(btn_id == SGBD_KEY_DN_ID){
         lm.opNext();
     }
     else if(btn_id == SGBD_KEY_ET_ID){
@@ -67,16 +70,16 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
 
     //打印按键id的事件
     if(btn_ev == ev_pres){
-        BinOutDrv.startPulse(BOD_BUZZER_ID);
+        BinOutDrv.startPulse(BOD_BUZZER_ID,50);
         //dbg.printf("KEY%d:按键按下\n",btn_id + 1);
     }
     else if(btn_ev == ev_rlsd){
         //dbg.printf("KEY%d:按键松手\n",btn_id + 1);
     }
     else if(btn_ev == ev_dp){
-        BinOutDrv.startPulse(BOD_BUZZER_ID,1000);
-        sDRV_MB85RCxx_Format(0x00); //清空FeRAM
-        sBSP_UART_Debug_Printf("FeRAM已清空\n");
+        BinOutDrv.startPulse(BOD_BUZZER_ID,500);
+        // sDRV_MB85RCxx_Format(0x00); //清空FeRAM
+        // sBSP_UART_Debug_Printf("FeRAM已清空\n");
         
         //sHMI_BUZZER_StartSinglePulse();
         //dbg.printf("KEY%d:双击按下\n",btn_id + 1);
@@ -100,7 +103,7 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
     //sHMI_Debug_Printf("btn_id:%d,btn_ev:%d\n",btn_id,btn_ev);
 
 
-    const sLM_MenuItemData* item = reinterpret_cast<const sLM_MenuItemData*>(lm.curr_menu->data);
+    const sLM_MenuItemData* item = reinterpret_cast<const sLM_MenuItemData*>(lm.curr_page->data);
         sBSP_UART_Debug_Printf("- ID: %u,text:%s",item->id,item->text);
         if(item->show_para_type == sLM_ISPType::STRING){
             sBSP_UART_Debug_Printf(", String: %s \n",item->para_str);

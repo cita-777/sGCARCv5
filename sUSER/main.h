@@ -83,4 +83,7 @@
 
 
 
+extern sLittleMenu lm;
+
+
 

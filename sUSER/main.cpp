@@ -28,8 +28,8 @@ float calculate_heading(float mag_x, float mag_y) {
 }
 
 
-
 sLittleMenu lm;
+
 
 int main(){
     car.initSys();
@@ -92,37 +92,31 @@ int main(){
     sLM_MenuItemData soundData = {.id = 4,.text = "Sound",.show_para_type = sLM_ISPType::INT32_NUM,.para_int = -58};
     sLM_MenuItemData versionData = {.id = 5,.text = "Version",.show_para_type = sLM_ISPType::STRING,.para_str = "v1.0"};
 
-    // 创建菜单节点
-    sLM_Menu* root = sLM_Menu::create(&rootData, sizeof(rootData));
-    sLM_Menu* settings = sLM_Menu::create(&settingsData, sizeof(settingsData));
-    sLM_Menu* about = sLM_Menu::create(&aboutData, sizeof(aboutData));
-    sLM_Menu* display = sLM_Menu::create(&displayData, sizeof(displayData));
-    sLM_Menu* sound = sLM_Menu::create(&soundData, sizeof(soundData));
-    sLM_Menu* version = sLM_Menu::create(&versionData, sizeof(versionData));
-
-    sLM_Menu* display1 = sLM_Menu::create(&displayData, sizeof(displayData));
-    sLM_Menu* sound1 = sLM_Menu::create(&soundData, sizeof(soundData));
-    sLM_Menu* version1 = sLM_Menu::create(&versionData, sizeof(versionData));
+    sLM_TreeNode* root      = sLM_TreeNode::createNode((const void*)&rootData,sizeof(rootData));
+    sLM_TreeNode* settings  = sLM_TreeNode::createNode((const void*)&settingsData,sizeof(settingsData));
+    sLM_TreeNode* about     = sLM_TreeNode::createNode((const void*)&aboutData,sizeof(aboutData));
+    sLM_TreeNode* display   = sLM_TreeNode::createNode((const void*)&displayData,sizeof(displayData));
+    sLM_TreeNode* sound     = sLM_TreeNode::createNode((const void*)&soundData,sizeof(soundData));
+    sLM_TreeNode* version   = sLM_TreeNode::createNode((const void*)&versionData,sizeof(versionData));
+    sLM_TreeNode* version1  = sLM_TreeNode::createNode((const void*)&versionData,sizeof(versionData));
 
     // // 构建菜单结构
-    // root->addSubMenu(settings);
-    // root->addSubMenu(about);
-    // settings->addSubMenu(display);
-    // settings->addSubMenu(sound);
-    // about->addSubMenu(version);
+    // root->addChild(settings);
+    // root->addChild(about);
+    // settings->addChild(display);
+    // settings->addChild(sound);
+    // about->addChild(version);
+    // about->addChild(version1);
 
     
-
     lm.init();
-    lm.addSub(settings);
-    lm.addSub(about);
-    lm.addSub(display);
-    lm.addSub(sound);
-    lm.addSub(version);
+    lm.addSubMenu(lm.root,settings);
+    lm.addSubMenu(lm.root,about);
+    lm.addSubMenu(lm.root,display);
+    lm.addSubMenu(lm.root,sound);
 
-    settings->addSubMenu(display1);
-    settings->addSubMenu(sound1);
-    sound->addSubMenu(version1);
+    lm.addSubMenu(display,version);
+    lm.addSubMenu(display,version1);
 
     
     
@@ -131,10 +125,9 @@ int main(){
 
     // 打印菜单结构
     sBSP_UART_Debug_Printf("菜单结构：\n");
-    lm.menu->printMenu(printMenuItemData);
+    lm.root->printTree(0,printMenuItemData);
+    delete lm.root;
 
-    // 释放资源
-    delete lm.menu; // 会递归释放所有节点
 
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
 
@@ -151,7 +144,7 @@ int main(){
         BinOutDrv.update();
 
         
-        HAL_Delay(30);
+        HAL_Delay(20);
     }
         
     while(1){
