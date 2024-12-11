@@ -28,7 +28,6 @@ float calculate_heading(float mag_x, float mag_y) {
 }
 
 
-sLittleMenu lm;
 
 
 int main(){
@@ -86,159 +85,41 @@ int main(){
 
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
 
-    sLM::MenuItemData p_item = {.id = 1,
-                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
-                                    .param.cb = sLM::param_change,
-                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
-                                    .param.i_val = 10,
-                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
-                                    .param.i_dn_val = -10,
-                                    .param.i_up_val = 15,
-                                    .param.i_increment = 1,
-                                    .param.i_decrement = 1,
-                                    .text = "P:"};
-    sLM::MenuItemData i_item = {.id = 2,
-                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
-                                    .param.cb = nullptr,
-                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
-                                    .param.type = sLM::Item_ParamType::INT,
-                                    .param.i_val = 0,
-                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
-                                    .param.i_dn_val = -10,
-                                    .param.i_up_val = 15,
-                                    .param.i_increment = 2,
-                                    .param.i_decrement = 2,
-                                    .text = "I:"};
-    sLM::MenuItemData d_item = {.id = 3,
-                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
-                                    .param.cb = nullptr,
-                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
-                                    .param.type = sLM::Item_ParamType::INT,
-                                    .param.i_val = 0,
-                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
-                                    .param.i_dn_val = -10,
-                                    .param.i_up_val = 15,
-                                    .param.i_increment = 2,
-                                    .param.i_decrement = 2,
-                                    .text = "D:"};
-    sLM::MenuItemData bri_item = {.id = 4,
-                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
-                                    .param.cb = nullptr,
-                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
-                                    .param.type = sLM::Item_ParamType::INT,
-                                    .param.i_val = 0,
-                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
-                                    .param.i_dn_val = -10,
-                                    .param.i_up_val = 15,
-                                    .param.i_increment = 2,
-                                    .param.i_decrement = 2,
-                                    .text = "Bri:"};
+    
+    
+    
+    
 
-    sLM::MenuItemData sec_item = {.id = 5,
-                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
-                                    .param.cb = nullptr,
-                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
-                                    .param.type = sLM::Item_ParamType::INT,
-                                    .param.i_val = 0,
-                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
-                                    .param.i_dn_val = -10,
-                                    .param.i_up_val = 15,
-                                    .param.i_increment = 2,
-                                    .param.i_decrement = 2,
-                                    .text = "brightness:"};
-    sLM::MenuItemData sec_item2 = {.id = 6,
-                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
-                                    .param.cb = nullptr,
-                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
-                                    .param.type = sLM::Item_ParamType::INT,
-                                    .param.i_val = 0,
-                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
-                                    .param.i_dn_val = -10,
-                                    .param.i_up_val = 15,
-                                    .param.i_increment = 2,
-                                    .param.i_decrement = 2,
-                                    .text = "buzzer:"};
-    sLM::MenuItemData sec_item3 = {.id = 7,
-                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
-                                    .param.cb = nullptr,
-                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
-                                    .param.type = sLM::Item_ParamType::INT,
-                                    .param.i_val = 0,
-                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
-                                    .param.i_dn_val = -10,
-                                    .param.i_up_val = 15,
-                                    .param.i_increment = 2,
-                                    .param.i_decrement = 2,
-                                    .text = "time:"};
-    sLM::MenuItemData sec_item4 = {.id = 8,
-                                    .param.access = sLM::Item_ParamAccess::RW_PARAM,
-                                    .param.cb = nullptr,
-                                    .param.cb_mthd = sLM::Item_ParamCbMethod::CHRG_CB,
-                                    .param.type = sLM::Item_ParamType::INT,
-                                    .param.i_val = 0,
-                                    .param.lim_type = sLM::Item_ParamLimitType::RANGE,
-                                    .param.i_dn_val = -10,
-                                    .param.i_up_val = 15,
-                                    .param.i_increment = 2,
-                                    .param.i_decrement = 2,
-                                    .text = "percent:"};
-
-
-    sLM_TreeNode* p      = sLM_TreeNode::createNode((const void*)&p_item,sizeof(p_item));
-    sLM_TreeNode* in  = sLM_TreeNode::createNode((const void*)&i_item,sizeof(i_item));
-    sLM_TreeNode* d  = sLM_TreeNode::createNode((const void*)&d_item,sizeof(d_item));
-    sLM_TreeNode* bri  = sLM_TreeNode::createNode((const void*)&bri_item,sizeof(bri_item));
-    sLM_TreeNode* sec  = sLM_TreeNode::createNode((const void*)&sec_item,sizeof(sec_item));
-    sLM_TreeNode* sec2  = sLM_TreeNode::createNode((const void*)&sec_item2,sizeof(sec_item2));
-    sLM_TreeNode* sec3  = sLM_TreeNode::createNode((const void*)&sec_item3,sizeof(sec_item3));
-    sLM_TreeNode* sec4  = sLM_TreeNode::createNode((const void*)&sec_item4,sizeof(sec_item4));
-
-    lm.init();
-    lm.addSubMenu(lm.root,p);
-    lm.addSubMenu(lm.root,in);
-    lm.addSubMenu(lm.root,d);
-    lm.addSubMenu(lm.root,bri);
-
-    lm.addSubMenu(bri,sec);
-    lm.addSubMenu(bri,sec2);
-    lm.addSubMenu(bri,sec3);
-    lm.addSubMenu(bri,sec4);
-
-
-    oled.setAll(0);
-    sLM_Show::showList(lm.root);
-    oled.handler();
-
-
+    
 
     
     
+    sAPP_GUI_Init();
+
+
+    
+
+    //完成 完成只读item,只读,不可修改,不可selected
+    //完成 数值单位设置
+    //完成 支持float数据格式%.2f
+    
+
 
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
 
     // 打印菜单结构
     sBSP_UART_Debug_Printf("菜单结构：\n");
-    lm.root->printTree(0,printMenuItemData);
-    // delete lm.root;
+    slm.root->printTree(0,printMenuItemData);
+    // delete slm.root;
 
 
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
 
-    // sAPP_Tasks_CreateAll();
-    // sDBG_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
-    // sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
-    // vTaskStartScheduler();
+    sAPP_Tasks_CreateAll();
+    sDBG_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
+    sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
+    vTaskStartScheduler();
     
-
-    while(1){
-        //处理按键
-        sGBD_Handler();
-        //处理二值化设备
-        BinOutDrv.update();
-
-        
-        HAL_Delay(20);
-    }
         
     while(1){
         //处理按键

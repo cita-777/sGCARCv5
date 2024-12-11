@@ -49,16 +49,16 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
     }
     else if(btn_ev == ev_pres){
         if(btn_id == SGBD_KEY_UP_ID){
-            lm.opPrev();
+            slm.opPrev();
         }
         else if(btn_id == SGBD_KEY_DN_ID){
-            lm.opNext();
+            slm.opNext();
         }
         else if(btn_id == SGBD_KEY_ET_ID){
-            lm.opEnter();
+            slm.opEnter();
         }
         else if(btn_id == SGBD_KEY_BK_ID){
-            lm.opBack();
+            slm.opBack();
         }
         
         
@@ -69,7 +69,7 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
 
     //打印按键id的事件
     if(btn_ev == ev_pres){
-        lm.root->printTree(0,printMenuItemData);
+        // slm.root->printTree(0,printMenuItemData);
 
         BinOutDrv.startPulse(BOD_BUZZER_ID,50);
         //dbg.printf("KEY%d:按键按下\n",btn_id + 1);
@@ -78,7 +78,7 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
         //dbg.printf("KEY%d:按键松手\n",btn_id + 1);
     }
     else if(btn_ev == ev_dp){
-        BinOutDrv.startPulse(BOD_BUZZER_ID,500);
+        // BinOutDrv.startPulse(BOD_BUZZER_ID,500);
         // sDRV_MB85RCxx_Format(0x00); //清空FeRAM
         // sBSP_UART_Debug_Printf("FeRAM已清空\n");
         
@@ -98,7 +98,7 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
         //dbg.printf("KEY%d:长按松手\n",btn_id + 1);
     }
     else if(btn_ev == ev_lp_loop){
-        BinOutDrv.startPulse(BOD_BUZZER_ID,100);
+        // BinOutDrv.startPulse(BOD_BUZZER_ID,100);
         //dbg.printf("KEY%d:长按循环触发\n",btn_id + 1);
     }
     //sHMI_Debug_Printf("btn_id:%d,btn_ev:%d\n",btn_id,btn_ev);

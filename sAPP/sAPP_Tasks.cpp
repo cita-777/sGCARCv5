@@ -20,10 +20,7 @@ void sAPP_Tasks_AHRS(void* param){
 
 void sAPP_Tasks_OLEDHdr(void* param){
     for(;;){
-        oled.printf(10,20,"%6.2f deg",ahrs.pitch);
-        oled.printf(10,30,"%6.2f deg",ahrs.roll);
-        oled.printf(10,40,"%6.2f deg",ahrs.yaw);
-
+        slm_weights.showList(slm.curr_page->parent);
         oled.handler();
         oled.setAll(0);
 

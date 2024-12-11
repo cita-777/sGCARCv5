@@ -245,7 +245,7 @@ void sG2D::updateScreen(){
     sDRV_GenOLED_SetShowEN(1);
     
     //附上FPS信息
-    attachFPSInfo();
+    //attachFPSInfo();
     
 
     sDRV_GenOLED_UpdateScreen(this->draw_buf);

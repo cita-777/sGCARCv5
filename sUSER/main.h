@@ -32,6 +32,7 @@
 #include "sAPP_Tasks.hpp"
 #include "sAPP_AHRS.hpp"
 #include "sAPP_BlcCtrl.hpp"
+#include "sAPP_GUI.hpp"
 
 
 /*MID*/
@@ -42,6 +43,7 @@
 #include "sDWTLib.hpp"
 
 #include "sLittleMenu.hpp"
+#include "sLM_Show.hpp"
 
 
 

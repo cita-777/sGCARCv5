@@ -426,6 +426,11 @@
               <FilePath>sAPP/sAPP_Motor.cpp</FilePath>
             </File>
             <File>
+              <FileName>sAPP_ParamSave.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>sAPP/sAPP_ParamSave.cpp</FilePath>
+            </File>
+            <File>
               <FileName>sAPP_Tasks.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>sAPP/sAPP_Tasks.cpp</FilePath>
@@ -584,6 +589,21 @@
               <FileName>sLittleMenu.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>sMID/sLittleMenu/sLittleMenu.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>sLM_Port.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>sMID/sLittleMenu/sLM_Port.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>sLM_Show.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>sMID/sLittleMenu/sLM_Show.cpp</FilePath>
+            </File>
+            <File>
+              <FileName>sLM_Tree.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>sMID/sLittleMenu/sLM_Tree.cpp</FilePath>
             </File>
           </Files>
         </Group>
