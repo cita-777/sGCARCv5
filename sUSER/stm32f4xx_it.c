@@ -5,6 +5,8 @@ extern UART_HandleTypeDef uart1;
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern DMA_HandleTypeDef hdma_usart1_tx;
 
+extern DMA_HandleTypeDef hdma2_stream0;
+
 extern UART_HandleTypeDef uart3;
 
 extern UART_HandleTypeDef uart6;
@@ -72,6 +74,10 @@ void USART6_IRQHandler(void){
 }
 
 
+
+void DMA2_Stream0_IRQHandler(void){
+    HAL_DMA_IRQHandler(&hdma2_stream0);
+}
 
 void DMA2_Stream2_IRQHandler(void){
     HAL_DMA_IRQHandler(&hdma_usart1_rx);

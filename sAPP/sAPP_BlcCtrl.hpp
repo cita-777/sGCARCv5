@@ -6,6 +6,8 @@
 #include "sAPP_Motor.hpp"
 #include "sAPP_AHRS.hpp"
 
+#include "sGCARC_Global.h"
+
 
 //小车平衡参数
 typedef struct{

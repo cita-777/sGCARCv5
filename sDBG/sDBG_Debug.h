@@ -9,9 +9,9 @@ extern "C" {
 
 
 
-void sDBG_Debug_Printf(const char *fmt,...);
 
 void sDBG_Debug_Warning(const char *fmt,...);
+void sDBG_Debug_Info(const char *fmt,...);
 
 void Error_Handler();
 void Warning_Handler(uint8_t* file, uint32_t line);

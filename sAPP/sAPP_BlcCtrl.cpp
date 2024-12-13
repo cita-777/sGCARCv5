@@ -66,6 +66,8 @@ void sAPP_BlcCtrl_Init(){
 void sAPP_BlcCtrl_Handler(){
     #define DT_S (0.010f)    //10ms 100Hz控制周期
 
+    if(xSemaphoreTake(ahrs.get_data_mutex,0) != pdTRUE)return;
+    
     sDRV_PS2_Handler();
 
     static float input_spd,input_head;
@@ -178,6 +180,7 @@ void sAPP_BlcCtrl_Handler(){
     //dbg.printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",ahrs.pitch,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
 
 
+    xSemaphoreGive(ahrs.get_data_mutex);
 }
 
 

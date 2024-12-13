@@ -31,8 +31,8 @@
 
 /* print line, must config by user */
 //! 我自己添加的
-#include "sDBG_Debug.h"
-#define cmb_println(...) sDBG_Debug_Printf(__VA_ARGS__);sDBG_Debug_Printf("\n")                /* e.g., printf(__VA_ARGS__);printf("\r\n") */
+#include "sBSP_UART.h"
+#define cmb_println(...) sBSP_UART_Debug_Printf(__VA_ARGS__);sBSP_UART_Debug_Printf("\n")                /* e.g., printf(__VA_ARGS__);printf("\r\n") */
 /* enable bare metal(no OS) platform */
 /* #define CMB_USING_BARE_METAL_PLATFORM */
 /* enable OS platform */

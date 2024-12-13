@@ -11,100 +11,31 @@ void uart_recied(char* pReciData,uint16_t length){
 }
 
 
-// 计算航向角函数
-float calculate_heading(float mag_x, float mag_y) {
-    // 使用atan2计算航向角（弧度）
-    float heading_rad = atan2(mag_y, mag_x);
-    
-    // 转换为角度（度数）
-    float heading_deg = heading_rad * (180.0 / M_PI);
-    
-    // 确保角度在0~360范围内
-    if (heading_deg < 0) {
-        heading_deg += 360.0;
-    }
-
-    return heading_deg;
-}
-
-
-
 
 int main(){
     car.initSys();
     car.initBoard();
 
-    //sBSP_UART_Debug_RecvBegin(uart_recied);
-    //sBSP_UART_Top_RecvBegin(uart_recied);
-
     sBSP_UART_Debug_Printf("STM32 System Clock Freq: %u MHz\n", car.coreClk / 1000000);
     sBSP_UART_Debug_Printf("Hello,STM32F405RGT6    BySightseer.\n");
     sBSP_UART_Debug_Printf("sGCARC初始化完成\n");
 
-    sDRV_MB85RCxx_Init();
+    //sBSP_UART_Debug_RecvBegin(uart_recied);
+    //sBSP_UART_Top_RecvBegin(uart_recied);
 
-    ahrs.init();
+    sAPP_ParamSave_CheckIMUStaticBias();
     
-
-    // if(sDRV_MB85RCxx_ReadByte(0xFF) != 0xAA){
-    //     sBSP_UART_Debug_Printf("IMU还没有进行零偏校准,将在1s后进行校准...\n");
-    //     ahrs.calcBias();
-    //     float buf[6] = {ahrs.bias_acc_x,ahrs.bias_acc_y,ahrs.bias_acc_z,\
-    //                     ahrs.bias_gyro_x,ahrs.bias_gyro_y,ahrs.bias_gyro_z};
-    //     sDRV_MB85RCxx_WriteBytes(0x10,(uint8_t*)buf,sizeof(buf));
-    //     sDRV_MB85RCxx_WriteByte(0xFF,0xAA);
-    //     sBSP_UART_Debug_Printf("校准完成! 校准值:%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",buf[0],buf[1],buf[2],buf[3],\
-    //                             buf[4],buf[5]);
-    // }else{
-    //     float buf[6];
-    //     sDRV_MB85RCxx_ReadBytes(0x10,(uint8_t*)buf,sizeof(buf));
-    //     sBSP_UART_Debug_Printf("检测到IMU已经校准! 读取的校准值:");
-    //     sBSP_UART_Debug_Printf("%.4f,%.4f,%.4f,%.4f,%.4f,%.4f\n",buf[0],buf[1],buf[2],buf[3],\
-    //                             buf[4],buf[5]);
-    //     sBSP_UART_Debug_Printf("IMU校准值已应用!\n");
-        
-    //     ahrs.bias_acc_x = buf[0]; ahrs.bias_acc_y = buf[1]; ahrs.bias_acc_z = buf[2];
-    //     ahrs.bias_gyro_x = buf[3]; ahrs.bias_gyro_y = buf[4]; ahrs.bias_gyro_z = buf[5];
-    // }
-    
-    
-    
-
     int i = 0;
 
     //sAPP_BlcCtrl_Init();
 
     // sDRV_PS2_Init();
     
-    sBSP_RNG_Init();
-
-    sDRV_NTC_Init();
-    
     oled.setAll(0);
     oled.handler();
 
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
-
-    
-    
-    
-    
-
-    
-
-    
-    
     sAPP_GUI_Init();
-
-
-    
-
-    //完成 完成只读item,只读,不可修改,不可selected
-    //完成 数值单位设置
-    //完成 支持float数据格式%.2f
-    
-
-
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
 
     // 打印菜单结构
@@ -112,11 +43,8 @@ int main(){
     slm.root->printTree(0,printMenuItemData);
     // delete slm.root;
 
-
-    sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
-
     sAPP_Tasks_CreateAll();
-    sDBG_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
+    sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
     sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
     vTaskStartScheduler();
     
@@ -128,10 +56,10 @@ int main(){
         BinOutDrv.update();
         
         ahrs.update();
-        sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",ahrs.acc_x,ahrs.acc_y,ahrs.acc_z);
-        sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",ahrs.gyr_x,ahrs.gyr_y,ahrs.gyr_z);
-        sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",ahrs.mag_x,ahrs.mag_y,ahrs.mag_z);
-        sBSP_UART_Debug_Printf("%6.2f\n",calculate_heading(ahrs.mag_x,ahrs.mag_y));
+        // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",ahrs.acc_x,ahrs.acc_y,ahrs.acc_z);
+        // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",ahrs.gyr_x,ahrs.gyr_y,ahrs.gyr_z);
+        // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",ahrs.mag_x,ahrs.mag_y,ahrs.mag_z);
+        // sBSP_UART_Debug_Printf("%6.2f\n",calculate_heading(ahrs.mag_x,ahrs.mag_y));
         // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
 
 
@@ -144,7 +72,7 @@ int main(){
         oled.handler();
         oled.setAll(0);
         dwt.end();
-        // sDBG_Debug_Printf("%uus\n",dwt.get_us());
+        // sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
 
         HAL_Delay(30);
         

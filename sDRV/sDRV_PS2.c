@@ -109,7 +109,7 @@ void sDRV_PS2_Handler(){
 
     portSetCS(1);
 
-    //sDBG_Debug_Printf("0x%2X,0x%2X\n", ps2.leftX,ps2.leftY);
+    //sBSP_UART_Debug_Printf("0x%2X,0x%2X\n", ps2.leftX,ps2.leftY);
 }
 
 

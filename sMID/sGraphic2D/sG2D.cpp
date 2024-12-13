@@ -258,9 +258,6 @@ void sG2D::handler(){
     //检查上一帧是否刷完
     if(sDRV_GenOLED_IsIdle() == false) return;
 
-
-
-
     updateScreen();
     
 }

@@ -411,9 +411,9 @@
               <FilePath>sAPP/sAPP_Car.cpp</FilePath>
             </File>
             <File>
-              <FileName>sAPP_IMU.cpp</FileName>
+              <FileName>sAPP_GUI.cpp</FileName>
               <FileType>8</FileType>
-              <FilePath>sAPP/sAPP_IMU.cpp</FilePath>
+              <FilePath>sAPP/sAPP_GUI.cpp</FilePath>
             </File>
             <File>
               <FileName>sAPP_Init.c</FileName>
@@ -581,19 +581,9 @@
           <GroupName>SMID/SLITTLEMENU</GroupName>
           <Files>
             <File>
-              <FileName>cot_menu.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>sMID/sLittleMenu/cot_menu.c</FilePath>
-            </File>
-            <File>
               <FileName>sLittleMenu.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>sMID/sLittleMenu/sLittleMenu.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>sLM_Port.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>sMID/sLittleMenu/sLM_Port.cpp</FilePath>
             </File>
             <File>
               <FileName>sLM_Show.cpp</FileName>

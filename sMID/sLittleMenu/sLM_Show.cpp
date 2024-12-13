@@ -91,7 +91,7 @@ void sLM_OLEDWeights::showList(sLM_TreeNode* parent){
         sLM::MenuItemData& data = sLM::getNodeData(node);
 
         if(data.param.access == sLM::Item_ParamAccess::RO){
-            if(data.param.update_cb)data.param.update_cb(&(data.param.value));
+            if(data.param.update_cb)data.param.update_cb(&(data.param.value),data.param.param_tag);
         }
 
         //绘制行的标题

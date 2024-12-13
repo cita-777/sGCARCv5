@@ -1,7 +1,7 @@
 #include "sBSP_DMA.h"
 
 
-#include "sDBG_Debug.h"
+#include "sBSP_UART.h"
 
 /**
  * DMA2 Stream0:用于把一块内存置任意数
@@ -15,7 +15,9 @@
 //按byte设置某个一块内存值
 DMA_HandleTypeDef hdma2_stream0;
 #define MEMSETB_HANDLE hdma2_stream0
-uint8_t dma2_s0_src_data;
+static uint8_t dma2_s0_src_data;
+static bool dma2_s0_lock;
+static void mem_set_byte_cb(DMA_HandleTypeDef *_hdma);
 
 DMA_HandleTypeDef hdma2_stream1;
 
@@ -42,6 +44,12 @@ int sBSP_DMA_MemSetByte_Init(){
         assert_param(1);    //直接报错
         return -1;
     }
+
+    HAL_DMA_RegisterCallback(&MEMSETB_HANDLE,HAL_DMA_XFER_CPLT_CB_ID,mem_set_byte_cb);
+
+    HAL_NVIC_SetPriority(DMA2_Stream0_IRQn, 4, 0);
+    HAL_NVIC_EnableIRQ  (DMA2_Stream0_IRQn);
+
     return 0;
 }
 
@@ -51,15 +59,22 @@ int sBSP_DMA_MemSetByte(uint8_t value,uint8_t* pDst,uint16_t len_bytes){
     assert_param(pDst != NULL);
     assert_param(len_bytes > 0 && len_bytes <= 65535);
 
-    if(HAL_DMA_Start(&MEMSETB_HANDLE,(uint32_t)&dma2_s0_src_data,(uint32_t)pDst,len_bytes) != HAL_OK){
-        sDBG_Debug_Warning("HAL_DMA_Start 错误");
-        return -1;
+    if(dma2_s0_lock)return -1;
+    dma2_s0_lock = true;
+
+    if(HAL_DMA_Start_IT(&MEMSETB_HANDLE,(uint32_t)&dma2_s0_src_data,(uint32_t)pDst,len_bytes) != HAL_OK){
+        sBSP_UART_Debug_Printf("HAL_DMA_Start 错误");
+        return -2;
     }
-    if(HAL_DMA_PollForTransfer(&MEMSETB_HANDLE, HAL_DMA_FULL_TRANSFER, 1000) != HAL_OK){
-        sDBG_Debug_Warning("HAL_DMA_PollForTransfer 错误");
-        return -1;
-    }
+    // if(HAL_DMA_PollForTransfer(&MEMSETB_HANDLE, HAL_DMA_FULL_TRANSFER, 1000) != HAL_OK){
+    //     sDBG_Debug_Warning("HAL_DMA_PollForTransfer 错误");
+    //     return -1;
+    // }
     return 0;
+}
+
+static void mem_set_byte_cb(DMA_HandleTypeDef *_hdma){
+    if(_hdma->Instance == DMA2_Stream0)dma2_s0_lock = false;
 }
 
 void sBSP_DMA2S1_Init(void){
@@ -98,6 +113,11 @@ void sBSP_DMA2S1_32MemToSPI1(uint32_t* pSrc,uint32_t len_bytes){
     //HAL_DMA_Start(&hdma2_stream1,(uint32_t)pSrc,(uint32_t)&hspi1.Instance->DR,len_bytes / 4);
     //HAL_DMA_PollForTransfer(&hdma2_stream1, HAL_DMA_FULL_TRANSFER, 100);
 }
+
+
+
+
+
 
 
 

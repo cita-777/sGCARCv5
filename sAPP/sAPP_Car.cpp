@@ -29,7 +29,10 @@ int sAPP_Car::initSys(){
     coreClk = HAL_RCC_GetSysClockFreq();
     //初始化DWT
     dwt.init(coreClk);
-
+    //初始化RNG
+    sBSP_RNG_Init();
+    //初始化NTC读取温度
+    sDRV_NTC_Init();
     //初始化调试串口
     sBSP_UART_Debug_Init(115200);
     //初始化顶层通信串口
@@ -48,8 +51,6 @@ int sAPP_Car::initSys(){
 int sAPP_Car::initBoard(){
     sBSP_I2C1_Init(400000);
 
-    //初始化IMU
-    // imu.init();
     //初始化电机
     motor.init();
     //初始化按键
@@ -62,7 +63,10 @@ int sAPP_Car::initBoard(){
     sDRV_GenOLED_Init();
     oled.init();
     oled.setFPSMode(sG2D::DIGITS2);
-
+    //初始化铁电
+    sAPP_ParamSave_Init();
+    //初始化航姿参考系统
+    ahrs.init();
 
     return 0;
 }

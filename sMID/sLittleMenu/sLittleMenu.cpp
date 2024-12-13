@@ -59,15 +59,16 @@ int sLittleMenu::addSubMenu(sLM_TreeNode* parent,sLM_TreeNode* child){
 }
 
 //创建一个item数据
-void sLittleMenu::createItemData(MenuItemData* item_data,ItemDataCreateConf* config){
+void sLittleMenu::setItemData(MenuItemData* item_data,ItemDataCreateConf* config){
     memset(item_data,0,sizeof(MenuItemData));
-    item_data->id = config->id;
     strcpy(item_data->text,config->text);
     item_data->param.access = config->access;
     item_data->param.type = config->type;
     item_data->param.cb_func = config->change_cb;
     item_data->param.cb_mthd = config->change_method;
     item_data->param.lim_type = config->limit_type;
+    item_data->param.update_cb = config->update_cb;
+    item_data->param.param_tag = config->param_tag;
 }
 
 
@@ -231,11 +232,6 @@ void sLittleMenu::setItemData(MenuItemData* item_data,const char* _text,const ch
     inc = _inc; dec = _dec;
     strcpy(text,_text);
     strcpy(unit,_unit);
-}
-
-void sLittleMenu::setItemParamUpdateCb(MenuItemData* item_data,Item_ParamUpdateCb cb){
-    if(!cb)return;
-    item_data->param.update_cb = cb;
 }
 
 //Enter操作

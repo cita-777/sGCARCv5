@@ -222,7 +222,7 @@ uint8_t sBSP_SPI_PS2_TransferByte(uint8_t send){
 void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
     
     if(hspi->Instance == SPI1){
-        //sDBG_Debug_Printf("S\n");
+        //sBSP_UART_Debug_Printf("S\n");
         oled_spi_tx_busy = 0;
         
         //恢复CS默认高电平(用于DMA异步处理)

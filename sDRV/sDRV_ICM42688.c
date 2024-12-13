@@ -393,12 +393,6 @@ static void reg_modify(uint8_t reg_addr, uint8_t reg_msk, uint8_t data){
 
 
 
-
-
-
-
-#include "sDBG_Debug.h"
-
 int sDRV_ICM_Init(){
     #ifdef USE_SPI_IF
         portCSInit();
@@ -408,10 +402,8 @@ int sDRV_ICM_Init(){
     //检查通信是否正常
     uint8_t who_am_i = read_reg(ADDR_WHOAMI);
     if(who_am_i != 0x47){
-        sDBG_Debug_Printf("[ERR ]ICM42688初始化失败:0x%0X\n",who_am_i);
-        return -1;
+        return who_am_i;
     }
-    sDBG_Debug_Printf("[OK ]ICM42688初始化OK:0x%0X\n",who_am_i);
     //上电复位器件
     reg_modify(ADDR_DEVICECONFIG,MSK_DEVICECONFIG_SOFTRESETCONFIG,1);
     HAL_Delay(50);

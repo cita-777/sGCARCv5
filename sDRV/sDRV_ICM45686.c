@@ -507,10 +507,10 @@ static void reg_modify(uint8_t reg_addr, uint8_t reg_msk, uint8_t data){
     //读改写
     //首先读出寄存器
     uint8_t tmpreg = read_reg(reg_addr);
-	// sDBG_Debug_Printf("读出位置0x%X的内容:0x%X\n",reg_addr,tmpreg);
+	// sBSP_UART_Debug_Printf("读出位置0x%X的内容:0x%X\n",reg_addr,tmpreg);
     //进行修改
     sLib_ModifyReg(&tmpreg, reg_msk, data);
-	// sDBG_Debug_Printf("位掩码:0x%X,数据:0x%X,修改后的内容:0x%X\n\n",reg_msk,data,tmpreg);
+	// sBSP_UART_Debug_Printf("位掩码:0x%X,数据:0x%X,修改后的内容:0x%X\n\n",reg_msk,data,tmpreg);
     //写回
     write_reg(reg_addr, tmpreg);
 }
@@ -526,8 +526,7 @@ int sDRV_ICM45686_Init(){
     //检查通信是否正常
     uint8_t who_am_i = read_reg(ADDR_WHO_AM_I);
     if(who_am_i != 0xE9){
-        sDBG_Debug_Printf("[ERR ]ICM45686初始化失败:0x%0X\n",who_am_i);
-        return -1;
+        return who_am_i;
     }
 
     //初始化配置:实时性+++

@@ -55,9 +55,10 @@ public:
     //参数被修改的回调
     using Item_ParamCb = Item_ParamCbRetType(*)(void* param,Item_ParamType type);
     //参数手动更新回调
-    using Item_ParamUpdateCb = void(*)(void* param);
+    using Item_ParamUpdateCb = void(*)(void* param,uint32_t _param_tag);
     //参数上下界保存
     struct Item_Param{
+        uint32_t param_tag;
         Item_ParamAccess access;            //参数是否可读
         Item_ParamType type;                //参数类型
         Item_ParamLimitType lim_type;       //参数的上下限类型
@@ -86,10 +87,11 @@ public:
         MenuChildShowMode child_show_mode;  //子菜单显示模式
     };
     struct ItemDataCreateConf{              //用于创建item data的配置
-        uint32_t id;
+        uint32_t param_tag;
         Item_ParamAccess access;
         Item_ParamType type;
         Item_ParamCb change_cb;
+        Item_ParamUpdateCb update_cb;
         Item_ParamCbMethod change_method;
         Item_ParamLimitType limit_type;
         char text[SLM_ITEM_TEXT_LEN];
@@ -113,8 +115,8 @@ public:
     void init();
     //添加一个子节点
     int addSubMenu(sLM_TreeNode* parent, sLM_TreeNode* child);
-    //创建一个item数据
-    static void createItemData(MenuItemData* item_data,ItemDataCreateConf* config);
+    //设置item数据
+    static void setItemData(MenuItemData* item_data,ItemDataCreateConf* config);
     //获取当前节点数据
     MenuItemData& getNodeData();
     //获取任意节点数据
@@ -140,8 +142,6 @@ public:
     //设置item数据,float
     static void setItemData(MenuItemData* item_data,const char* _text,const char* _unit,\
                             float _value,float _min,float _max,float _inc,float _dec);
-    //设置item的参数更新回调
-    static void setItemParamUpdateCb(MenuItemData* item_data,Item_ParamUpdateCb cb);
 
     /*菜单操作,操作有效返回true*/
     void opEnter();
