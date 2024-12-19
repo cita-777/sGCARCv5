@@ -669,10 +669,6 @@ void sDRV_ICM45686_GetData(){
         g_icm45686.gyro_z *= (15.625f / 32768.0f);
 	}
 
-    
-    // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",g_icm45686.acc_x,g_icm45686.acc_y,g_icm45686.acc_z);
-    // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f\n",g_icm45686.gyro_x,g_icm45686.gyro_y,g_icm45686.gyro_z);
-
 }
 
 

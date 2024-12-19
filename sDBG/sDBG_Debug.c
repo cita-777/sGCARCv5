@@ -13,18 +13,18 @@ char fmt_buf[256];
 
 
 
+//! 不能用,有bug
+// void sBSP_UART_Debug_Printf(const char *fmt,...){
+//     sBSP_UART_Debug_Printf("[WARN]:");
+//     sBSP_UART_Debug_Printf(fmt);
+//     sBSP_UART_Debug_Printf("\n");
+// }
 
-void sDBG_Debug_Warning(const char *fmt,...){
-    sBSP_UART_Debug_Printf("[WARN]:");
-    sBSP_UART_Debug_Printf(fmt);
-    sBSP_UART_Debug_Printf("\n");
-}
-
-void sDBG_Debug_Info(const char *fmt,...){
-    sBSP_UART_Debug_Printf("[INFO]:");
-    sBSP_UART_Debug_Printf(fmt);
-    sBSP_UART_Debug_Printf("\n");
-}
+// void sDBG_Debug_Info(const char *fmt,...){
+//     sBSP_UART_Debug_Printf("[INFO]:");
+//     sBSP_UART_Debug_Printf(fmt);
+//     sBSP_UART_Debug_Printf("\n");
+// }
 
 
 

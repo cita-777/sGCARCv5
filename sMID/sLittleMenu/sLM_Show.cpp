@@ -104,17 +104,24 @@ void sLM_OLEDWeights::showList(sLM_TreeNode* parent){
             screen->write_string(101,y_offset + 1,str);
             screen->write_string(102,y_offset + 1,str);
         }else{
-            if(data.param.type == sLM::Item_ParamType::FLOAT){
-                float& value  = *(float*)&(data.param.value);
-                char* unit    =  (char*)&(data.param.unit);
-                snprintf(str,10,SLM_WEIGHTS_LIST_PARAM_SHOW_FLOAT,value,unit);
+            if(data.type == sLM::ItemType::NORMAL){
+                if(data.param.type == sLM::Item_ParamType::FLOAT){
+                    float& value  = *(float*)&(data.param.value);
+                    char* unit    =  (char*)&(data.param.unit);
+                    snprintf(str,10,SLM_WEIGHTS_LIST_PARAM_SHOW_FLOAT,value,unit);
+                }
+                else if(data.param.type == sLM::Item_ParamType::INT){
+                    int& value  = *(int*)&(data.param.value);
+                    char* unit  =  (char*)&(data.param.unit);
+                    snprintf(str,10,SLM_WEIGHTS_LIST_PARAM_SHOW_INT,value,unit);
+                }
+                screen->write_string(SLM_WEIGHTS_LIST_PARAM_SHOW_POS,y_offset + 1,str);
             }
-            else if(data.param.type == sLM::Item_ParamType::INT){
-                int& value  = *(int*)&(data.param.value);
-                char* unit  =  (char*)&(data.param.unit);
-                snprintf(str,10,SLM_WEIGHTS_LIST_PARAM_SHOW_INT,value,unit);
+            else if(data.type == sLM::ItemType::SWITCH){
+
             }
-            screen->write_string(SLM_WEIGHTS_LIST_PARAM_SHOW_POS,y_offset + 1,str);
+            
+            
             
         }
         
@@ -130,8 +137,6 @@ void sLM_OLEDWeights::showList(sLM_TreeNode* parent){
 
         //如果下一个是空的了
         if(menu->getIndexMenu(scroll_index_offset + i + 1) == nullptr){
-            // oled.drawHLine(0,128,y_offset + 1,1);
-            // oled.write_string(10, y_offset + 3," ----NO MORE----");
             return;
         }else{
             //下一行

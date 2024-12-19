@@ -67,7 +67,7 @@ int sBSP_DMA_MemSetByte(uint8_t value,uint8_t* pDst,uint16_t len_bytes){
         return -2;
     }
     // if(HAL_DMA_PollForTransfer(&MEMSETB_HANDLE, HAL_DMA_FULL_TRANSFER, 1000) != HAL_OK){
-    //     sDBG_Debug_Warning("HAL_DMA_PollForTransfer 错误");
+    //     sBSP_UART_Debug_Printf("HAL_DMA_PollForTransfer 错误");
     //     return -1;
     // }
     return 0;

@@ -18,7 +18,8 @@
 void sAPP_ParamSave_Init();
 
 
-void sAPP_ParamSave_CheckIMUStaticBias();
+void sAPP_ParamSave_CaliIMU();
+void sAPP_ParamSave_ReadIMUCaliVal();
 
 
 

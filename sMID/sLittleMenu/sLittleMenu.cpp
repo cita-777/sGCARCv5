@@ -35,7 +35,7 @@ sLittleMenu::~sLittleMenu(){
 //初始化菜单
 void sLittleMenu::init(){
     //创建一个根节点
-    MenuItemData root_item = {.id = 0,.text = "root_menu",\
+    MenuItemData root_item = {.id = 0,.text = SLM_ROOT_MENU_TEXT,\
                             .child_show_mode = sLM::MenuChildShowMode::LIST};
     root = sLM_TreeNode::createNode((const void*)&root_item,sizeof(root_item));
     curr_page = root;
@@ -63,7 +63,8 @@ void sLittleMenu::setItemData(MenuItemData* item_data,ItemDataCreateConf* config
     memset(item_data,0,sizeof(MenuItemData));
     strcpy(item_data->text,config->text);
     item_data->param.access = config->access;
-    item_data->param.type = config->type;
+    item_data->param.type = config->param_type;
+    item_data->type = config->item_type;
     item_data->param.cb_func = config->change_cb;
     item_data->param.cb_mthd = config->change_method;
     item_data->param.lim_type = config->limit_type;
@@ -88,7 +89,7 @@ sLM::MenuItemData& sLittleMenu::getNodeData(sLM_TreeNode* node){
 sLM_TreeNode& sLittleMenu::getFristNode(){
     sLM_TreeNode* node = curr_page; //从当前节点开始
     //沿着prev_sibling向上遍历直到找到最顶层节点
-    while (node->prev_sibling)node = node->prev_sibling;
+    while(node->prev_sibling)node = node->prev_sibling;
     return *node; //返回最上层节点
 }
 
@@ -248,8 +249,18 @@ void sLittleMenu::opEnter(){
     }
     //没有下一级了,说明要选中
     else{
-        //参数可读写时才能选中
-        if(item.param.access == Item_ParamAccess::RW)item.is_selected = true;
+        if(item.type == ItemType::NORMAL){
+            //参数可读写时才能选中
+            if(item.param.access == Item_ParamAccess::RW)item.is_selected = true;
+        }
+        //如果item是一个按键,则调用用户注册的回调
+        else if(item.type == ItemType::BUTTON){
+            if(item.param.cb_func){
+                //void* param传的是当前的参数的标签
+                item.param.cb_func(&item.param.param_tag,Item_ParamType::BUTTON_PRESS);
+            }
+        }
+        
     }
 
     //调用变化回调

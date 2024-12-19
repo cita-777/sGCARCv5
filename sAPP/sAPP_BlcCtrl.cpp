@@ -4,19 +4,26 @@
 /*这些是上电默认值*/
 //机械中值
 #define MECHINE_CENTER_ANGLE    (  -1.2f)
+// #define MECHINE_CENTER_ANGLE    (  -0.0f)
 //直立环初始值
+// #define STAND_KP                (-12.00f * 0.6f)
+// #define STAND_KD                (- 0.60f * 0.6f)
 #define STAND_KP                (-12.00f * 0.6f)
-#define STAND_KD                (- 0.60f * 0.6f)
+#define STAND_KD                (- 0.70f * 0.6f)
 //速度环初始值
 #define SPD_KP                  ( 0.30f)
+// #define SPD_KP                  ( 0.20f)
 #define SPD_KI                  (SPD_KP / 200.0f)
 //转向环初始值
 #define TURN_KP                 (  0.20f)
 #define TURN_KD                 (  0.05f)
 //0速度环初始值
-#define ZERO_KP                 (200.00f)
+#define ZERO_KP                 (220.00f)
 #define ZERO_KI                 ( 80.00f)
 #define ZERO_KD                 (  0.00f)
+// #define ZERO_KP                 (120.00f)
+// #define ZERO_KI                 ( 50.00f)
+// #define ZERO_KD                 (  0.00f)
 
 //轮胎半径
 #define WHEEL_RADIUS            (0.0672f)
@@ -68,7 +75,7 @@ void sAPP_BlcCtrl_Handler(){
 
     if(xSemaphoreTake(ahrs.get_data_mutex,0) != pdTRUE)return;
     
-    sDRV_PS2_Handler();
+    // sDRV_PS2_Handler();
 
     static float input_spd,input_head;
     input_spd = -(float)(ps2.leftY - 0x7F);
@@ -79,6 +86,8 @@ void sAPP_BlcCtrl_Handler(){
     if(input_head < 5 && input_head > -5){
         input_head = 0;
     }
+
+    if(input_spd > 60){input_spd = 60;}
 
     g_ctrl.tar_spd = sLib_Fmap(input_spd,-128,127,-200,200);
 
@@ -91,10 +100,6 @@ void sAPP_BlcCtrl_Handler(){
         g_ctrl.tar_head += 360;
     }
     
-
-    if(g_ctrl.tar_spd < 5 && g_ctrl.tar_spd > -5){
-        g_ctrl.tar_spd = 0;
-    }
 
     if(g_ctrl.tar_spd < 5 && g_ctrl.tar_spd > -5){
         g_ctrl.tar_spd = 0;

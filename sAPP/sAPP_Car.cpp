@@ -40,8 +40,7 @@ int sAPP_Car::initSys(){
     
     //启用div0异常
     SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
-
-    //dbg.printf("cm_backtrace初始化完成\n");
+    //初始化cm_backtrace崩溃调试
     cm_backtrace_init(APPNAME, HARDWARE_VERSION, SOFTWARE_VERSION);
 
     return 0;

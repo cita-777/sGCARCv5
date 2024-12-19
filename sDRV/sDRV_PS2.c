@@ -100,12 +100,40 @@ void sDRV_PS2_Handler(){
     ps2.key1 = portTransferByte(RightV);
     //读取KEY2组
     ps2.key2 = portTransferByte(LeftV);
-    //读取轴
-    ps2.rightX = portTransferByte(0x00);
-    ps2.rightY = portTransferByte(0x00);
-    ps2.leftX = portTransferByte(0x00);
-    ps2.leftY = portTransferByte(0x00);
 
+    //读取轴
+    if(mode == 0x73){   //红灯模式0x73 绿灯0x41
+        ps2.rightX = portTransferByte(0x00);
+        ps2.rightY = portTransferByte(0x00);
+        ps2.leftX = portTransferByte(0x00);
+        ps2.leftY = portTransferByte(0x00);
+    }else{
+        ps2.rightX = 0x80;
+        ps2.rightY = 0x7F;
+        ps2.leftX  = 0x80;
+        ps2.leftY  = 0x7F;
+        ps2.key1 = 0xFF;
+        ps2.key2 = 0xFF;
+    }
+    
+
+    ps2.select = ps2.key1 & 0b00000001;
+    ps2.l3     = ps2.key1 & 0b00000010;
+    ps2.r3     = ps2.key1 & 0b00000100;
+    ps2.start  = ps2.key1 & 0b00001000;
+    ps2.up     = ps2.key1 & 0b00010000;
+    ps2.right  = ps2.key1 & 0b00100000;
+    ps2.down   = ps2.key1 & 0b01000000;
+    ps2.left   = ps2.key1 & 0b10000000;
+
+    ps2.l2     = ps2.key2 & 0b00000001;
+    ps2.r2     = ps2.key2 & 0b00000010;
+    ps2.l1     = ps2.key2 & 0b00000100;
+    ps2.r1     = ps2.key2 & 0b00001000;
+    ps2.tri    = ps2.key2 & 0b00010000;
+    ps2.cir    = ps2.key2 & 0b00100000;
+    ps2.x      = ps2.key2 & 0b01000000;
+    ps2.rect   = ps2.key2 & 0b10000000;
 
     portSetCS(1);
 

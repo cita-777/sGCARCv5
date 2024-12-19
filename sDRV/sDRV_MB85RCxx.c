@@ -11,9 +11,14 @@
  * v1.1 2024.05.17 inHNIP9607
  * 加入对MB85RC64的支持,优化软件架构,分离了接口,但是MB85RC16不可用(未测试)
  * 
+ * v1.2 241214
+ * 加入format时多线程保护机制,bool互斥锁
  * 
  * 
  */
+
+
+static bool format_lock;
 
 
 //#define MB85RC16
@@ -68,7 +73,10 @@ int8_t sDRV_MB85RCxx_Init(){
   * @return 返回0表示正常
   */
 int8_t sDRV_MB85RCxx_WriteByte(uint16_t addr,uint8_t byte){
+    if(format_lock)return -1;
+    format_lock = true;
     write_byte(addr,byte);
+    format_lock = false;
     return 0;
 }
 
@@ -82,7 +90,10 @@ int8_t sDRV_MB85RCxx_WriteByte(uint16_t addr,uint8_t byte){
   * @return 返回0表示正常
   */
 int8_t sDRV_MB85RCxx_WriteBytes(uint16_t addr,uint8_t* pData,uint16_t length){
+    // if(format_lock)return -1;
+    // format_lock = true;
     write_bytes(addr,pData,length);
+    // format_lock = false;
     return 0;
 }
 
@@ -94,7 +105,11 @@ int8_t sDRV_MB85RCxx_WriteBytes(uint16_t addr,uint8_t* pData,uint16_t length){
   * @return 读到的数据
   */
 uint8_t sDRV_MB85RCxx_ReadByte(uint16_t addr){
-    return read_byte(addr);
+    if(format_lock)return -1;
+    format_lock = true;
+    uint8_t tmp = read_byte(addr);
+    format_lock = false;
+    return tmp;
 }
 
 /**
@@ -107,7 +122,10 @@ uint8_t sDRV_MB85RCxx_ReadByte(uint16_t addr){
   * @return 返回0表示正常
   */
 int8_t sDRV_MB85RCxx_ReadBytes(uint16_t addr,uint8_t* pData,uint16_t length){
+    // if(format_lock)return -1;
+    // format_lock = true;
     read_bytes(addr,pData,length);
+    // format_lock = true;
     return 0;
 }
 
@@ -118,6 +136,8 @@ int8_t sDRV_MB85RCxx_ReadBytes(uint16_t addr,uint8_t* pData,uint16_t length){
   * @return 返回0表示正常
   */
 int8_t sDRV_MB85RCxx_Format(uint8_t all_val){
+    if(format_lock)return -1;
+    format_lock = true;
     #ifdef MB85RC16
         for(uint32_t i = 0;i < MB85RC16_BYTES;i++){
             sDRV_MB85RCxx_WriteByte(i,all_val);
@@ -126,10 +146,11 @@ int8_t sDRV_MB85RCxx_Format(uint8_t all_val){
 
     #ifdef MB85RC64
         for(uint32_t i = 0;i < MB85RC64_BYTES;i++){
-            sDRV_MB85RCxx_WriteByte(i,all_val);
+            write_byte(i,all_val);
         }
     #endif
 
+    format_lock = false;
     return 0;
 }
 

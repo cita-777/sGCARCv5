@@ -81,12 +81,12 @@
 
 
 #define APPNAME                        "sGCARCv5"
-#define HARDWARE_VERSION               "V5"
+#define HARDWARE_VERSION               "V5.1"
 #define SOFTWARE_VERSION               "V1.0"
 
+#define delay(__MS__) vTaskDelay(__MS__)
 
 
-extern sLittleMenu lm;
-
+void loop();
 
 

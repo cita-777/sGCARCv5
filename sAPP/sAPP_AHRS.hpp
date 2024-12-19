@@ -60,6 +60,7 @@ public:
 
     int init();
     int calcBias();
+    int get_imu_data();
     int update();
 
 private:

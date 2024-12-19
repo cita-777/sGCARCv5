@@ -3,14 +3,34 @@
 
 
 void uart_recied(char* pReciData,uint16_t length){
-    sBSP_UART_Debug_SendBytes((uint8_t*)pReciData,length);
+    // sBSP_UART_Debug_SendBytes((uint8_t*)pReciData,length);
+    unsigned u_cir, u_rect, u_tri, u_x; // 暂存无符号整型数
+    int t_leftX, t_leftY, t_rightX, t_rightY;
+    
     //sBSP_UART_Debug_Printf("%s\n",pReciData);
     //parseSerialData(pReciData);
+    if(sscanf(pReciData, "S:%2X,%2X,%2X,%2X,%u,%u,%u,%u:E",
+                        &t_leftX, &t_leftY, &t_rightX, &t_rightY,
+                        &u_cir, &u_rect, &u_tri, &u_x) == 8){
+                            // 转换为uint8_t类型
+        ps2.leftX = (uint8_t)t_leftX;
+        ps2.leftY = (uint8_t)t_leftY;
+        ps2.rightX = (uint8_t)t_rightX;
+        ps2.rightY = (uint8_t)t_rightY;
+                            ps2.cir  = (u_cir  != 0);
+                            ps2.rect = (u_rect != 0);
+                            ps2.tri  = (u_tri  != 0);
+                            ps2.x    = (u_x    != 0);
+// sBSP_UART_Debug_Printf("OK\n");
+sBSP_UART_Debug_Printf("0x%2X,0x%2X\n", ps2.leftY,ps2.rightX);
+                        }
 
-    sBSP_UART_IMU_RecvBegin(uart_recied);
+    sBSP_UART_Top_RecvBegin(uart_recied);
 }
 
 
+
+void setup();
 
 int main(){
     car.initSys();
@@ -20,16 +40,17 @@ int main(){
     sBSP_UART_Debug_Printf("Hello,STM32F405RGT6    BySightseer.\n");
     sBSP_UART_Debug_Printf("sGCARC初始化完成\n");
 
-    //sBSP_UART_Debug_RecvBegin(uart_recied);
-    //sBSP_UART_Top_RecvBegin(uart_recied);
+    sAPP_ParamSave_ReadIMUCaliVal();
 
-    sAPP_ParamSave_CheckIMUStaticBias();
-    
+    // sBSP_UART_Debug_RecvBegin(uart_recied);
+    sBSP_UART_Top_RecvBegin(uart_recied);
+
+
     int i = 0;
 
-    //sAPP_BlcCtrl_Init();
+    sAPP_BlcCtrl_Init();
 
-    // sDRV_PS2_Init();
+    sDRV_PS2_Init();
     
     oled.setAll(0);
     oled.handler();
@@ -43,13 +64,45 @@ int main(){
     slm.root->printTree(0,printMenuItemData);
     // delete slm.root;
 
+    setup();
+
     sAPP_Tasks_CreateAll();
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
     sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
     vTaskStartScheduler();
-    
-        
-    while(1){
+}
+
+
+
+
+
+
+
+void setup(){
+
+}
+
+
+
+void loop(){
+    // sDRV_PS2_Handler();
+    // sBSP_UART_Debug_Printf("0x%2X,0x%2X\n", ps2.leftX,ps2.leftY);
+    // sBSP_UART_Debug_Printf("S:%2X,%2X,%2X,%2X,%u,%u,%u,%u:E\n", ps2.leftX,ps2.leftY,ps2.rightX,ps2.rightY,ps2.cir,ps2.rect,ps2.tri,ps2.x);
+    // sBSP_UART_Debug_Printf("%.2f,%.2f\n",motor.getLRPM(),motor.getRRPM());
+    // motor.setLM(100);
+    // motor.setRM(100);
+
+    delay(20);
+}
+
+
+//10min 偏1.5度
+
+
+
+
+/**
+ *     while(1){
         //处理按键
         sGBD_Handler();
         //处理二值化设备
@@ -75,10 +128,8 @@ int main(){
         // sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
 
         HAL_Delay(30);
-        
-
     }
-}
+ */
 
 
 /*用于重载c++ new/delete分配器,让其指向FreeRTOS的内存管理策略*/

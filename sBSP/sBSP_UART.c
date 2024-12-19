@@ -101,11 +101,11 @@ void sBSP_UART_Debug_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb){
     uart1_recv_end_cb = recv_cb;
 
     // if(HAL_UARTEx_ReceiveToIdle_IT(&uart1, (uint8_t*)uart1_recv_buf, sizeof(uart1_recv_buf)) != HAL_OK){
-    //     sDBG_Debug_Warning("串口1:空闲中断IT接收出错");
+    //     sBSP_UART_Debug_Printf("串口1:空闲中断IT接收出错");
     // }
 
     if(HAL_UARTEx_ReceiveToIdle_DMA(&uart1, (uint8_t*)uart1_recv_buf, sizeof(uart1_recv_buf)) != HAL_OK){
-        sDBG_Debug_Warning("串口1:空闲中断DMA接收出错");
+        sBSP_UART_Debug_Printf("串口1:空闲中断DMA接收出错");
     }
 }
 
@@ -149,11 +149,11 @@ void sBSP_UART_IMU_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb){
     uart3_recv_end_cb = recv_cb;
 
     if(HAL_UARTEx_ReceiveToIdle_IT(&uart3, (uint8_t*)uart3_recv_buf, sizeof(uart3_recv_buf)) != HAL_OK){
-        sDBG_Debug_Warning("串口3:空闲中断IT接收出错");
+        sBSP_UART_Debug_Printf("串口3:空闲中断IT接收出错");
     }
 
     // if(HAL_UARTEx_ReceiveToIdle_DMA(&uart6, (uint8_t*)uart6_recv_buf, sizeof(uart6_recv_buf)) != HAL_OK){
-    //     sDBG_Debug_Warning("串口6:空闲中断DMA接收出错");
+    //     sBSP_UART_Debug_Printf("串口6:空闲中断DMA接收出错");
     // }
 }
 
@@ -189,11 +189,11 @@ void sBSP_UART_Top_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb){
     uart6_recv_end_cb = recv_cb;
 
     if(HAL_UARTEx_ReceiveToIdle_IT(&uart6, (uint8_t*)uart6_recv_buf, sizeof(uart6_recv_buf)) != HAL_OK){
-        sDBG_Debug_Warning("串口6:空闲中断IT接收出错");
+        sBSP_UART_Debug_Printf("串口6:空闲中断IT接收出错");
     }
 
     // if(HAL_UARTEx_ReceiveToIdle_DMA(&uart6, (uint8_t*)uart6_recv_buf, sizeof(uart6_recv_buf)) != HAL_OK){
-    //     sDBG_Debug_Warning("串口6:空闲中断DMA接收出错");
+    //     sBSP_UART_Debug_Printf("串口6:空闲中断DMA接收出错");
     // }
 }
 

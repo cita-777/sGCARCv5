@@ -14,6 +14,7 @@
 
 
 #define GMR_ROUND_PLUSE     (30000)
+// #define GMR_ROUND_PLUSE     (1464)
 
 
 float right_rpm;

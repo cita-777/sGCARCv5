@@ -19,11 +19,13 @@
 //参数的单位字段长度
 #define SLM_ITEM_UNIT_LEN   6
 
+#define SLM_ROOT_MENU_TEXT  "sGCARCv5.1"
+
 
 //little~
 class sLittleMenu{
 public:
-    enum class Item_ParamAccess{    //参数属性
+    enum class Item_ParamAccess{    //参数权限
         NO = 0,         //没有参数
         RW,             //参数可读写
         RO,             //参数只读
@@ -32,6 +34,7 @@ public:
         INT = 0,        //显示的是int
         FLOAT,          //float类型
         STRING,         //char[]
+        BUTTON_PRESS,   //按键按下事件
     };
     enum class Item_ParamLimitType{ //参数的上下限
         NO = 0,         //无限制
@@ -58,7 +61,7 @@ public:
     using Item_ParamUpdateCb = void(*)(void* param,uint32_t _param_tag);
     //参数上下界保存
     struct Item_Param{
-        uint32_t param_tag;
+        uint32_t param_tag;                 //参数标签,用于从用户获取数据告诉用户的
         Item_ParamAccess access;            //参数是否可读
         Item_ParamType type;                //参数类型
         Item_ParamLimitType lim_type;       //参数的上下限类型
@@ -78,6 +81,11 @@ public:
         LIST = 0,   //目前只实现了list
         PAGE,
     };
+    enum class ItemType{                    //item类型
+        NORMAL = 0, //显示参数/下一级/调整参数
+        BUTTON = 1, //是一个按钮,只能按,无参数
+        SWITCH = 2, //一个开关,两种状态,开和关
+    };
     struct MenuItemData{                    //item的数据结构体
         uint32_t id;                        //唯一id,手动分配
         char text[SLM_ITEM_TEXT_LEN];       //显示的文本
@@ -85,11 +93,14 @@ public:
         bool is_selected;                   //是否选中
         bool is_hover;                      //光标是否悬停在上面
         MenuChildShowMode child_show_mode;  //子菜单显示模式
+        ItemType type;                      //item的类型
+        bool switch_on;                     //开关是否为on
     };
     struct ItemDataCreateConf{              //用于创建item data的配置
         uint32_t param_tag;
         Item_ParamAccess access;
-        Item_ParamType type;
+        Item_ParamType param_type;
+        ItemType item_type;
         Item_ParamCb change_cb;
         Item_ParamUpdateCb update_cb;
         Item_ParamCbMethod change_method;

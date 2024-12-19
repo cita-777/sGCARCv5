@@ -47,7 +47,7 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
     if(btn_ev == ev_dp){
         
     }
-    else if(btn_ev == ev_pres){
+    else if(btn_ev == ev_pres || btn_ev == ev_lp_loop){
         if(btn_id == SGBD_KEY_UP_ID){
             slm.opPrev();
         }
@@ -135,7 +135,7 @@ void sAPP_Btns_Init(){
     btn_init.en = 1;                //使能此按键
     btn_init.lv_rev = lv_non_reverse;   //空闲时的电平反转
     btn_init.dp_mode = dp_disable;   //禁用双击,可提高连续单击速度
-    btn_init.lp_loop_pridt = 300;   //设置长按循环触发间隔每500ms触发一次
+    btn_init.lp_loop_pridt = 200;   //设置长按循环触发间隔每500ms触发一次
     btn_init.lp_trig_waitt = 1000;  //设置长按触发时间2000ms
     btn_init.dp_prid_waitt = 200;   //设置最大等待双击时间
     sGBD_SetAllBtnEnable(1);        //设置所有按键使能

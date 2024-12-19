@@ -8,6 +8,8 @@ extern "C"{
 
 #include "stm32f4xx_hal.h"
 
+#include "stdbool.h"
+
 
 
 int8_t sDRV_MB85RCxx_Init();

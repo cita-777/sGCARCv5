@@ -10,7 +10,7 @@ extern "C" {
 
 
 
-void sDBG_Debug_Warning(const char *fmt,...);
+void sBSP_UART_Debug_Printf(const char *fmt,...);
 void sDBG_Debug_Info(const char *fmt,...);
 
 void Error_Handler();
