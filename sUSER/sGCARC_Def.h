@@ -13,6 +13,8 @@
 #define IROM_ATTR      __attribute__((section("IROM")))
 //attribute:手动设置对齐
 #define ALIGN_ATTR(__BYTES) __attribute__((aligned(__BYTES)))
+//中断服务函数标识
+#define ISR_ATTR       __attribute__((used))
 
 
 /*User LED*/
@@ -86,6 +88,10 @@
 #define ICM_CS_GPIO_Port GPIOC
 #define LIS3_CS_Pin GPIO_PIN_1
 #define LIS3_CS_GPIO_Port GPIOC
+
+/*IMU INT1*/
+#define IMU_INT1_Pin GPIO_PIN_8
+#define IMU_INT1_GPIO_Port GPIOC
 
 /*VBAT ADC*/
 #define VBAT_ADC_Pin GPIO_PIN_4

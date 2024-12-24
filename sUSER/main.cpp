@@ -50,6 +50,7 @@ int main(){
 
     sAPP_BlcCtrl_Init();
 
+
     sDRV_PS2_Init();
     
     oled.setAll(0);

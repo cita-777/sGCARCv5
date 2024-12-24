@@ -12,9 +12,9 @@ typedef struct{
     float    acc_x;        //加速度数据,单位m/s^2
     float    acc_y;
     float    acc_z;
-    float    gyro_x;       //陀螺仪数据,单位dps
-    float    gyro_y;
-    float    gyro_z;
+    float    gyr_x;       //陀螺仪数据,单位dps
+    float    gyr_y;
+    float    gyr_z;
     uint32_t tick;         //
 }sDRV_ICM45686_Data_t;
 
@@ -180,9 +180,12 @@ extern sDRV_ICM45686_Conf_t g_icm45686_conf;
 
 
 
+
 int sDRV_ICM45686_Init();
 void sDRV_ICM45686_SetConfig(const sDRV_ICM45686_Conf_t* p_conf);
 
+
+//如果使用中断式获取数据,在中断里调用这个函数
 void sDRV_ICM45686_GetData();
 
 

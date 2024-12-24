@@ -101,3 +101,8 @@ void TIM6_DAC_IRQHandler(void){
 }
 
 
+void EXTI9_5_IRQHandler(){
+    //todo 不做判断先,还有一个PC9的LIS3_DRDY中断
+    HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
+}
+

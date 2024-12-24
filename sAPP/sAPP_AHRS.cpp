@@ -5,6 +5,12 @@
  * sAPP_AHRS.cpp
  * 用于姿态估计
  * 
+ * 
+ * v1.1 241223 bySightseer.
+ * ! 注意,因为改变了IMU数据获取方式,从直接获取变成了中断式获取,以降低latency
+ * ! 所以,现在暂时不能用除ICM45686以外的其他IMU!!!
+ * 
+ * 
  */
 
 
@@ -16,24 +22,32 @@
 AHRS ahrs;
 
 
+//ICM数据就绪二值信号量
+SemaphoreHandle_t icm_data_ready_bin;
+
+
 AHRS::AHRS(){
     memset(&imu_sbias, 0, sizeof(IMU_StaticBias));
 }
 
 
+
+
 int AHRS::init(){
-    get_data_mutex = xSemaphoreCreateMutex();
+    //创建ICM数据就绪的二值信号量
+    icm_data_ready_bin = xSemaphoreCreateBinary();
+    //创建AHRS数据互斥锁
+    mutex = xSemaphoreCreateMutex();
     
     #ifdef AHRS_IMU_SOURCE_WIT
         sDRV_JY901S_Init();
         HAL_NVIC_SetPriority(USART3_IRQn,4,0);
         HAL_NVIC_EnableIRQ(USART3_IRQn);
-
     #endif
     #ifdef AHRS_IMU_SOURCE_9DOF
         this->icm42688  = &g_icm;
-        this->icm45686 = &g_icm45686;
-        this->lis3 = &g_lis3;
+        this->icm45686  = &g_icm45686;
+        this->lis3      = &g_lis3;
 
         /*把IMU的2个CS都上拉*/
         __GPIOC_CLK_ENABLE();
@@ -50,25 +64,27 @@ int AHRS::init(){
         sBSP_SPI_IMU_Init(SPI_BAUDRATEPRESCALER_4);   //11.25MBits/s
 
         #ifdef AHRS_IMU_USE_ICM42688
-        if(sDRV_ICM_Init() != 0){
-            return -1;
-        }
+            if(sDRV_ICM_Init() != 0){
+                return -1;
+            }
         #endif
         #ifdef AHRS_IMU_USE_ICM45686
             if(sDRV_ICM45686_Init() != 0){
+                sBSP_UART_Debug_Printf("[ERR ]ICM45688初始化失败\n");
                 return -1;
             }
         #endif
         if(sDRV_LIS3_Init() != 0){
+            sBSP_UART_Debug_Printf("[ERR ]LIS3MDLTR初始化失败\n");
             return -2;
         }
+        
+        
 
     #endif
     
     return 0;
 }
-
-
 
 
 int AHRS::calcBias(){
@@ -82,14 +98,13 @@ int AHRS::calcBias(){
 	float gyro_y_accu = 0;
 	float gyro_z_accu = 0;
 	for(uint16_t i = 0; i < POINT_COUNT; i++){
-		//更新IMU采集的数据
-        get_imu_data();
-		acc_x_accu  += g_icm45686.acc_x ;
-		acc_y_accu  += g_icm45686.acc_y ;
-		acc_z_accu  += g_icm45686.acc_z ;
-		gyro_x_accu += g_icm45686.gyro_x;
-		gyro_y_accu += g_icm45686.gyro_y;
-		gyro_z_accu += g_icm45686.gyro_z;
+        //减掉偏置是为了读到原始数据
+		acc_x_accu  += dat.acc_x + imu_sbias.acc_x;
+		acc_y_accu  += dat.acc_y + imu_sbias.acc_y;
+		acc_z_accu  += dat.acc_z + imu_sbias.acc_z;
+		gyro_x_accu += dat.gyr_x + imu_sbias.gyr_x;
+		gyro_y_accu += dat.gyr_y + imu_sbias.gyr_y;
+		gyro_z_accu += dat.gyr_z + imu_sbias.gyr_z;
         // dwt.delay_us(10);
 		// HAL_Delay(1);
         vTaskDelay(1);
@@ -106,7 +121,7 @@ int AHRS::calcBias(){
 
 
 
-int AHRS::get_imu_data(){
+void AHRS::get_imu_data(){
     #ifdef AHRS_IMU_SOURCE_WIT
         sDRV_JY901S_Handler();
         imu.acc_x = g_jy901s.acc_x;
@@ -127,86 +142,107 @@ int AHRS::get_imu_data(){
         ahrs.q3    = g_jy901s.q3;
     #endif
     #ifdef AHRS_IMU_SOURCE_9DOF
-        #ifdef AHRS_IMU_DATA_PERIOD_GET
-            #ifdef AHRS_IMU_USE_ICM42688
-                sDRV_ICM_GetData();
-                //减掉偏置
-                input.acc_x  = g_icm.acc_x  - imu_sbias.acc_x;
-                input.acc_y  = g_icm.acc_y  - imu_sbias.acc_y;
-                input.acc_z  = g_icm.acc_z  - imu_sbias.acc_z;
-                input.gyro_x = g_icm.gyro_x - imu_sbias.gyr_x;
-                input.gyro_y = g_icm.gyro_y - imu_sbias.gyr_y;
-                input.gyro_z = g_icm.gyro_z - imu_sbias.gyr_z;
-            #endif
-            #ifdef AHRS_IMU_USE_ICM45686
-                sDRV_ICM45686_GetData();
-                //减掉偏置
-                input.acc_x  = g_icm45686.acc_x  - imu_sbias.acc_x;
-                input.acc_y  = g_icm45686.acc_y  - imu_sbias.acc_y;
-                input.acc_z  = g_icm45686.acc_z  - imu_sbias.acc_z;
-                input.gyro_x = g_icm45686.gyro_x - imu_sbias.gyr_x;
-                input.gyro_y = g_icm45686.gyro_y - imu_sbias.gyr_y;
-                input.gyro_z = g_icm45686.gyro_z - imu_sbias.gyr_z;
-            #endif
-            sDRV_LIS3_GetData();
-            mag_x = g_lis3.mag_x;
-            mag_y = g_lis3.mag_y;
-            mag_z = g_lis3.mag_z;
+        #ifdef AHRS_IMU_USE_ICM42688
+            sDRV_ICM_GetData();
+            //减掉偏置
+            input.acc_x  = g_icm.acc_x  - imu_sbias.acc_x;
+            input.acc_y  = g_icm.acc_y  - imu_sbias.acc_y;
+            input.acc_z  = g_icm.acc_z  - imu_sbias.acc_z;
+            input.gyro_x = g_icm.gyro_x - imu_sbias.gyr_x;
+            input.gyro_y = g_icm.gyro_y - imu_sbias.gyr_y;
+            input.gyro_z = g_icm.gyro_z - imu_sbias.gyr_z;
         #endif
+        #ifdef AHRS_IMU_USE_ICM45686
+            sDRV_ICM45686_GetData();
+            //减掉偏置
+            input.acc_x  = g_icm45686.acc_x - imu_sbias.acc_x;
+            input.acc_y  = g_icm45686.acc_y - imu_sbias.acc_y;
+            input.acc_z  = g_icm45686.acc_z - imu_sbias.acc_z;
+            input.gyro_x = g_icm45686.gyr_x - imu_sbias.gyr_x;
+            input.gyro_y = g_icm45686.gyr_y - imu_sbias.gyr_y;
+            input.gyro_z = g_icm45686.gyr_z - imu_sbias.gyr_z;
+        #endif
+        sDRV_LIS3_GetData();
+        dat.mag_x = g_lis3.mag_x;
+        dat.mag_y = g_lis3.mag_y;
+        dat.mag_z = g_lis3.mag_z;
     #endif
-    return 0;
 }
 
-int AHRS::update(){
-    if(xSemaphoreTake(get_data_mutex,20) == pdTRUE){
-        get_imu_data();
-        
+//AHRS任务,非阻塞式获取数据
+void sAPP_AHRS_Task(void* param){
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount();
+    for(;;){
+        //当数据准备就绪则运行AHRS算法,此步骤消耗时间60us
+        if(xSemaphoreTake(icm_data_ready_bin,200) == pdTRUE){
+            sDRV_ICM45686_GetData();
+            //获取AHRS数据互斥锁
+            if(xSemaphoreTake(ahrs.mutex,200) == pdTRUE){
+                //减掉静态偏置,这里g_icm45686只在这个task里运行,所以不用加锁
+                ahrs.dat.acc_x = g_icm45686.acc_x - ahrs.imu_sbias.acc_x;
+                ahrs.dat.acc_y = g_icm45686.acc_y - ahrs.imu_sbias.acc_y;
+                ahrs.dat.acc_z = g_icm45686.acc_z - ahrs.imu_sbias.acc_z;
+                ahrs.dat.gyr_x = g_icm45686.gyr_x - ahrs.imu_sbias.gyr_x;
+                ahrs.dat.gyr_y = g_icm45686.gyr_y - ahrs.imu_sbias.gyr_y;
+                ahrs.dat.gyr_z = g_icm45686.gyr_z - ahrs.imu_sbias.gyr_z;
+                ahrs.icm_temp  = g_icm45686.temp;
 
-        // if(input.gyro_x < 0.1 && input.gyro_z > -0.1){
-        //     input.gyro_x = 0;
-        // }
-        // if(input.gyro_y < 0.1 && input.gyro_y > -0.1){
-        //     input.gyro_y = 0;
-        // }
-        // if(input.gyro_z < 0.1 && input.gyro_z > -0.1){
-        //     input.gyro_z = 0;
-        // }
-            
-        // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",input.acc_x,input.acc_y,input.acc_z);
-        // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f\n",input.gyro_x,input.gyro_y,input.gyro_z);
+                //给互补滤波准备数据
+                ahrs.input.acc_x  = ahrs.dat.acc_x; 
+                ahrs.input.acc_y  = ahrs.dat.acc_y; 
+                ahrs.input.acc_z  = ahrs.dat.acc_z; 
+                ahrs.input.gyro_x = ahrs.dat.gyr_x;
+                ahrs.input.gyro_y = ahrs.dat.gyr_y;
+                ahrs.input.gyro_z = ahrs.dat.gyr_z;
+                //融合算法
+                sLib_6AxisCompFilter(&ahrs.input, &ahrs.result);
+                ahrs.dat.pitch = ahrs.result.pitch;
+                ahrs.dat.roll  = ahrs.result.roll;
+                ahrs.dat.yaw   = ahrs.result.yaw;
+                ahrs.dat.q0    = ahrs.result.q0;
+                ahrs.dat.q1    = ahrs.result.q1;
+                ahrs.dat.q2    = ahrs.result.q2;
+                ahrs.dat.q3    = ahrs.result.q3;
 
-        //融合算法
-        sLib_6AxisCompFilter(&input, &result);
-        acc_x = input.acc_x;
-        acc_y = input.acc_y;
-        acc_z = input.acc_z;
-        gyr_x = input.gyro_x;
-        gyr_y = input.gyro_y;
-        gyr_z = input.gyro_z;
-        
+                //把新获取到的数据通过队列发送给blc_ctrl算法
+                xQueueSend(g_blc_ctrl_ahrs_queue,&ahrs.dat,200);
 
-        pitch = result.pitch;
-        roll = result.roll;
-        yaw = result.yaw;
-        q0 = result.q0;
-        q1 = result.q1;
-        q2 = result.q2;
-        q3 = result.q3;
-        
-        // sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",pitch,roll,yaw);
-        // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f\n",pitch,roll,yaw);
-        xSemaphoreGive(ahrs.get_data_mutex);
-    }else{
-        sBSP_UART_Debug_Printf("AHRS::update获取get_data_mutex超时");
-        return -1;
+                xSemaphoreGive(ahrs.mutex);
+            }
+            // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",ahrs.dat.acc_x,ahrs.dat.acc_y,ahrs.dat.acc_z);
+            // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f\n",ahrs.dat.gyr_x,ahrs.dat.gyr_y,ahrs.dat.gyr_z);
+            // sBSP_UART_Debug_Printf("%6.2f\n",ahrs.icm_temp);
+            //sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
+        }
+        //如果等待200ms还没有获取到信号量则报错
+        else{
+            sBSP_UART_Debug_Printf("[ERR]AHRS错误:获取icm_data_ready_bin超时\n");
+            Error_Handler();
+        }
+        //高精确度延时10ms
+        // xTaskDelayUntil(&xLastWakeTime,10 / portTICK_PERIOD_MS);
     }
-
-    return 0;
 }
 
+// if(input.gyro_x < 0.1 && input.gyro_z > -0.1){
+//     input.gyro_x = 0;
+// }
+// if(input.gyro_y < 0.1 && input.gyro_y > -0.1){
+//     input.gyro_y = 0;
+// }
+// if(input.gyro_z < 0.1 && input.gyro_z > -0.1){
+//     input.gyro_z = 0;
+// }
 
 
 
+void sAPP_AHRS_ICMDataReadyCbISR(){
+    portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
+    //通知数据就绪
+	xSemaphoreGiveFromISR(icm_data_ready_bin, &xHigherPriorityTaskWoken);
+    if(xHigherPriorityTaskWoken)portYIELD();
+}
 
 
 

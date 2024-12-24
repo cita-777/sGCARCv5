@@ -5,31 +5,6 @@
 
 
 
-void sAPP_Tasks_ControlAlgo(void* param){
-    TickType_t xLastWakeTime;
-    xLastWakeTime = xTaskGetTickCount();
-    for(;;){
-        motor.update();
-        sAPP_BlcCtrl_Handler();
-        
-
-        //高精确度延时10ms
-        xTaskDelayUntil(&xLastWakeTime,10 / portTICK_PERIOD_MS);
-    }
-}
-
-void sAPP_Tasks_AHRS(void* param){
-    TickType_t xLastWakeTime;
-    xLastWakeTime = xTaskGetTickCount();
-    for(;;){
-        ahrs.update();
-
-        //sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
-
-        //高精确度延时10ms
-        xTaskDelayUntil(&xLastWakeTime,10 / portTICK_PERIOD_MS);
-    }
-}
 
 void sAPP_Tasks_OLEDHdr(void* param){
     for(;;){
@@ -108,16 +83,16 @@ static void calibrateIMU(void* param){
 
 
 void sAPP_Tasks_CreateAll(){
-    //控制算法 100Hz
-    xTaskCreate(sAPP_Tasks_ControlAlgo  , "ControlAlgo"  , 2048 / sizeof(int), NULL, 4, NULL);
-    //姿态估计算法 100Hz  
-    xTaskCreate(sAPP_Tasks_AHRS         , "AHRS"         , 1024 / sizeof(int), NULL, 3, NULL);
+    //控制算法
+    xTaskCreate(sAPP_BlcCtrl_CtrlTask   , "CtrlTask"     , 2048 / sizeof(int), NULL, 4, NULL);
+    //姿态估计算法
+    xTaskCreate(sAPP_AHRS_Task          , "AHRS"         , 1024 / sizeof(int), NULL, 3, NULL);
     //OLED刷屏 20Hz  
     xTaskCreate(sAPP_Tasks_OLEDHdr      , "OLED"         , 2048 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_Devices      , "Devices"      ,  512 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_500ms        , "500ms"        ,  512 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_1000ms       , "1000ms"       ,  512 / sizeof(int), NULL, 1, NULL);
-    //xTaskCreate(sAPP_Tasks_TaskMang     , "TaskMang"     , 2048 / sizeof(int), NULL, 1, NULL);
+    // xTaskCreate(sAPP_Tasks_TaskMang     , "TaskMang"     , 2048 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_LoopTask     , "Loop"         , 8192 / sizeof(int), NULL, 4, NULL);
 
 }

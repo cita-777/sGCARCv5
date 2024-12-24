@@ -254,8 +254,6 @@ int sDRV_LIS3_Init(){
     //检查通信是否正常
     uint8_t who_am_i = read_reg(ADDR_WHOAMI);
     if(who_am_i != 0x3D){
-        #include "sBSP_UART.h"
-        sBSP_UART_Debug_Printf("[ERR ]LIS3MDLTR初始化失败:0x%0X\n",who_am_i);
         return -1;
     }
 
@@ -273,9 +271,6 @@ int sDRV_LIS3_Init(){
     reg_modify(ADDR_CTRLREG4,MSK_CTRLREG4_OMZ,SDRV_LIS3_ZOM_UHP);
     //设置阻塞读取模式
     reg_modify(ADDR_CTRLREG5,MSK_CTRLREG5_BDU,1);
-
-
-    //sHMI_Debug_Printf("[OK  ]LIS3MDLTR初始化成功\n");
 
     return 0;
 }

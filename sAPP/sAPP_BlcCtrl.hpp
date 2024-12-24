@@ -64,9 +64,13 @@ typedef struct{
 extern sAPP_BlcCtrl_Blc_t g_blc;
 extern sAPP_BlcCtrl_Ctrl_t g_ctrl;
 
+extern QueueHandle_t g_blc_ctrl_ahrs_queue;
+
 
 void sAPP_BlcCtrl_Init();
 void sAPP_BlcCtrl_Handler();
 
+
+void sAPP_BlcCtrl_CtrlTask(void* param);
 
 

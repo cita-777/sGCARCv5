@@ -4,12 +4,13 @@ extern "C"{
 #endif
 
 
-void sBSP_IWDG_Init();
+#include "stm32f4xx_hal.h"
 
+
+void sBSP_GPIO_IcmInt_Init();
 
 
 
 #ifdef __cplusplus
 }
 #endif
-

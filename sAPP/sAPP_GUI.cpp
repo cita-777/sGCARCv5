@@ -28,37 +28,37 @@ static void pwrlight_menu_init(sLM_TreeNode* parent);
 
 
 static void imu_data_update(void* param,uint32_t _param_tag){
-    if(xSemaphoreTake(ahrs.get_data_mutex,20) == pdTRUE){
+    if(xSemaphoreTake(ahrs.mutex,20) == pdTRUE){
         if(_param_tag == TAG_IMU_PITCH){
-            *(float*)param = ahrs.pitch;
+            *(float*)param = ahrs.dat.acc_x;
         }
         else if(_param_tag == TAG_IMU_ROLL){
-            *(float*)param = ahrs.roll;
+            *(float*)param = ahrs.dat.roll;
         }
         else if(_param_tag == TAG_IMU_YAW){
-            *(float*)param = ahrs.yaw;
+            *(float*)param = ahrs.dat.yaw;
         }
         else if(_param_tag == TAG_IMU_ACC_X){
-            *(float*)param = ahrs.acc_x;
+            *(float*)param = ahrs.dat.acc_x;
         }
         else if(_param_tag == TAG_IMU_ACC_Y){
-            *(float*)param = ahrs.acc_y;
+            *(float*)param = ahrs.dat.acc_y;
         }
         else if(_param_tag == TAG_IMU_ACC_Z){
-            *(float*)param = ahrs.acc_z;
+            *(float*)param = ahrs.dat.acc_z;
         }
         else if(_param_tag == TAG_IMU_GYR_X){
-            *(float*)param = ahrs.gyr_x;
+            *(float*)param = ahrs.dat.gyr_x;
         }
         else if(_param_tag == TAG_IMU_GYR_Y){
-            *(float*)param = ahrs.gyr_y;
+            *(float*)param = ahrs.dat.gyr_y;
         }
         else if(_param_tag == TAG_IMU_GYR_Z){
-            *(float*)param = ahrs.gyr_z;
+            *(float*)param = ahrs.dat.gyr_z;
         }
 
 
-        xSemaphoreGive(ahrs.get_data_mutex);
+        xSemaphoreGive(ahrs.mutex);
     }
     
 }

@@ -40,7 +40,7 @@ void sBSP_RCC_Init(){
         Error_Handler();
     }
 
-    //configure MCO1 output clock:32.768KHz(from LSE)
-    //HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_LSE, RCC_MCODIV_1);
+    //configure MCO1 output clock:32.768KHz(from LSE) 
+    // HAL_RCC_MCOConfig(RCC_MCO1, RCC_MCO1SOURCE_LSE, RCC_MCODIV_1);
 }
 

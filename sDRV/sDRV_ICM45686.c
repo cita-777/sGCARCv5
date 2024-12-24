@@ -10,27 +10,36 @@
 
 
 #include "sLib_Reg.h"
+#include "sBSP_GPIO.h"
 
 
-#include "sDBG_Debug.h"
 
-
+/*************配置选项*********************/
+//使用SPI接口
 #define USE_SPI_IF
+//todo 使用I2C接口
+// #define USE_I2C_IF
+//使用中断式获取数据(无latency),不定义则使用手动式获取数据
+#define USE_INT_GET_DATA
 
-//PC0 -> ICM_CS
-#define SPI_CS_CLK_EN    __GPIOC_CLK_ENABLE
-#define SPI_CS_PORT      GPIOC
-#define SPI_CS_PIN       GPIO_PIN_0
+
+
 
 #ifdef USE_SPI_IF
+    //PC0 -> ICM_CS
+    #define SPI_CS_CLK_EN    __GPIOC_CLK_ENABLE
+    #define SPI_CS_PORT      GPIOC
+    #define SPI_CS_PIN       GPIO_PIN_0
     #include "sBSP_SPI.h"
 #endif
 
 
+
+
+
+
 sDRV_ICM45686_Data_t g_icm45686;
 sDRV_ICM45686_Conf_t g_icm45686_conf;
-
-
 
 //寄存器地址和掩码
 /*Bank0的寄存器*/
@@ -291,6 +300,10 @@ sDRV_ICM45686_Conf_t g_icm45686_conf;
 #define ADDR_DRIVE_CONFIG2                                           (0x34U)
 #define MSK_DRIVE_CONFIG2_PADS_SLEW                                  (0b00000111U)
 
+//REG_MISC1
+#define ADDR_REG_MISC1                                               (0x35U)
+#define MSK_REG_MISC1_OSC_ID_OVRD                                    (0b00001111U)
+
 //INT_APEX_CONFIG0
 #define ADDR_INT_APEX_CONFIG0                                        (0x39U)
 #define MSK_INT_APEX_CONFIG0_INT_STATUS_MASK_PIN_R2W_WAKE_DET        (0b10000000U)
@@ -473,6 +486,16 @@ static inline void portSetCS(bool lv){
     HAL_GPIO_WritePin(SPI_CS_PORT,SPI_CS_PIN,(GPIO_PinState)lv);
 }
 
+#ifdef USE_INT_GET_DATA
+static void portINTInit(){
+    sBSP_GPIO_IcmInt_Init();
+}
+#endif
+
+
+
+
+
 static uint8_t read_reg(uint8_t addr){
     //读时序有两个字节,第一个字节最高位为1表示读,为0表示写时序,其他位为寄存器地址
     portSetCS(0);
@@ -499,7 +522,6 @@ static void read_regs(uint8_t addr,uint8_t* pData,uint8_t len){
     //然后读取
     sBSP_SPI_IMU_RecvBytes(pData,len);
     portSetCS(1);
-    
 }
 
 // 对寄存器进行修改,形参:寄存器地址,修改的部分,修改的数据
@@ -529,6 +551,18 @@ int sDRV_ICM45686_Init(){
         return who_am_i;
     }
 
+    #ifdef USE_INT_GET_DATA
+        portINTInit();
+        //使能INT1数据准备好了中断
+        reg_modify(ADDR_INT1_CONFIG0,MSK_INT1_CONFIG0_INT1_STATUS_EN_DRDY,1);
+        //开漏模式
+        reg_modify(ADDR_INT1_CONFIG2,MSK_INT1_CONFIG2_INT1_DRIVE,1);
+        //中断PULSE模式
+        reg_modify(ADDR_INT1_CONFIG2,MSK_INT1_CONFIG2_INT1_MODE,0);
+        //中断激活为LOW
+        reg_modify(ADDR_INT1_CONFIG2,MSK_INT1_CONFIG2_INT1_POLARITY,0);
+    #endif
+
     //初始化配置:实时性+++
     sDRV_ICM45686_Conf_t icm_conf = {0};
     icm_conf.gyro_fs           = SDRV_ICM45686_GYRO_UI_FS_SEL_250DPS;
@@ -537,7 +571,7 @@ int sDRV_ICM45686_Init(){
     icm_conf.accel_odr         = SDRV_ICM45686_ACCEL_ODR_100HZ;
     icm_conf.gyro_mode         = SDRV_ICM45686_GYRO_MODE_LN;
     icm_conf.accel_mode        = SDRV_ICM45686_ACCEL_MODE_LN;
-    sDRV_ICM45686_SetConfig(&icm_conf);
+    sDRV_ICM45686_SetConfig(&icm_conf); 
 
     return 0;
 }
@@ -560,51 +594,22 @@ void sDRV_ICM45686_SetConfig(const sDRV_ICM45686_Conf_t* p_conf){
     reg_modify(ADDR_PWR_MGMT0        ,MSK_PWR_MGMT0_ACCEL_MODE                ,g_icm45686_conf.accel_mode);
 }
 
-static uint8_t buf[14];
 
 
-#include "sBSP_UART.h"
+
 
 void sDRV_ICM45686_GetData(){
-    
+    uint8_t buf[14];
     read_regs(ADDR_ACCEL_DATA_X1_UI,buf,14);
 
 
-
-    // buf[1] = read_reg(ADDR_ACCEL_DATA_X0_UI);   //LSB
-    // buf[0] = read_reg(ADDR_ACCEL_DATA_X1_UI);   //MSB
-
-    // buf[3] = read_reg(ADDR_ACCEL_DATA_Y0_UI);
-    // buf[2] = read_reg(ADDR_ACCEL_DATA_Y1_UI);
-
-    // buf[5] = read_reg(ADDR_ACCEL_DATA_Z0_UI);
-    // buf[4] = read_reg(ADDR_ACCEL_DATA_Z1_UI);
-
-    // buf[7] = read_reg(ADDR_GYRO_DATA_X0_UI);
-    // buf[6] = read_reg(ADDR_GYRO_DATA_X1_UI);
-
-    // buf[9] = read_reg(ADDR_GYRO_DATA_Y0_UI);
-    // buf[8] = read_reg(ADDR_GYRO_DATA_Y1_UI);
-
-    // buf[11] = read_reg(ADDR_GYRO_DATA_Z0_UI);
-    // buf[10] = read_reg(ADDR_GYRO_DATA_Z1_UI);
-
-    // buf[13] = read_reg(ADDR_TEMP_DATA0_UI);
-    // buf[12] = read_reg(ADDR_TEMP_DATA1_UI);
-
-
     g_icm45686.temp   = (float)((int16_t)((buf[13] << 8) | buf[12]) / 128 + 25);
-
-    g_icm45686.acc_x  = (float)(int16_t)((uint16_t)(buf[ 1] << 8)  | (uint16_t)buf[ 0]);
-    g_icm45686.acc_y  = (float)(int16_t)((uint16_t)(buf[ 3] << 8)  | (uint16_t)buf[ 2]);
-	g_icm45686.acc_z  = (float)(int16_t)((uint16_t)(buf[ 5] << 8)  | (uint16_t)buf[ 4]);
-	g_icm45686.gyro_x = (float)(int16_t)((uint16_t)(buf[ 7] << 8)  | (uint16_t)buf[ 6]);
-	g_icm45686.gyro_y = (float)(int16_t)((uint16_t)(buf[ 9] << 8)  | (uint16_t)buf[ 8]);
-    g_icm45686.gyro_z = (float)(int16_t)((uint16_t)(buf[11] << 8)  | (uint16_t)buf[10]);
-
-    //sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f\n",g_icm45686.acc_x,g_icm45686.acc_y,g_icm45686.acc_z);
-    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f\n",g_icm45686.gyro_x,g_icm45686.gyro_y,g_icm45686.gyro_z);
-    // sBSP_UART_Debug_Printf("%.2f\n",g_icm45686.temp);
+    g_icm45686.acc_x = (float)(int16_t)((uint16_t)(buf[ 1] << 8) | (uint16_t)buf[ 0]);
+    g_icm45686.acc_y = (float)(int16_t)((uint16_t)(buf[ 3] << 8) | (uint16_t)buf[ 2]);
+	g_icm45686.acc_z = (float)(int16_t)((uint16_t)(buf[ 5] << 8) | (uint16_t)buf[ 4]);
+	g_icm45686.gyr_x = (float)(int16_t)((uint16_t)(buf[ 7] << 8) | (uint16_t)buf[ 6]);
+	g_icm45686.gyr_y = (float)(int16_t)((uint16_t)(buf[ 9] << 8) | (uint16_t)buf[ 8]);
+    g_icm45686.gyr_z = (float)(int16_t)((uint16_t)(buf[11] << 8) | (uint16_t)buf[10]);
 
     //处理数据
 	//处理加速度,单位m/s^2
@@ -632,55 +637,48 @@ void sDRV_ICM45686_GetData(){
 
     //处理角速度
 	if(g_icm45686_conf.gyro_fs == SDRV_ICM45686_GYRO_UI_FS_SEL_250DPS){
-		g_icm45686.gyro_x *= ( 250.0f / 32768.0f);
-        g_icm45686.gyro_y *= ( 250.0f / 32768.0f);
-        g_icm45686.gyro_z *= ( 250.0f / 32768.0f);
+		g_icm45686.gyr_x *= ( 250.0f / 32768.0f);
+        g_icm45686.gyr_y *= ( 250.0f / 32768.0f);
+        g_icm45686.gyr_z *= ( 250.0f / 32768.0f);
 	}else if(g_icm45686_conf.gyro_fs == SDRV_ICM45686_GYRO_UI_FS_SEL_500DPS){
-		g_icm45686.gyro_x *= ( 500.0f / 32768.0f);
-        g_icm45686.gyro_y *= ( 500.0f / 32768.0f);
-        g_icm45686.gyro_z *= ( 500.0f / 32768.0f);
+		g_icm45686.gyr_x *= ( 500.0f / 32768.0f);
+        g_icm45686.gyr_y *= ( 500.0f / 32768.0f);
+        g_icm45686.gyr_z *= ( 500.0f / 32768.0f);
 	}else if(g_icm45686_conf.gyro_fs == SDRV_ICM45686_GYRO_UI_FS_SEL_1000DPS){
-		g_icm45686.gyro_x *= (1000.0f / 32768.0f);
-        g_icm45686.gyro_y *= (1000.0f / 32768.0f);
-        g_icm45686.gyro_z *= (1000.0f / 32768.0f);
+		g_icm45686.gyr_x *= (1000.0f / 32768.0f);
+        g_icm45686.gyr_y *= (1000.0f / 32768.0f);
+        g_icm45686.gyr_z *= (1000.0f / 32768.0f);
 	}else if(g_icm45686_conf.gyro_fs == SDRV_ICM45686_GYRO_UI_FS_SEL_2000DPS){
-		g_icm45686.gyro_x *= (2000.0f / 32768.0f);
-        g_icm45686.gyro_y *= (2000.0f / 32768.0f);
-        g_icm45686.gyro_z *= (2000.0f / 32768.0f);
+		g_icm45686.gyr_x *= (2000.0f / 32768.0f);
+        g_icm45686.gyr_y *= (2000.0f / 32768.0f);
+        g_icm45686.gyr_z *= (2000.0f / 32768.0f);
     }else if(g_icm45686_conf.gyro_fs == SDRV_ICM45686_GYRO_UI_FS_SEL_4000DPS){
-		g_icm45686.gyro_x *= (4000.0f / 32768.0f);
-        g_icm45686.gyro_y *= (4000.0f / 32768.0f);
-        g_icm45686.gyro_z *= (4000.0f / 32768.0f);
+		g_icm45686.gyr_x *= (4000.0f / 32768.0f);
+        g_icm45686.gyr_y *= (4000.0f / 32768.0f);
+        g_icm45686.gyr_z *= (4000.0f / 32768.0f);
 	}else if(g_icm45686_conf.gyro_fs == SDRV_ICM45686_GYRO_UI_FS_SEL_125DPS){
-		g_icm45686.gyro_x *= ( 125.0f / 32768.0f);
-        g_icm45686.gyro_y *= ( 125.0f / 32768.0f);
-        g_icm45686.gyro_z *= ( 125.0f / 32768.0f);
+		g_icm45686.gyr_x *= ( 125.0f / 32768.0f);
+        g_icm45686.gyr_y *= ( 125.0f / 32768.0f);
+        g_icm45686.gyr_z *= ( 125.0f / 32768.0f);
 	}else if(g_icm45686_conf.gyro_fs == SDRV_ICM45686_GYRO_UI_FS_SEL_62D5DPS){
-		g_icm45686.gyro_x *= (  62.5f / 32768.0f);
-        g_icm45686.gyro_y *= (  62.5f / 32768.0f);
-        g_icm45686.gyro_z *= (  62.5f / 32768.0f);
+		g_icm45686.gyr_x *= (  62.5f / 32768.0f);
+        g_icm45686.gyr_y *= (  62.5f / 32768.0f);
+        g_icm45686.gyr_z *= (  62.5f / 32768.0f);
 	}else if(g_icm45686_conf.gyro_fs == SDRV_ICM45686_GYRO_UI_FS_SEL_31D25DPS){
-		g_icm45686.gyro_x *= ( 31.25f / 32768.0f);
-        g_icm45686.gyro_y *= ( 31.25f / 32768.0f);
-        g_icm45686.gyro_z *= ( 31.25f / 32768.0f);
+		g_icm45686.gyr_x *= ( 31.25f / 32768.0f);
+        g_icm45686.gyr_y *= ( 31.25f / 32768.0f);
+        g_icm45686.gyr_z *= ( 31.25f / 32768.0f);
 	}else if(g_icm45686_conf.gyro_fs == SDRV_ICM45686_GYRO_UI_FS_SEL_15D625DPS){
-		g_icm45686.gyro_x *= (15.625f / 32768.0f);
-        g_icm45686.gyro_y *= (15.625f / 32768.0f);
-        g_icm45686.gyro_z *= (15.625f / 32768.0f);
+		g_icm45686.gyr_x *= (15.625f / 32768.0f);
+        g_icm45686.gyr_y *= (15.625f / 32768.0f);
+        g_icm45686.gyr_z *= (15.625f / 32768.0f);
 	}
 
+    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f\n",g_icm45686.acc_x,g_icm45686.acc_y,g_icm45686.acc_z);
+    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f\n",g_icm45686.gyr_x,g_icm45686.gyr_y,g_icm45686.gyr_z);
+    // sBSP_UART_Debug_Printf("%.2f\n",g_icm45686.temp);
+
 }
-
-
-
-
-
-
-
-
-
-
-
 
 
 

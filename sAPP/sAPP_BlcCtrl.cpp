@@ -6,13 +6,10 @@
 #define MECHINE_CENTER_ANGLE    (  -1.2f)
 // #define MECHINE_CENTER_ANGLE    (  -0.0f)
 //直立环初始值
-// #define STAND_KP                (-12.00f * 0.6f)
-// #define STAND_KD                (- 0.60f * 0.6f)
 #define STAND_KP                (-12.00f * 0.6f)
 #define STAND_KD                (- 0.70f * 0.6f)
 //速度环初始值
 #define SPD_KP                  ( 0.30f)
-// #define SPD_KP                  ( 0.20f)
 #define SPD_KI                  (SPD_KP / 200.0f)
 //转向环初始值
 #define TURN_KP                 (  0.20f)
@@ -21,12 +18,13 @@
 #define ZERO_KP                 (220.00f)
 #define ZERO_KI                 ( 80.00f)
 #define ZERO_KD                 (  0.00f)
-// #define ZERO_KP                 (120.00f)
-// #define ZERO_KI                 ( 50.00f)
-// #define ZERO_KD                 (  0.00f)
-
 //轮胎半径
 #define WHEEL_RADIUS            (0.0672f)
+
+
+
+QueueHandle_t g_blc_ctrl_ahrs_queue;
+static AHRS::AHRS_Data dat;
 
 
 sAPP_BlcCtrl_Blc_t g_blc;
@@ -46,6 +44,9 @@ static float TurnPDCtrler(float gyro_z);
 
 //平衡控制初始化
 void sAPP_BlcCtrl_Init(){
+    //创建平衡控制算法需要的AHRS数据队列
+    g_blc_ctrl_ahrs_queue = xQueueCreate(1,sizeof(AHRS::AHRS_Data));
+
     //设置各个参数的初始值
     g_blc.m_angle = MECHINE_CENTER_ANGLE;
     g_blc.stand_kp = STAND_KP;
@@ -73,7 +74,6 @@ void sAPP_BlcCtrl_Init(){
 void sAPP_BlcCtrl_Handler(){
     #define DT_S (0.010f)    //10ms 100Hz控制周期
 
-    if(xSemaphoreTake(ahrs.get_data_mutex,0) != pdTRUE)return;
     
     // sDRV_PS2_Handler();
 
@@ -124,7 +124,7 @@ void sAPP_BlcCtrl_Handler(){
 
     
 
-    if(ahrs.pitch > 45 || ahrs.pitch < -45){
+    if(dat.pitch > 45 || dat.pitch < -45){
         sDRV_DRV8870_SetRightBrake(1);
         sDRV_DRV8870_SetLeftBrake(1);
         //关闭平衡开关
@@ -141,7 +141,7 @@ void sAPP_BlcCtrl_Handler(){
     float inc_pos_out;
 
     //应用转向环
-    g_blc.turn_out  = TurnPDCtrler (ahrs.yaw);
+    g_blc.turn_out  = TurnPDCtrler (dat.yaw);
 
     if(fabs(g_blc.turn_out) < 10){
         //对编码器读到的转速值转换成线速度并积分
@@ -158,7 +158,7 @@ void sAPP_BlcCtrl_Handler(){
     }
 
     //计算直立环
-    g_blc.stand_out = StandPDCtrler(ahrs.pitch,ahrs.gyr_x);
+    g_blc.stand_out = StandPDCtrler(dat.pitch,dat.gyr_x);
     //计算速度环
     g_blc.spd_out   = SpdPICtrler  (g_blc.left_rpm,g_blc.right_rpm);
     
@@ -185,7 +185,6 @@ void sAPP_BlcCtrl_Handler(){
     //dbg.printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",ahrs.pitch,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
 
 
-    xSemaphoreGive(ahrs.get_data_mutex);
 }
 
 
@@ -241,5 +240,27 @@ static float TurnPDCtrler(float gyro_z){
     return turn_val;
 }
 
+
+
+void sAPP_BlcCtrl_CtrlTask(void* param){
+    TickType_t xLastWakeTime;
+    xLastWakeTime = xTaskGetTickCount();
+
+    
+    for(;;){
+        if(xQueueReceive(g_blc_ctrl_ahrs_queue,&ahrs,200)){
+            //更新电机GMR编码器数据
+            motor.update();
+            //调用平衡控制算法
+            sAPP_BlcCtrl_Handler();
+        }else{
+            sBSP_UART_Debug_Printf("[ERR]BlcCtrl错误:获取g_blc_ctrl_ahrs_queue超时\n");
+            Error_Handler();
+        }
+
+        // //高精确度延时10ms
+        // xTaskDelayUntil(&xLastWakeTime,10 / portTICK_PERIOD_MS);
+    }
+}
 
 
