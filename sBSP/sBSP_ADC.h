@@ -11,7 +11,10 @@ extern "C" {
 
 
 void sBSP_ADC_Init();
-float sBSP_ADC_GetBatVolt();
+
+
+float sBSP_ADC_GetMCUTemp();
+float sBSP_ADC_GetVCC();
 
 
 #ifdef __cplusplus

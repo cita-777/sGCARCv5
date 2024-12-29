@@ -1,38 +1,42 @@
-#include "sLM_Show.hpp"
+#include "sLM_OLED128X64.hpp"
 
 
-sLM_OLEDWeights slm_weights;
 
-sLM_OLEDWeights::sLM_OLEDWeights(){
-    
-}
+#define LOG_INFO(_TEXT) sBSP_UART_Debug_Printf("[INFO] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
+#define LOG_WARN(_TEXT) sBSP_UART_Debug_Printf("[WARN] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
+#define LOG_ERR(_TEXT)  sBSP_UART_Debug_Printf("[ERR ] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
 
-sLM_OLEDWeights::~sLM_OLEDWeights(){
+// #define LOG_INFO(_LINE,_TEXT) (void)0
+// #define LOG_WARN(_LINE,_TEXT) (void)0
+// #define LOG_ERR(_LINE,_TEXT)  (void)0
 
-}
 
-// extern sLittleMenu lm;
+#include "sLittleMenu.hpp"
+using namespace sLM;
 
-void sLM_OLEDWeights::init(sG2D* _screen,sLittleMenu* _menu){
+
+#define LIST_MAX_ITEMS 4
+
+
+OLED128X64::OLED128X64(sG2D* _screen,sLM::sLittleMenu* _menu){
     screen = _screen;
     menu = _menu;
 }
 
-void toUpper(char str[]) {
-    for (int i = 0; str[i] != '\0'; ++i) {
-        str[i] = toupper((unsigned char)str[i]); // 转换为大写
-    }
+OLED128X64::~OLED128X64(){
+    // ...
 }
 
-
-
-void sLM_OLEDWeights::showList(sLM_TreeNode* parent){
-    //如果当前节点的父节点是空的,说明目前在root节点
+// 实现渲染器接口
+void OLED128X64::showMenuList(sLM::TreeNode* parent){
     if(parent == nullptr){
-        parent = parent->child;
+        LOG_ERR("错误,showList传入了空指针");
+        return;
     }
     //获取当前父节点的数据,用来显示标题
-    sLM::MenuItemData& parent_data = sLM::getNodeData(parent);
+    ItemData& parent_data = sLittleMenu::getNodeData(parent);
+
+    
 
     //当前菜单项索引
     uint32_t curr_index = menu->getCurrMenuIndex();
@@ -67,10 +71,11 @@ void sLM_OLEDWeights::showList(sLM_TreeNode* parent){
     screen->drawHLine(0,128,y_offset - 2,1);
 
     //第一个
-    sLM_TreeNode* node = parent->child;
+    TreeNode* node = parent->child;
+    //如果父节点没有子节点则不显示
+    if(node == nullptr)return;
 
     //如果当前的菜单项大于能显示的菜单项了,就增加显示偏移
-
     //如果当前是最后一个项了,并且大于一个屏幕能显示的范围
     if(curr_index == menu->getCurrMenuNumber() && curr_index > (LIST_MAX_ITEMS - 1)){
         //让偏移量不减去-1,这样光标就能在最后一行
@@ -86,12 +91,12 @@ void sLM_OLEDWeights::showList(sLM_TreeNode* parent){
     //只能显示四个
     for(int i = 1;i <= LIST_MAX_ITEMS;i++){
         //获取当前节点
-        sLM_TreeNode* node = menu->getIndexMenu(scroll_index_offset + i);
+        TreeNode* node = menu->getIndexMenu(scroll_index_offset + i);
         //获取当前节点的数据
-        sLM::MenuItemData& data = sLM::getNodeData(node);
+        ItemData& data = sLittleMenu::getNodeData(node);
 
-        if(data.param.access == sLM::Item_ParamAccess::RO){
-            if(data.param.update_cb)data.param.update_cb(&(data.param.value),data.param.param_tag);
+        if(data.param.access == ParamAccess::RO){
+            if(data.param.update_cb)data.param.update_cb(&(data.param.val_i),data.param.param_tag);
         }
 
         //绘制行的标题
@@ -104,25 +109,26 @@ void sLM_OLEDWeights::showList(sLM_TreeNode* parent){
             screen->write_string(101,y_offset + 1,str);
             screen->write_string(102,y_offset + 1,str);
         }else{
-            if(data.type == sLM::ItemType::NORMAL){
-                if(data.param.type == sLM::Item_ParamType::FLOAT){
-                    float& value  = *(float*)&(data.param.value);
+            if(data.type == ItemType::NORMAL && data.param.access != ParamAccess::NO){
+                if(data.param.type == ParamType::FLOAT){
+                    float& value  = *(float*)&(data.param.val_i);
                     char* unit    =  (char*)&(data.param.unit);
-                    snprintf(str,10,SLM_WEIGHTS_LIST_PARAM_SHOW_FLOAT,value,unit);
+                    snprintf(str,10,data.param.show_fmt,value,unit);
                 }
-                else if(data.param.type == sLM::Item_ParamType::INT){
-                    int& value  = *(int*)&(data.param.value);
+                else if(data.param.type == ParamType::INT){
+                    int& value  = *(int*)&(data.param.val_i);
                     char* unit  =  (char*)&(data.param.unit);
-                    snprintf(str,10,SLM_WEIGHTS_LIST_PARAM_SHOW_INT,value,unit);
+                    snprintf(str,10,data.param.show_fmt,value,unit);
                 }
-                screen->write_string(SLM_WEIGHTS_LIST_PARAM_SHOW_POS,y_offset + 1,str);
+                else if(data.param.type == ParamType::STRING){
+                    char* value  =  (char*)&(data.param.val_i);
+                    snprintf(str,10,"%s",value);
+                }
+                screen->write_string(weights_LIST_PARAM_SHOW_POS,y_offset + 1,str);
             }
             else if(data.type == sLM::ItemType::SWITCH){
 
             }
-            
-            
-            
         }
         
         //处理选中区域
@@ -130,7 +136,7 @@ void sLM_OLEDWeights::showList(sLM_TreeNode* parent){
             screen->inv_area(0,y_offset - 1 ,128,y_offset + 9);
         }
         if(data.is_selected == true){
-            screen->inv_area(SLM_WEIGHTS_LIST_PARAM_SHOW_POS - 5,y_offset - 1 ,125,y_offset + 9);
+            screen->inv_area(weights_LIST_PARAM_SHOW_POS - 5,y_offset - 1 ,125,y_offset + 9);
         }
 
         
@@ -145,3 +151,34 @@ void sLM_OLEDWeights::showList(sLM_TreeNode* parent){
         
     }
 }
+
+
+void OLED128X64::showWatingDialog(const char* _title, const char* _message){
+    //画两个重叠矩形,让他看起来像个对话框
+    screen->drawRectangle(5,5,122,65,1);
+    screen->drawRectangle(1,1,118,61,0);
+
+    uint16_t x_x = 107,x_y = 5;
+    screen->drawLine(x_x + 0,x_y + 0,x_x + 5,x_y + 6,1);
+    screen->drawLine(x_x + 1,x_y + 0,x_x + 6,x_y + 6,1);
+
+    screen->drawLine(x_x + 5,x_y + 0,x_x + 0,x_y + 6,1);
+    screen->drawLine(x_x + 6,x_y + 0,x_x + 1,x_y + 6,1);
+
+    screen->printf(5,5,"%s",_title);
+    screen->drawHLine(1,120,15,1);
+
+    screen->printf(10,20,"%s",_message);
+}
+
+
+void OLED128X64::update(){
+    if(sLittleMenu::getNodeData(menu->getCurr()).param.lock == ParamModifyLock::LOCK){
+        showWatingDialog("Processing","\n\n  Please wait");
+    }else{
+        showMenuList(menu->getCurr()->parent);
+    }
+    
+}
+
+

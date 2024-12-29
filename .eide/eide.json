@@ -44,7 +44,7 @@
         "cpuType": "Cortex-M4",
         "floatingPointHardware": "single",
         "useCustomScatterFile": true,
-        "scatterFilePath": "${OutDir}/../sGCARCv5.sct",
+        "scatterFilePath": "./build/sGCARCv5.sct",
         "storageLayout": {
           "RAM": [
             {
@@ -52,17 +52,7 @@
               "id": 1,
               "mem": {
                 "startAddr": "0x20000000",
-                "size": "0x00020000"
-              },
-              "isChecked": true,
-              "noInit": false
-            },
-            {
-              "tag": "IRAM",
-              "id": 2,
-              "mem": {
-                "startAddr": "0x10000000",
-                "size": "0x00010000"
+                "size": "0x5000"
               },
               "isChecked": true,
               "noInit": false
@@ -74,7 +64,7 @@
               "id": 1,
               "mem": {
                 "startAddr": "0x08000000",
-                "size": "0x00100000"
+                "size": "0x10000"
               },
               "isChecked": true,
               "isStartup": true

@@ -24,8 +24,9 @@ void sBSP_ADC_Init(){
         Error_Handler();
     }
 
+
     ADC_ChannelConfTypeDef sConfig = {0};
-    sConfig.Channel = ADC_CHANNEL_4;
+    sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
     sConfig.Rank = 1;
     sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
     if (HAL_ADC_ConfigChannel(&g_hadc1, &sConfig) != HAL_OK){
@@ -36,13 +37,36 @@ void sBSP_ADC_Init(){
 }
 
 
-
-float sBSP_ADC_GetBatVolt(){
+float sBSP_ADC_GetMCUTemp(){
+    ADC_ChannelConfTypeDef sConfig = {0};
+    sConfig.Channel = ADC_CHANNEL_TEMPSENSOR;
+    sConfig.Rank = 1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+	HAL_ADC_ConfigChannel(&g_hadc1, &sConfig);
     HAL_ADC_Start(&g_hadc1);
-    HAL_ADC_PollForConversion(&g_hadc1,10);
-    HAL_ADC_Stop(&g_hadc1);
-    float volt = HAL_ADC_GetValue(&g_hadc1) / 4095.0f * 3300.0f / 1000.0f;
-    volt /= 0.1803f;
-    return volt;
+	HAL_ADC_PollForConversion(&g_hadc1,100);
+    
+    uint32_t adc_value= HAL_ADC_GetValue(&g_hadc1);
+	float temper=(((float)adc_value*3.3f)/4096.0f);
+	temper=(temper-0.76f)/0.0025f+25;
+	HAL_ADC_Stop(&g_hadc1);
+
+	return temper;
 }
+
+float sBSP_ADC_GetVCC(){
+    ADC_ChannelConfTypeDef sConfig = {0};
+    sConfig.Channel = ADC_CHANNEL_VBAT;
+    sConfig.Rank = 1;
+    sConfig.SamplingTime = ADC_SAMPLETIME_480CYCLES;
+	HAL_ADC_ConfigChannel(&g_hadc1, &sConfig);
+	HAL_ADC_Start(&g_hadc1);
+	HAL_ADC_PollForConversion(&g_hadc1,100);
+	uint32_t adc_value = HAL_ADC_GetValue(&g_hadc1);
+	float bat=(((float)adc_value*3.3f)/2048.0f);
+	HAL_ADC_Stop(&g_hadc1);
+
+	return bat;
+}
+
 

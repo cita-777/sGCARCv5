@@ -210,7 +210,7 @@
             <Ir1Chk>0</Ir1Chk>
             <Ir2Chk>0</Ir2Chk>
             <Ra1Chk>1</Ra1Chk>
-            <Ra2Chk>1</Ra2Chk>
+            <Ra2Chk>0</Ra2Chk>
             <Ra3Chk>0</Ra3Chk>
             <Im1Chk>0</Im1Chk>
             <Im2Chk>0</Im2Chk>
@@ -263,7 +263,7 @@
               <OCR_RVCT1>
                 <Type>1</Type>
                 <StartAddress>0x8000000</StartAddress>
-                <Size>0x100000</Size>
+                <Size>0x10000</Size>
               </OCR_RVCT1>
               <OCR_RVCT2>
                 <Type>1</Type>
@@ -288,12 +288,12 @@
               <OCR_RVCT6>
                 <Type>0</Type>
                 <StartAddress>0x20000000</StartAddress>
-                <Size>0x20000</Size>
+                <Size>0x5000</Size>
               </OCR_RVCT6>
               <OCR_RVCT7>
                 <Type>0</Type>
-                <StartAddress>0x10000000</StartAddress>
-                <Size>0x10000</Size>
+                <StartAddress>0x0</StartAddress>
+                <Size>0x0</Size>
               </OCR_RVCT7>
               <OCR_RVCT8>
                 <Type>0</Type>
@@ -307,8 +307,8 @@
               </OCR_RVCT9>
               <OCR_RVCT10>
                 <Type>0</Type>
-                <StartAddress>0x0</StartAddress>
-                <Size>0x0</Size>
+                <StartAddress>0x10000000</StartAddress>
+                <Size>0x10000</Size>
               </OCR_RVCT10>
             </OnChipMemories>
             <RvctStartVector></RvctStartVector>
@@ -431,6 +431,11 @@
               <FilePath>sAPP/sAPP_ParamSave.cpp</FilePath>
             </File>
             <File>
+              <FileName>sAPP_RC.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>sAPP/sAPP_RC.cpp</FilePath>
+            </File>
+            <File>
               <FileName>sAPP_Tasks.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>sAPP/sAPP_Tasks.cpp</FilePath>
@@ -456,9 +461,19 @@
               <FilePath>sBSP/sBSP_DWT.c</FilePath>
             </File>
             <File>
+              <FileName>sBSP_GPIO.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>sBSP/sBSP_GPIO.c</FilePath>
+            </File>
+            <File>
               <FileName>sBSP_I2C.c</FileName>
               <FileType>1</FileType>
               <FilePath>sBSP/sBSP_I2C.c</FilePath>
+            </File>
+            <File>
+              <FileName>sBSP_IWDG.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>sBSP/sBSP_IWDG.c</FilePath>
             </File>
             <File>
               <FileName>sBSP_RCC.c</FileName>
@@ -589,11 +604,6 @@
               <FileName>sLM_Show.cpp</FileName>
               <FileType>8</FileType>
               <FilePath>sMID/sLittleMenu/sLM_Show.cpp</FilePath>
-            </File>
-            <File>
-              <FileName>sLM_Tree.cpp</FileName>
-              <FileType>8</FileType>
-              <FilePath>sMID/sLittleMenu/sLM_Tree.cpp</FilePath>
             </File>
           </Files>
         </Group>

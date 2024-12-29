@@ -248,7 +248,7 @@ void sAPP_BlcCtrl_CtrlTask(void* param){
 
     
     for(;;){
-        if(xQueueReceive(g_blc_ctrl_ahrs_queue,&ahrs,200)){
+        if(xQueueReceive(g_blc_ctrl_ahrs_queue,&dat,200)){
             //更新电机GMR编码器数据
             motor.update();
             //调用平衡控制算法

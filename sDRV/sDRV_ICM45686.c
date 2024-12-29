@@ -673,8 +673,8 @@ void sDRV_ICM45686_GetData(){
         g_icm45686.gyr_y *= (15.625f / 32768.0f);
         g_icm45686.gyr_z *= (15.625f / 32768.0f);
 	}
-
-    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f\n",g_icm45686.acc_x,g_icm45686.acc_y,g_icm45686.acc_z);
+    // #include "sBSP_UART.h"
+    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,",g_icm45686.acc_x,g_icm45686.acc_y,g_icm45686.acc_z);
     // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f\n",g_icm45686.gyr_x,g_icm45686.gyr_y,g_icm45686.gyr_z);
     // sBSP_UART_Debug_Printf("%.2f\n",g_icm45686.temp);
 

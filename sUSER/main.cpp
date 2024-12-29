@@ -1,7 +1,6 @@
 #include "main.h"
 
 
-
 void uart_recied(char* pReciData,uint16_t length){
     // sBSP_UART_Debug_SendBytes((uint8_t*)pReciData,length);
     unsigned u_cir, u_rect, u_tri, u_x; // 暂存无符号整型数
@@ -30,15 +29,17 @@ sBSP_UART_Debug_Printf("0x%2X,0x%2X\n", ps2.leftY,ps2.rightX);
 
 
 
+
 void setup();
 
 int main(){
     car.initSys();
-    car.initBoard();
-
-    sBSP_UART_Debug_Printf("STM32 System Clock Freq: %u MHz\n", car.coreClk / 1000000);
+    sBSP_UART_Debug_Printf("STM32 System Clock Freq: %u MHz\n", car.coreClock / 1e6);
     sBSP_UART_Debug_Printf("Hello,STM32F405RGT6    BySightseer.\n");
+    car.initBoard();
     sBSP_UART_Debug_Printf("sGCARC初始化完成\n");
+
+
 
     sAPP_ParamSave_ReadIMUCaliVal();
 
@@ -57,20 +58,25 @@ int main(){
     oled.handler();
 
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
+    dwt.start();
     sAPP_GUI_Init();
+    dwt.end();
+    sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
 
     // 打印菜单结构
-    sBSP_UART_Debug_Printf("菜单结构：\n");
-    slm.root->printTree(0,printMenuItemData);
-    // delete slm.root;
+    // sBSP_UART_Debug_Printf("菜单结构：\n");
+    // menu.getRoot()->printTree(0,sLM::printItemData);
+    // delete menu.getRoot();
 
     setup();
+    sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
 
     sAPP_Tasks_CreateAll();
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
     sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
     vTaskStartScheduler();
+    // while(1);
 }
 
 
@@ -93,7 +99,7 @@ void loop(){
     // motor.setLM(100);
     // motor.setRM(100);
 
-    delay(20);
+    delay(200);
 }
 
 

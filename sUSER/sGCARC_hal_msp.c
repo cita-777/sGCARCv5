@@ -7,6 +7,7 @@ extern UART_HandleTypeDef uart1;
 extern DMA_HandleTypeDef hdma_usart1_rx;
 extern DMA_HandleTypeDef hdma_usart1_tx;
 
+extern ADC_HandleTypeDef g_adc1;
 
 extern DMA_HandleTypeDef hdma_spi1_tx;
 

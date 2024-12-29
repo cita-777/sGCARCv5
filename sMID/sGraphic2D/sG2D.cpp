@@ -4,6 +4,30 @@
 #include "sDRV_GenOLED.h"
 #include "sBSP_DMA.h"
 
+#include <stdarg.h>
+
+
+/**
+ * sG2D.cpp
+ * Sightseer's 2D Graphic Library
+ * Sightseer用于OLED的2D图形库
+ * 
+ * 
+ * 更新记录
+ * v1.0 TIME 忘了
+ * 初版
+ * 
+ * v1.1 TIME 2024.06.17inHNIP9607Lab
+ * 优化性能,使用DMA
+ * 
+ * v1.2 TIME 2024.10.31inHNIP9607Lab
+ * 1.进一步优化性能,修改了GRAM排列方式,以便DMA发送,优化架构,DMA可选
+ * 2.使用双1KB全屏缓冲区,在刷屏时同时进行绘制
+ * 
+ * 
+ * 
+ */
+
 
 sG2D oled;
 
@@ -107,15 +131,20 @@ void sG2D::write_number(uint8_t x,uint8_t y,uint32_t num){
 }
 
 void sG2D::write_string(uint16_t x,uint16_t y,const char* str){
+    int16_t x_offset = 0;
     //遍历字符串
     while(*str != '\0'){
         if(x != 128){
-            set_byte(x + 1,y,CharFont[*str].CharByte0);
-            set_byte(x + 2,y,CharFont[*str].CharByte1);
-            set_byte(x + 3,y,CharFont[*str].CharByte2);
-            set_byte(x + 4,y,CharFont[*str].CharByte3);
-            set_byte(x + 5,y,CharFont[*str].CharByte4);
-            x+=6;
+            if(*str == '\n'){
+                x_offset = -6;
+                y += 9; //换行
+            }
+            set_byte(x + x_offset + 1,y,CharFont[*str].CharByte0);
+            set_byte(x + x_offset + 2,y,CharFont[*str].CharByte1);
+            set_byte(x + x_offset + 3,y,CharFont[*str].CharByte2);
+            set_byte(x + x_offset + 4,y,CharFont[*str].CharByte3);
+            set_byte(x + x_offset + 5,y,CharFont[*str].CharByte4);
+            x_offset += 6;
             str++; 
         }else{
             //已经达到所能显示的最大范围了

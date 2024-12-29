@@ -8,7 +8,8 @@
 
 void sAPP_Tasks_OLEDHdr(void* param){
     for(;;){
-        slm_weights.showList(slm.curr_page->parent);
+        menu.update();
+
         oled.handler();
         oled.setAll(0);
 
@@ -63,21 +64,39 @@ void sAPP_Tasks_LoopTask(void* param){
 
 
 void sAPP_Tasks_FormatFeRAM(void* param){
+    menu.setLockCurrItem(true);
     sBSP_UART_Debug_Printf("FeRAM开始格式化!\n");
     if(sDRV_MB85RCxx_Format(0) == 0){
         sBSP_UART_Debug_Printf("FeRAM格式化完成!\n");
     }else{
         sBSP_UART_Debug_Printf("FeRAM格式化失败!\n");
     }
-    
+    menu.setLockCurrItem(false);
     vTaskDelete(NULL);
 }
 
 static void calibrateIMU(void* param){
+    menu.setLockCurrItem(true);
     sAPP_ParamSave_CaliIMU();
+    menu.setLockCurrItem(false);
     vTaskDelete(NULL);
 }
 
+
+void sAPP_Tasks_ProtectTask(void* param){
+    for(;;){
+        if(xSemaphoreTake(car.mutex,200) == pdTRUE){
+            //电池电压过低保护
+            if(car.batt_volt < 11.5f){
+                __disable_irq();
+                sBSP_UART_Debug_Printf("[ERR ]电池电压过低:%.2fv\n",car.batt_volt);
+                Error_Handler();
+            }
+            xSemaphoreGive(car.mutex);
+        }
+        vTaskDelay(500 / portTICK_PERIOD_MS);
+    }
+}
 
 
 
@@ -89,9 +108,11 @@ void sAPP_Tasks_CreateAll(){
     xTaskCreate(sAPP_AHRS_Task          , "AHRS"         , 1024 / sizeof(int), NULL, 3, NULL);
     //OLED刷屏 20Hz  
     xTaskCreate(sAPP_Tasks_OLEDHdr      , "OLED"         , 2048 / sizeof(int), NULL, 1, NULL);
-    xTaskCreate(sAPP_Tasks_Devices      , "Devices"      ,  512 / sizeof(int), NULL, 1, NULL);
-    xTaskCreate(sAPP_Tasks_500ms        , "500ms"        ,  512 / sizeof(int), NULL, 1, NULL);
-    xTaskCreate(sAPP_Tasks_1000ms       , "1000ms"       ,  512 / sizeof(int), NULL, 1, NULL);
+    xTaskCreate(sAPP_Tasks_Devices      , "Devices"      , 1024 / sizeof(int), NULL, 1, NULL);
+    xTaskCreate(sAPP_Car_InfoUpdateTask , "CarInfoUp"    , 2048 / sizeof(int), NULL, 1, NULL);
+    // xTaskCreate(sAPP_Tasks_ProtectTask  , "Protect"      , 2048 / sizeof(int), NULL, 1, NULL);
+    xTaskCreate(sAPP_Tasks_500ms        , "500ms"        , 1024 / sizeof(int), NULL, 1, NULL);
+    xTaskCreate(sAPP_Tasks_1000ms       , "1000ms"       , 1024 / sizeof(int), NULL, 1, NULL);
     // xTaskCreate(sAPP_Tasks_TaskMang     , "TaskMang"     , 2048 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_LoopTask     , "Loop"         , 8192 / sizeof(int), NULL, 4, NULL);
 

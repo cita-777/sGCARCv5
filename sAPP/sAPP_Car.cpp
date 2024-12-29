@@ -26,9 +26,9 @@ int sAPP_Car::initSys(){
     sBSP_RCC_Init();
     HAL_InitTick(4);
     //获取时钟频率
-    coreClk = HAL_RCC_GetSysClockFreq();
+    coreClock = HAL_RCC_GetSysClockFreq();
     //初始化DWT
-    dwt.init(coreClk);
+    dwt.init(coreClock);
     //初始化RNG
     sBSP_RNG_Init();
     //初始化NTC读取温度
@@ -37,6 +37,8 @@ int sAPP_Car::initSys(){
     sBSP_UART_Debug_Init(115200);
     //初始化顶层通信串口
     sBSP_UART_Top_Init(115200);
+    //初始化ADC
+    sBSP_ADC_Init();
     
     //启用div0异常
     SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
@@ -66,8 +68,35 @@ int sAPP_Car::initBoard(){
     sAPP_ParamSave_Init();
     //初始化航姿参考系统
     ahrs.init();
+    //初始化INA219
+    sDRV_INA219_Init();
+
+    //创建数据互斥锁
+    mutex = xSemaphoreCreateMutex();
 
     return 0;
+}
+
+
+extern"C" void sAPP_Car_InfoUpdateTask(void* param){
+    for(;;){
+        if(xSemaphoreTake(car.mutex,200) == pdTRUE){
+            car.coreClock = HAL_RCC_GetHCLKFreq();
+            car.mcu_temp = sBSP_ADC_GetMCUTemp();
+            car.mcu_volt = sBSP_ADC_GetVCC();
+
+            //! 这里应该先获取I2C1总线的互斥锁,这里只先测试
+            car.batt_volt = sDRV_INA219_GetBusV();
+            car.batt_curr = sDRV_INA219_GetCurrA();
+            car.batt_power = sDRV_INA219_GetPwrW();
+            xSemaphoreGive(car.mutex);
+        }
+        
+        
+        // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f\n", car.batt_volt, car.batt_curr,car.batt_power);
+        // sBSP_UART_Debug_Printf("up!\n");
+        vTaskDelay(300);
+    }
 }
 
 

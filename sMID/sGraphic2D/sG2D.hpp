@@ -14,7 +14,7 @@
 #include <string.h>
 #include <stdbool.h>
 #include <stdint.h>
-#include <stdarg.h>
+
 
 #include "sAPP_Font.h"
 

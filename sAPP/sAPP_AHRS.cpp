@@ -205,15 +205,24 @@ void sAPP_AHRS_Task(void* param){
                 ahrs.dat.q2    = ahrs.result.q2;
                 ahrs.dat.q3    = ahrs.result.q3;
 
+                sDRV_LIS3_GetData();
+                ahrs.dat.mag_x = g_lis3.mag_x;
+                ahrs.dat.mag_y = g_lis3.mag_y;
+                ahrs.dat.mag_z = g_lis3.mag_z;
+
                 //把新获取到的数据通过队列发送给blc_ctrl算法
-                xQueueSend(g_blc_ctrl_ahrs_queue,&ahrs.dat,200);
+                // xQueueSend(g_blc_ctrl_ahrs_queue,&ahrs.dat,200);
+                xQueueOverwrite(g_blc_ctrl_ahrs_queue,&ahrs.dat);
 
                 xSemaphoreGive(ahrs.mutex);
+            }else{
+                sBSP_UART_Debug_Printf("[ERR]AHRS错误: 获取ahrs.mutex超时\n");
+                Error_Handler();
             }
             // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",ahrs.dat.acc_x,ahrs.dat.acc_y,ahrs.dat.acc_z);
             // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f\n",ahrs.dat.gyr_x,ahrs.dat.gyr_y,ahrs.dat.gyr_z);
             // sBSP_UART_Debug_Printf("%6.2f\n",ahrs.icm_temp);
-            //sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
+            // sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
         }
         //如果等待200ms还没有获取到信号量则报错
         else{

@@ -39,26 +39,26 @@ static bool get_lv(uint8_t btn_id){
 
 #include "main.h"
 
+using namespace sLM;
+
+extern sLittleMenu menu;
 
 static void trig(uint8_t btn_id,ev_flag_t btn_ev){
-    
-
-
     if(btn_ev == ev_dp){
         
     }
     else if(btn_ev == ev_pres || btn_ev == ev_lp_loop){
         if(btn_id == SGBD_KEY_UP_ID){
-            slm.opPrev();
+            menu.opPrev();
         }
         else if(btn_id == SGBD_KEY_DN_ID){
-            slm.opNext();
+            menu.opNext();
         }
         else if(btn_id == SGBD_KEY_ET_ID){
-            slm.opEnter();
+            menu.opEnter();
         }
         else if(btn_id == SGBD_KEY_BK_ID){
-            slm.opBack();
+            menu.opBack();
         }
         
         
@@ -70,6 +70,9 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
     //打印按键id的事件
     if(btn_ev == ev_pres){
         // slm.root->printTree(0,printMenuItemData);
+        // 打印菜单结构
+        // sBSP_UART_Debug_Printf("菜单结构：\n");
+        // menu.getRoot()->printTree(0,sLM::printItemData);
 
         BinOutDrv.startPulse(BOD_BUZZER_ID,50);
         //dbg.printf("KEY%d:按键按下\n",btn_id + 1);
@@ -98,6 +101,7 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
         //dbg.printf("KEY%d:长按松手\n",btn_id + 1);
     }
     else if(btn_ev == ev_lp_loop){
+        // BinOutDrv.startPulse(BOD_BUZZER_ID,50);
         // BinOutDrv.startPulse(BOD_BUZZER_ID,100);
         //dbg.printf("KEY%d:长按循环触发\n",btn_id + 1);
     }
@@ -135,8 +139,8 @@ void sAPP_Btns_Init(){
     btn_init.en = 1;                //使能此按键
     btn_init.lv_rev = lv_non_reverse;   //空闲时的电平反转
     btn_init.dp_mode = dp_disable;   //禁用双击,可提高连续单击速度
-    btn_init.lp_loop_pridt = 200;   //设置长按循环触发间隔每500ms触发一次
-    btn_init.lp_trig_waitt = 1000;  //设置长按触发时间2000ms
+    btn_init.lp_loop_pridt = 150;   //设置长按循环触发间隔
+    btn_init.lp_trig_waitt = 600;  //设置长按触发时间2000ms
     btn_init.dp_prid_waitt = 200;   //设置最大等待双击时间
     sGBD_SetAllBtnEnable(1);        //设置所有按键使能
     sGBD_SetAllBtnMode(&btn_init);  //装载btn_init的配置参数
