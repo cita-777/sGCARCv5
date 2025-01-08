@@ -15,8 +15,8 @@
 
 
 
-#define MOTORL_DEADZONE (50.0f)
-#define MOTORR_DEADZONE (50.0f)
+#define MOTORL_DEADZONE (52.0f)
+#define MOTORR_DEADZONE (52.0f)
 
 
 /***************************************对底层接口*************************************/

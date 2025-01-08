@@ -11,6 +11,8 @@
 
 #include "sBSP_DWT.h"
 
+#include "string.h"
+
 
 static void portSPIInit(){
     //实测64:657KHz正常运行
@@ -80,18 +82,32 @@ int sDRV_PS2_Init(){
 static uint8_t LeftV  = 0x00;
 static uint8_t RightV = 0x00;
 
-sDRV_PS2_t ps2;
+static sDRV_PS2_t ps2;
 
 
 
 typedef void(*sDRV_PS2_Cb_t)(char* pReciData,uint16_t length);
 
 
+
+void sDRV_PS2_GetData(sDRV_PS2_t* _ps2){
+    if(ps2.lock){
+        return;
+    }
+    ps2.lock = true;
+    memcpy(_ps2,&ps2,sizeof(sDRV_PS2_t));
+    ps2.lock = false;
+}
+
+
 void sDRV_PS2_Handler(){
     uint8_t tmp = 0;
+    if(ps2.lock)return;
+    ps2.lock = true;
     portSetCS(0);
     //开始通信
     portSendByte(0x01);
+
     //请求发送数据,此时接收到红绿灯模式
     mode = portTransferByte(0x42);
     //如果正常这个值应该是0x5A
@@ -135,12 +151,12 @@ void sDRV_PS2_Handler(){
     ps2.x      = ps2.key2 & 0b01000000;
     ps2.rect   = ps2.key2 & 0b10000000;
 
+    ps2.lock = false;
+
     portSetCS(1);
 
     //sBSP_UART_Debug_Printf("0x%2X,0x%2X\n", ps2.leftX,ps2.leftY);
 }
-
-
 
 
 

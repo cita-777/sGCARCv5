@@ -68,7 +68,7 @@
 
 
 //设置按键数量
-#define BTN_NUM 4
+#define BTN_NUM 16
 
 //按键信息保存
 btn_t btn[BTN_NUM];

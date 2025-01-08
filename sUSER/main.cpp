@@ -12,16 +12,16 @@ void uart_recied(char* pReciData,uint16_t length){
                         &t_leftX, &t_leftY, &t_rightX, &t_rightY,
                         &u_cir, &u_rect, &u_tri, &u_x) == 8){
                             // 转换为uint8_t类型
-        ps2.leftX = (uint8_t)t_leftX;
-        ps2.leftY = (uint8_t)t_leftY;
-        ps2.rightX = (uint8_t)t_rightX;
-        ps2.rightY = (uint8_t)t_rightY;
-                            ps2.cir  = (u_cir  != 0);
-                            ps2.rect = (u_rect != 0);
-                            ps2.tri  = (u_tri  != 0);
-                            ps2.x    = (u_x    != 0);
+        // ps2.leftX = (uint8_t)t_leftX;
+        // ps2.leftY = (uint8_t)t_leftY;
+        // ps2.rightX = (uint8_t)t_rightX;
+        // ps2.rightY = (uint8_t)t_rightY;
+                            // ps2.cir  = (u_cir  != 0);
+                            // ps2.rect = (u_rect != 0);
+                            // ps2.tri  = (u_tri  != 0);
+                            // ps2.x    = (u_x    != 0);
 // sBSP_UART_Debug_Printf("OK\n");
-sBSP_UART_Debug_Printf("0x%2X,0x%2X\n", ps2.leftY,ps2.rightX);
+// sBSP_UART_Debug_Printf("0x%2X,0x%2X\n", ps2.leftY,ps2.rightX);
                         }
 
     sBSP_UART_Top_RecvBegin(uart_recied);
@@ -34,7 +34,7 @@ void setup();
 
 int main(){
     car.initSys();
-    sBSP_UART_Debug_Printf("STM32 System Clock Freq: %u MHz\n", car.coreClock / 1e6);
+    sBSP_UART_Debug_Printf("STM32 System Clock Freq: %u MHz\n", car.coreClock / 1000000);
     sBSP_UART_Debug_Printf("Hello,STM32F405RGT6    BySightseer.\n");
     car.initBoard();
     sBSP_UART_Debug_Printf("sGCARC初始化完成\n");
@@ -44,12 +44,14 @@ int main(){
     sAPP_ParamSave_ReadIMUCaliVal();
 
     // sBSP_UART_Debug_RecvBegin(uart_recied);
-    sBSP_UART_Top_RecvBegin(uart_recied);
+    //sBSP_UART_Top_RecvBegin(uart_recied);
 
 
     int i = 0;
 
     sAPP_BlcCtrl_Init();
+
+    HAL_Delay(500);
 
 
     sDRV_PS2_Init();
@@ -78,7 +80,6 @@ int main(){
     vTaskStartScheduler();
     // while(1);
 }
-
 
 
 

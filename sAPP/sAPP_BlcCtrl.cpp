@@ -3,20 +3,19 @@
 
 /*这些是上电默认值*/
 //机械中值
-#define MECHINE_CENTER_ANGLE    (  -1.2f)
-// #define MECHINE_CENTER_ANGLE    (  -0.0f)
+#define MECHINE_CENTER_ANGLE    (  1.0f)
 //直立环初始值
-#define STAND_KP                (-12.00f * 0.6f)
-#define STAND_KD                (- 0.70f * 0.6f)
+#define STAND_KP                (-14.00f * 0.6f)
+#define STAND_KD                (- 0.85f * 0.6f)
 //速度环初始值
 #define SPD_KP                  ( 0.30f)
 #define SPD_KI                  (SPD_KP / 200.0f)
 //转向环初始值
 #define TURN_KP                 (  0.20f)
 #define TURN_KD                 (  0.05f)
-//0速度环初始值
-#define ZERO_KP                 (220.00f)
-#define ZERO_KI                 ( 80.00f)
+//0位置环初始值
+#define ZERO_KP                 (120.00f)
+#define ZERO_KI                 ( 30.00f)
 #define ZERO_KD                 (  0.00f)
 //轮胎半径
 #define WHEEL_RADIUS            (0.0672f)
@@ -72,10 +71,10 @@ void sAPP_BlcCtrl_Init(){
 #include "sBSP_UART.h"
 
 void sAPP_BlcCtrl_Handler(){
-    #define DT_S (0.010f)    //10ms 100Hz控制周期
+    #define DT_S (0.005f)
 
-    
-    // sDRV_PS2_Handler();
+    sDRV_PS2_t ps2;
+    sDRV_PS2_GetData(&ps2);
 
     static float input_spd,input_head;
     input_spd = -(float)(ps2.leftY - 0x7F);
@@ -87,9 +86,14 @@ void sAPP_BlcCtrl_Handler(){
         input_head = 0;
     }
 
-    if(input_spd > 60){input_spd = 60;}
 
-    g_ctrl.tar_spd = sLib_Fmap(input_spd,-128,127,-200,200);
+
+
+    g_ctrl.tar_spd2 = sLib_Fmap(input_spd,-128,128,-60,60);
+
+    if(g_ctrl.tar_spd2 < 1 && g_ctrl.tar_spd2 > -1){
+        g_ctrl.tar_spd2 = 0;
+    }
 
 
     g_ctrl.tar_head += input_head * DT_S;
@@ -101,13 +105,6 @@ void sAPP_BlcCtrl_Handler(){
     }
     
 
-    if(g_ctrl.tar_spd < 5 && g_ctrl.tar_spd > -5){
-        g_ctrl.tar_spd = 0;
-    }
-
-    
-
-
     //sBSP_UART_Debug_Printf("tar_spd: %6.1f,tar_head:%6.1f \n",g_ctrl.tar_spd,g_ctrl.tar_head);
 
     //如果没有启用平衡就不计算
@@ -116,8 +113,10 @@ void sAPP_BlcCtrl_Handler(){
         motor.setLBrake();
         motor.setRBrake();
         //sBSP_UART_Debug_Printf("NO\n");
-        goto PRINT;
-        //return;
+        // goto PRINT;
+        // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",g_blc.left_pwm,g_blc.right_pwm,dat.pitch,dat.gyr_x,x_velo,x_pos);
+
+        return;
     }
 
     
@@ -132,7 +131,6 @@ void sAPP_BlcCtrl_Handler(){
         //Error_Handler();
     }
 
-    //! 负号
     g_blc.left_rpm  = motor.getLRPM();
     g_blc.right_rpm = motor.getRRPM();
 
@@ -148,10 +146,12 @@ void sAPP_BlcCtrl_Handler(){
         g_nav.y_pos += (g_blc.left_rpm + g_blc.right_rpm) * ((2.0f * 3.1416 * WHEEL_RADIUS) / 60.0f) * DT_S;
     }
 
-    if(g_ctrl.tar_spd < 1 && g_ctrl.tar_spd > -1){
+    if(g_ctrl.tar_spd2 < 1 && g_ctrl.tar_spd2 > -1){
         inc_pos_out = sLib_IncPIDUpdate(&pid_inc_pos,g_nav.y_pos,DT_S);
         g_ctrl.tar_spd = inc_pos_out;
     }else{
+        // g_ctrl.tar_spd = g_ctrl.tar_spd2;
+        g_ctrl.tar_spd = 0;
         g_nav.y_pos = 0;
         pid_inc_pos.integral = 0;
         inc_pos_out = 0;
@@ -161,11 +161,15 @@ void sAPP_BlcCtrl_Handler(){
     g_blc.stand_out = StandPDCtrler(dat.pitch,dat.gyr_x);
     //计算速度环
     g_blc.spd_out   = SpdPICtrler  (g_blc.left_rpm,g_blc.right_rpm);
+
+    
     
 
     //合并三环输出
-    g_blc.left_pwm  = g_blc.stand_out + g_blc.spd_out + g_blc.turn_out;
-    g_blc.right_pwm = g_blc.stand_out + g_blc.spd_out - g_blc.turn_out;
+    g_blc.left_pwm  = g_blc.stand_out + g_blc.spd_out + g_blc.turn_out - g_ctrl.tar_spd2;
+    g_blc.right_pwm = g_blc.stand_out + g_blc.spd_out - g_blc.turn_out - g_ctrl.tar_spd2;
+
+
 
 
     //输出限幅
@@ -175,15 +179,20 @@ void sAPP_BlcCtrl_Handler(){
     motor.setLM(-g_blc.left_pwm);
     motor.setRM(-g_blc.right_pwm);
 
+    // motor.setLM(g_blc.left_pwm);
+    // motor.setRM(g_blc.right_pwm);
 
 
     PRINT:
     (void)0;
 
     //调试:平衡
-    //sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",ahrs.pitch,ahrs.gyr_x,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
+    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",dat.pitch,dat.gyr_x,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
     //dbg.printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",ahrs.pitch,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
 
+    sBSP_UART_Debug_Printf("%.2f\n",inc_pos_out);
+
+    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",g_blc.left_pwm,g_blc.right_pwm,dat.pitch,dat.gyr_x,x_velo,x_pos);
 
 }
 
@@ -201,15 +210,21 @@ static float SpdPICtrler(float left_rpm,float right_rpm){
     static float velocity, Encoder_Least, Encoder_bias;
     static float Encoder_Integral;
 
-    //计算最新速度偏差 = 目标速度- 测量速度（左右编码器之和）
-    Encoder_Least = g_ctrl.tar_spd - (left_rpm + right_rpm);
+    //计算最新速度偏差
+    //if(g_ctrl.tar_spd2 > 0){
+        Encoder_Least = g_ctrl.tar_spd - (left_rpm + right_rpm);
+    // }else{
+    //     Encoder_Least = g_ctrl.tar_spd2 - (left_rpm + right_rpm);
+    //     Encoder_Least = - Encoder_Least;
+    // }
+    
     //一阶低通滤波器,减缓速度变化
     Encoder_bias *= 0.86;
     Encoder_bias += Encoder_Least * 0.14;
-    //积分出位移,积分时间：10ms
+    //积分出位移
     Encoder_Integral += Encoder_bias;
     //接收遥控器数据,控制前进后退
-    Encoder_Integral += g_ctrl.tar_move;
+    Encoder_Integral += 0;
     //积分限幅
     sLib_FLimit(&Encoder_Integral, -1000, 1000);
     //计算速度PI
@@ -246,11 +261,15 @@ void sAPP_BlcCtrl_CtrlTask(void* param){
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount();
 
-    
+    int i = 0;
     for(;;){
         if(xQueueReceive(g_blc_ctrl_ahrs_queue,&dat,200)){
             //更新电机GMR编码器数据
-            motor.update();
+            if(i >= 4){
+                i = 0;
+                motor.update();
+            }
+            i++;
             //调用平衡控制算法
             sAPP_BlcCtrl_Handler();
         }else{
@@ -262,5 +281,44 @@ void sAPP_BlcCtrl_CtrlTask(void* param){
         // xTaskDelayUntil(&xLastWakeTime,10 / portTICK_PERIOD_MS);
     }
 }
+
+
+//? LQR
+    // //轮子转速 m/s
+    // float left_velo = g_blc.left_rpm * ((2.0f * M_PI * WHEEL_RADIUS) / 60.0f);
+    // float right_velo = g_blc.right_rpm * ((2.0f * M_PI * WHEEL_RADIUS) / 60.0f);
+    // //x
+    // static float x_velo;
+    // x_velo = (left_velo + right_velo) / 2.0f;
+    // //x位置 m
+    // static float x_pos;
+    // x_pos += x_velo * DT_S;
+
+    // //angle rad/s
+    // float omega_rads = dat.gyr_x * DEG2RAD;
+    // //angle rad
+    // float angle_rad  = (dat.pitch - MECHINE_CENTER_ANGLE) * DEG2RAD;
+    // //turn velo rad/s
+    // float turn_velo  = (g_blc.right_rpm - g_blc.left_rpm) / 161.0f / 1000;
+    // //turn rad
+    // static float turn_rad;
+    // turn_rad += dat.gyr_z * DEG2RAD * DT_S;
+
+    // //LQR-K
+    // // static float K1=-77.4597, K2=-113.9570, K3=-357.2249, K4=-33.3211, K5=22.3607, K6=22.8301;
+    // // static float K1=-22.3607, K2=-39.8701, K3=-393.5334, K4=-31.0357, K5=22.3607, K6=4.9891;
+    // static float K1=-0.3607, K2=-0.6957, K3=-380.6007, K4=-40.3537, K5=22.3607, K6=5.0942;
+
+    // //calculate LQR controller
+    // float l_acc = K1 * x_pos + K2 * x_velo + K3 * angle_rad + K4 * omega_rads + K5 * turn_rad + K6 * (dat.gyr_z * DEG2RAD);
+    // float r_acc = K1 * x_pos + K2 * x_velo + K3 * angle_rad + K4 * omega_rads - K5 * turn_rad - K6 * (dat.gyr_z * DEG2RAD);
+    // l_acc = -l_acc;
+    // r_acc = -r_acc;
+
+    // float outL = x_velo + l_acc * DT_S;
+    // float outR = x_velo + r_acc * DT_S;
+
+    // g_blc.left_pwm  = outL * 116.0f;
+    // g_blc.right_pwm = outR * 116.0f;
 
 

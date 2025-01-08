@@ -10,6 +10,7 @@ extern "C" {
 #include <stdbool.h>
 
 
+
 typedef struct{
     bool select,l3,r3,start,up,right,down,left;
     bool l2,r2,l1,r1,tri,cir,x,rect;
@@ -17,13 +18,16 @@ typedef struct{
     uint8_t key2;
     uint8_t leftX,leftY;
     uint8_t rightX,rightY;
+    bool lock;
+    bool dummy;
 }sDRV_PS2_t;
 
-extern sDRV_PS2_t ps2;
+// extern sDRV_PS2_t ps2;
 
 
 
 int sDRV_PS2_Init();
+void sDRV_PS2_GetData(sDRV_PS2_t* _ps2);
 void sDRV_PS2_Handler();
 
 

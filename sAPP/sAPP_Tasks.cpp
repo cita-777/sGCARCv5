@@ -20,10 +20,13 @@ void sAPP_Tasks_OLEDHdr(void* param){
 
 void sAPP_Tasks_Devices(void* param){
     for(;;){
+        //读取PS2手柄数据
+        sDRV_PS2_Handler();
         //处理按键
         sGBD_Handler();
         //处理二值化设备
         BinOutDrv.update();
+        
 
 
         vTaskDelay(20 / portTICK_PERIOD_MS);

@@ -1,7 +1,7 @@
 #include "sAPP_Btns.hpp"
 
 
-
+#include "sDRV_PS2.h"
 
 #define KEY_UP_GPIO_CLK_EN __GPIOC_CLK_ENABLE
 #define KEY_UP_GPIO        GPIOC
@@ -21,7 +21,10 @@
 
 
 
+static sDRV_PS2_t ps2;
+
 static bool get_lv(uint8_t btn_id){
+    
     if(btn_id == SGBD_KEY_UP_ID){
         return !!HAL_GPIO_ReadPin(KEY_UP_GPIO,KEY_UP_GPIO_PIN);
     }
@@ -34,6 +37,31 @@ static bool get_lv(uint8_t btn_id){
     else if(btn_id == SGBD_KEY_BK_ID){
         return !!HAL_GPIO_ReadPin(KEY_BK_GPIO,KEY_BK_GPIO_PIN);
     }
+    
+    else if(btn_id == SGBD_KEY_PS2_UP_ID){
+        sDRV_PS2_GetData(&ps2);
+        return ps2.up;
+    }
+    else if(btn_id == SGBD_KEY_PS2_DN_ID){
+        sDRV_PS2_GetData(&ps2);
+        return ps2.down;
+    }
+    else if(btn_id == SGBD_KEY_PS2_LE_ID){
+        sDRV_PS2_GetData(&ps2);
+        return ps2.left;
+    }
+    else if(btn_id == SGBD_KEY_PS2_RI_ID){
+        sDRV_PS2_GetData(&ps2);
+        return ps2.right;
+    }
+    else if(btn_id == SGBD_KEY_PS2_L2_ID){
+        sDRV_PS2_GetData(&ps2);
+        return ps2.l2;
+    }
+    else if(btn_id == SGBD_KEY_PS2_L1_ID){
+        sDRV_PS2_GetData(&ps2);
+        return ps2.l1;
+    }
     return false;
 }
 
@@ -43,22 +71,38 @@ using namespace sLM;
 
 extern sLittleMenu menu;
 
+float brightness = 0;
+
 static void trig(uint8_t btn_id,ev_flag_t btn_ev){
     if(btn_ev == ev_dp){
         
     }
     else if(btn_ev == ev_pres || btn_ev == ev_lp_loop){
-        if(btn_id == SGBD_KEY_UP_ID){
+        if(btn_id == SGBD_KEY_UP_ID || btn_id == SGBD_KEY_PS2_UP_ID){
             menu.opPrev();
         }
-        else if(btn_id == SGBD_KEY_DN_ID){
+        else if(btn_id == SGBD_KEY_DN_ID || btn_id == SGBD_KEY_PS2_DN_ID){
             menu.opNext();
         }
-        else if(btn_id == SGBD_KEY_ET_ID){
+        else if(btn_id == SGBD_KEY_ET_ID || btn_id == SGBD_KEY_PS2_LE_ID){
             menu.opEnter();
         }
-        else if(btn_id == SGBD_KEY_BK_ID){
+        else if(btn_id == SGBD_KEY_BK_ID || btn_id == SGBD_KEY_PS2_RI_ID){
             menu.opBack();
+        }
+        else if(btn_id == SGBD_KEY_PS2_L1_ID){
+            brightness += 20;
+            if(brightness > 100){
+                brightness = 100;
+            }
+            sDRV_PL_SetBrightness((float)brightness);
+        }
+        else if(btn_id == SGBD_KEY_PS2_L2_ID){
+            brightness -= 20;
+            if(brightness < 0){
+                brightness = 0;
+            }
+            sDRV_PL_SetBrightness((float)brightness);
         }
         
         
@@ -145,6 +189,9 @@ void sAPP_Btns_Init(){
     sGBD_SetAllBtnEnable(1);        //设置所有按键使能
     sGBD_SetAllBtnMode(&btn_init);  //装载btn_init的配置参数
     sGBD_Init(get_lv,trig,HAL_GetTick);
+
+    
+    
 }
 
 

@@ -97,6 +97,11 @@ void sAPP_GUI_Init(){
 
     /**/
 
+    menu.addSubMenu(menu.getRoot(),CreateItem()
+        .setText("Balance Ctrl").setUnit("")
+        .setParamTag(TAG_BLC_CTRL).setItemType(ItemType::BUTTON).setChangeCallback(button_event_cb).create());
+
+    
 
 
     sys_setting_init(sys_setting_item);

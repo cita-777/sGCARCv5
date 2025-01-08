@@ -20,7 +20,7 @@
 
 
 /*选择数据来源,默认选择维特智能的IMU,取消这个宏将会选择ICM+LIS3惯导(互补滤波姿态解算)*/
-//#define AHRS_IMU_SOURCE_WIT
+#define AHRS_IMU_SOURCE_WIT
 #define AHRS_IMU_SOURCE_9DOF
 /*选择9DOF模块获取数据的方式,取消这个注释将使用period read方式读取数据*/
 #define AHRS_IMU_ICM_INT_GET

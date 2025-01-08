@@ -175,7 +175,8 @@ int sDRV_JY901S_Init(){
     //__SEND_COMM_CONF_IMU();
     //首先不回传,等我空闲中断启动之后再回传
     //__SEND_COMM_RRATENEVER();
-    __SEND_COMM_AXIS9();
+    // __SEND_COMM_AXIS9();
+    __SEND_COMM_AXIS6();
 
     //等待200ms
     HAL_Delay(200);
@@ -183,6 +184,9 @@ int sDRV_JY901S_Init(){
     __SEND_COMM_SAVE();
     HAL_Delay(200);
 
+    __SEND_COMM_DEGREF();
+    HAL_Delay(200);
+    
     // sDRV_JY901S_SetRRATE100Hz();
 
     //开始接收数据
