@@ -37,7 +37,8 @@
         "sMID/cm_backtrace/fault_handler/iar",
         "sMID/sBinOutDrv/sBinOutDev - 副本.cpp",
         "sMID/sBinOutDrv/sBinOutDev _std.cpp",
-        "sMID/sBinOutDrv/sBinOutDev_std.cpp"
+        "sMID/sBinOutDrv/sBinOutDev_std.cpp",
+        "sMID/FreeRTOS/portable/MemMang/heap_4 - 副本.c"
       ],
       "toolchain": "AC6",
       "compileConfig": {
@@ -96,6 +97,23 @@
           "proType": 1,
           "speed": 8000,
           "otherCmds": ""
+        },
+        "STLink": {
+          "bin": "",
+          "proType": "SWD",
+          "resetMode": "default",
+          "runAfterProgram": true,
+          "speed": 4000,
+          "address": "0x08000000",
+          "elFile": "None",
+          "optionBytes": ".eide/debug.st.option.bytes.ini",
+          "otherCmds": ""
+        },
+        "OpenOCD": {
+          "bin": "",
+          "target": "stm32f4x",
+          "interface": "stlink",
+          "baseAddr": "0x08000000"
         }
       },
       "custom_dep": {
@@ -122,7 +140,8 @@
           "sMID/cm_backtrace",
           "sMID/sBinOutDrv",
           "sMID/sLittleMenu",
-          "sMID/sDWTLib"
+          "sMID/sDWTLib",
+          "sMID/ArduinoFramework"
         ],
         "libList": [],
         "defineList": [

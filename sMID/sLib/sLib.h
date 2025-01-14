@@ -57,6 +57,12 @@
 //弧度转度
 #define RAD2DEG		57.29578f
 
+//工程转速转弧度每秒
+#define RPM2RADPS   0.104720f
+//弧度每秒转工程转速
+#define RADPS2RPM   9.549297f
+
+
 
 /*常用函数*/
 

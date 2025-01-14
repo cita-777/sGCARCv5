@@ -30,6 +30,25 @@ void uart_recied(char* pReciData,uint16_t length){
 
 
 
+void test(){
+    dwt.start();
+
+    String a = "hello123";
+    String b = "你好世界sBSP_UART_Debug_Printf";
+    String c = "sightseer543";
+    String d = a + b + c;
+    
+
+    int num = d.substring(5,8).toInt();
+    
+    dwt.end();
+    sBSP_UART_Debug_Printf("%s,%d\n",d.c_str(),num);
+    // sBSP_UART_Debug_Printf("%s,%d\n",d,num);
+    sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
+    
+}
+
+
 void setup();
 
 int main(){
@@ -51,7 +70,12 @@ int main(){
 
     sAPP_BlcCtrl_Init();
 
-    HAL_Delay(500);
+    sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
+    
+
+    //test();
+    //sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
+    //sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
 
 
     sDRV_PS2_Init();

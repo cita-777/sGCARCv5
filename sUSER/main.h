@@ -19,6 +19,8 @@
 #include "sG2D.hpp"
 #include "sBinOutDev.hpp"
 
+#include <WString.h>
+// #include <string>
 
 
 

@@ -63,6 +63,7 @@
 //v2.1 修复btn_init.lp_loop_pridt长按触发写错了的问题
 //v2.2 修复双击之前触发单击的Bug 2024.06.17
 //v2.3 修复启用双击后长按循环触发松手后会再触发一次按键按下的bug 2024.07.17电赛加油
+//v2.4 2025.01.13 优化代码,使用static修饰变量和函数
 
 #include "sGenBtnDrv2.h"
 
@@ -71,10 +72,10 @@
 #define BTN_NUM 16
 
 //按键信息保存
-btn_t btn[BTN_NUM];
+static btn_t btn[BTN_NUM];
 
 //状态机的状态转移表
-fsm_t fsm[] = {
+static const fsm_t fsm[] = {
     //从fsm_press状态转换到fsm_pressed状态需要条件cdtn_12,这个状态切换触发事件ev_pres
     {fsm_idle       ,fsm_press      ,cdtn_01 ,ev_null    },
     {fsm_press      ,fsm_pressed    ,cdtn_12 ,ev_pres    },
@@ -94,11 +95,11 @@ fsm_t fsm[] = {
 };
 
 //获取按键电平回调
-btn_lv_get_cb btn_lv_get_f;
+static btn_lv_get_cb btn_lv_get_f;
 //事件触发回调
-btn_trig_cb btn_trig_f;
+static btn_trig_cb btn_trig_f;
 //滴答定时器回调
-btn_tick_func_cb btn_tick_func_f;
+static btn_tick_func_cb btn_tick_func_f;
 
 
 /*@brief  初始化
@@ -211,7 +212,7 @@ static void Level_Handler(uint8_t id){
 }
 
 //条件检查
-bool cdtn_check(uint8_t id,cdtn_t cdtn){
+static bool cdtn_check(uint8_t id,cdtn_t cdtn){
     switch (cdtn){
     	case cdtn_NON:
             //总是返回true
@@ -356,7 +357,7 @@ bool cdtn_check(uint8_t id,cdtn_t cdtn){
 }
 
 //核心代码,遍历状态表进行状态切换
-void FSM_Handler(uint8_t id){
+static void FSM_Handler(uint8_t id){
     //遍历状态表
     for(uint8_t fsm_num = 0; fsm_num < (sizeof(fsm) / sizeof(fsm[0])); fsm_num++){
         //满足上态和条件才能切换

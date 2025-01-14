@@ -84,15 +84,9 @@
             "editor.tabSize": 4,
             "editor.autoIndent": "advanced"
         },
-        "workbench.colorCustomizations": {
-            "editor.lineHighlightBackground": "#1073cf2d",
-            "editor.lineHighlightBorder": "#9fced11f",
-            "activityBar.background": "#142476",
-            "titleBar.activeBackground": "#1D32A5",
-            "titleBar.activeForeground": "#F9FAFE"
-        },
+
         "commentTranslate.source": "Google",
-        "commentTranslate.targetLanguage": "zh-CN"
+        "commentTranslate.targetLanguage": "zh-CN",
     },
     "extensions": {
         "recommendations": [
@@ -110,4 +104,5 @@
             "marus25.cortex-debug"
         ]
     }
+
 }

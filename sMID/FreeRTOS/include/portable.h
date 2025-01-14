@@ -175,6 +175,9 @@ void vPortGetHeapStats( HeapStats_t * pxHeapStats );
 void * pvPortMalloc( size_t xSize ) PRIVILEGED_FUNCTION;
 void * pvPortCalloc( size_t xNum,
                      size_t xSize ) PRIVILEGED_FUNCTION;
+//! 我的修改:void *pvPortRealloc( void *SrcAddr, size_t NewSize)
+void * pvPortRealloc( void * SrcAddr,
+                      size_t NewSize ) PRIVILEGED_FUNCTION;
 void vPortFree( void * pv ) PRIVILEGED_FUNCTION;
 void vPortInitialiseBlocks( void ) PRIVILEGED_FUNCTION;
 size_t xPortGetFreeHeapSize( void ) PRIVILEGED_FUNCTION;

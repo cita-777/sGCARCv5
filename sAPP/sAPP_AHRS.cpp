@@ -150,6 +150,131 @@ static void complementary_filter(sLIB_6AXIS_INPUT_t* input,sLIB_ATTITUDE_RESULT_
 
 }
 
+// static void complementary_filter(sLIB_6AXIS_INPUT_t* input,sLIB_ATTITUDE_RESULT_t* result\
+// ,float mag_x,float mag_y,float mag_z){
+//     static uint32_t prev_time;
+//     static uint32_t now_time;
+//     static float dts;
+//     prev_time = now_time;
+//     now_time = HAL_GetTick();
+//     dts = (now_time - prev_time) / 1000.0f;
+
+//     if(flag){
+//         dts = 0;
+//         flag = 0;
+//     }
+
+//     const float Kp = 0.05f;
+// 	const float Ki = 0.001f;
+
+//     static float q0 = 1.0f;
+// 	static float q1 = 0.0f;
+// 	static float q2 = 0.0f;
+// 	static float q3 = 0.0f;	
+
+//     //误差积分累计
+// 	float exInt = 0.0f;
+// 	float eyInt = 0.0f;
+// 	float ezInt = 0.0f;
+
+//     //用于缓存数据,便于修改
+//     static sLIB_6AXIS_INPUT_t data;
+//     //拷贝数据
+//     memcpy(&data, input, sizeof(sLIB_6AXIS_INPUT_t));
+
+//     //把陀螺仪的角度单位换算成弧度
+//     data.gyro_x *= DEG2RAD;
+// 	data.gyro_y *= DEG2RAD;
+// 	data.gyro_z *= DEG2RAD;
+
+// 	//标准化加速计测量值
+// 	float acc_norm = sLib_InvSqrt(data.acc_x * data.acc_x + data.acc_y * data.acc_y + data.acc_z * data.acc_z);
+// 	data.acc_x *= acc_norm;
+// 	data.acc_y *= acc_norm;
+// 	data.acc_z *= acc_norm;
+
+//     float mag_norm = sLib_InvSqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
+//     mag_x *= mag_norm;
+//     mag_y *= mag_norm;
+//     mag_z *= mag_norm;
+
+
+//     static float rMat[3][3];
+
+
+// 	float a_vx = rMat[2][0];
+// 	float a_vy = rMat[2][1];
+// 	float a_vz = rMat[2][2];
+
+//     float a_ex = data.acc_y * a_vz - data.acc_z * a_vy;
+//     float a_ey = data.acc_z * a_vx - data.acc_x * a_vz;
+//     float a_ez = data.acc_x * a_vy - data.acc_y * a_vx;
+
+//     //误差累计，与积分常数相乘
+// 	exInt += Ki * a_ex * dts;  
+// 	eyInt += Ki * a_ey * dts;
+// 	ezInt += Ki * a_ez * dts;
+
+// 	//用叉积误差来做PI修正陀螺零偏，即抵消陀螺读数中的偏移量
+// 	data.gyro_x += Kp * a_ex + exInt;
+// 	data.gyro_y += Kp * a_ey + eyInt;
+// 	data.gyro_z += Kp * a_ez + ezInt;
+
+//     //一阶近似算法，四元数运动学方程的离散化形式和积分
+// 	float q0Last = q0;
+// 	float q1Last = q1;
+// 	float q2Last = q2;
+// 	float q3Last = q3;
+// 	q0 += (-q1Last * data.gyro_x - q2Last * data.gyro_y - q3Last * data.gyro_z) * 0.5f * dts;
+// 	q1 += ( q0Last * data.gyro_x + q2Last * data.gyro_z - q3Last * data.gyro_y) * 0.5f * dts;
+// 	q2 += ( q0Last * data.gyro_y - q1Last * data.gyro_z + q3Last * data.gyro_x) * 0.5f * dts;
+// 	q3 += ( q0Last * data.gyro_z + q1Last * data.gyro_y - q2Last * data.gyro_x) * 0.5f * dts;
+
+//     //标准化四元数
+// 	float q_norm = sLib_InvSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
+// 	q0 *= q_norm;
+// 	q1 *= q_norm;
+// 	q2 *= q_norm;
+// 	q3 *= q_norm;
+
+
+//     //计算方向余弦矩阵
+//     float q1q1 = q1 * q1;
+//     float q2q2 = q2 * q2;
+//     float q3q3 = q3 * q3;
+
+//     float q0q1 = q0 * q1;
+//     float q0q2 = q0 * q2;
+//     float q0q3 = q0 * q3;
+//     float q1q2 = q1 * q2;
+//     float q1q3 = q1 * q3;
+//     float q2q3 = q2 * q3;
+
+//     rMat[0][0] = 1.0f - 2.0f * q2q2 - 2.0f * q3q3;
+//     rMat[0][1] = 2.0f * (q1q2 + -q0q3);
+//     rMat[0][2] = 2.0f * (q1q3 - -q0q2);
+
+//     rMat[1][0] = 2.0f * (q1q2 - -q0q3);
+//     rMat[1][1] = 1.0f - 2.0f * q1q1 - 2.0f * q3q3;
+//     rMat[1][2] = 2.0f * (q2q3 + -q0q1);
+
+//     rMat[2][0] = 2.0f * (q1q3 - q0q2);
+//     rMat[2][1] = 2.0f * (q2q3 + q0q1);
+//     rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
+
+//     //计算roll pitch yaw 欧拉角
+// 	result->roll  = -asinf(rMat[2][0]) * RAD2DEG; 
+// 	result->pitch =  atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
+// 	result->yaw   =  atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
+//     //保存四元数
+//     result->q0 = q0;
+//     result->q1 = q1;
+//     result->q2 = q2;
+//     result->q3 = q3;
+
+// }
+
+
 
 
 int AHRS::init(){
