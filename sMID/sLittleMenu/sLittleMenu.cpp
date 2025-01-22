@@ -1,14 +1,17 @@
 #include "sLittleMenu.hpp"
 
 
+#ifdef SLM_DEBUG_LOG_EN
+    #define LOG_INFO(_TEXT) dbg_info("sLM line:%u,%s\n",__LINE__,_TEXT)
+    #define LOG_WARN(_TEXT) dbg_warn("sLM line:%u,%s\n",__LINE__,_TEXT)
+    #define LOG_ERR(_TEXT)  dbg_printf("[ERR ] sLM line:%u,%s\n",__LINE__,_TEXT)
+#else
+    #define LOG_INFO(_TEXT) (void)0
+    #define LOG_WARN(_TEXT) (void)0
+    #define LOG_ERR(_TEXT)  (void)0
+#endif
 
-#define LOG_INFO(_TEXT) sBSP_UART_Debug_Printf("[INFO] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
-#define LOG_WARN(_TEXT) sBSP_UART_Debug_Printf("[WARN] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
-#define LOG_ERR(_TEXT)  sBSP_UART_Debug_Printf("[ERR ] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
 
-// #define LOG_INFO(_LINE,_TEXT) (void)0
-// #define LOG_WARN(_LINE,_TEXT) (void)0
-// #define LOG_ERR(_LINE,_TEXT)  (void)0
 
 sLM::sLittleMenu menu;
 
@@ -101,13 +104,15 @@ void sLittleMenu::init(Renderer* _renderer){
     root = TreeNode::createNode((const void*)&root_item,sizeof(root_item));
     curr = root;
     id_count++;
+    if(id_count >= SLM_MAX_ITEM_NUM){
+        LOG_ERR("已达最大的菜单项数量");
+    }
+
+    //记录到qlist
+    qlist[0] = root;
 
     renderer = _renderer;
 
-}
-
-TreeNode* sLittleMenu::getRoot(){
-    return root;
 }
 
 //添加一个子节点
@@ -121,6 +126,8 @@ int sLittleMenu::addSubMenu(TreeNode* parent,TreeNode* child){
     }
     ItemData& node = getNodeData(child);
     node.id = id_count;
+    //记录到qlist
+    qlist[id_count] = child;
     id_count++;
     //添加到父节点的子节点列表
     return parent->addChild(child);
@@ -134,31 +141,10 @@ void sLittleMenu::setItemData(ItemData* item_data,ItemDataCreateItemConf* config
     item_data->param.type = config->param_type;
     item_data->type = config->item_type;
     item_data->param.modify_cb = config->change_cb;
-    item_data->param.modify_cb_mthd = config->change_method;
+    item_data->param.modify_cb_method = config->change_method;
     item_data->param.lim_type = config->limit_type;
     item_data->param.update_cb = config->update_cb;
     item_data->param.param_tag = config->param_tag;
-}
-
-
-
-sLM::TreeNode* sLittleMenu::getCurr(){
-    return curr;
-}
-
-
-//获取当前节点数据
-sLM::ItemData& sLittleMenu::getCurrNodeData(){
-    sLM::ItemData* item = reinterpret_cast<sLM::ItemData*>(curr->data);
-    return *item;
-}
-
-
-
-//获取任意节点数据
-sLM::ItemData& sLittleMenu::getNodeData(TreeNode* node){
-    sLM::ItemData* item = reinterpret_cast<sLM::ItemData*>(node->data);
-    return *item;
 }
 
 //获取同级的第一个节点
@@ -220,76 +206,94 @@ TreeNode* sLittleMenu::getIndexMenu(TreeNode* any_slibing ,uint32_t index){
     return node;
 }
 
-//返回根节点
-void sLittleMenu::reset(){
-    curr = root->child;
-}
-
 //参数增量处理
 void sLittleMenu::incDecParamHandler(ItemData& item,ParamModifyDir dir){
-    if(item.param.type == ParamType::STRING)return;    //不处理字符串类型,留给用户处理
-    
+    //获取item的param段
+    Param& param = item.param;
+    if(param.type == ParamType::STRING)return;    //不处理字符串类型,留给用户处理
+    //获取item的限幅类型
+    ParamLimitType lim_t = param.lim_type;
+
     //参数值为int
-    if(item.param.type == sLM::ParamType::INT){
-        int& val = *&(item.param.val_i);
-        int& max = *&(item.param.max_i); int& min = *&(item.param.min_i);
-        int& inc = *&(item.param.inc_i); int& dec = *&(item.param.dec_i);
+    if(param.type == sLM::ParamType::INT){
+        int& val = param.val_i;
+        int& max = param.max_i; int& min = param.min_i;
+        int& inc = param.inc_i; int& dec = param.dec_i;
         //先加减再限幅
         dir == ParamModifyDir::UP ? val += inc : val -= dec;
         //限幅处理
-        if(item.param.lim_type == ParamLimitType::MAX || item.param.lim_type == ParamLimitType::RANGE){
-            //向上限幅
-            if(val > max)val = max;
-        }
-        if(item.param.lim_type == ParamLimitType::MIN || item.param.lim_type == ParamLimitType::RANGE){
-            //向下限幅
-            if(val < min)val = min;
-        }
+        if(lim_t == ParamLimitType::MAX || lim_t == ParamLimitType::RANGE)if(val > max)val = max;
+        if(lim_t == ParamLimitType::MIN || lim_t == ParamLimitType::RANGE)if(val < min)val = min;
     }
     //float
-    else if(item.param.type == sLM::ParamType::FLOAT){
-        float& val = *&(item.param.val_f);
-        float& max = *&(item.param.max_f); float& min = *&(item.param.min_f);
-        float& inc = *&(item.param.inc_f); float& dec = *&(item.param.dec_f);
+    else if(param.type == sLM::ParamType::FLOAT){
+        float& val = param.val_f;
+        float& max = param.max_f; float& min = param.min_f;
+        float& inc = param.inc_f; float& dec = param.dec_f;
         //先加减再限幅
         dir == ParamModifyDir::UP ? val += inc : val -= dec;
         //限幅处理
-        if(item.param.lim_type == ParamLimitType::MAX || item.param.lim_type == ParamLimitType::RANGE){
-            //向上限幅
-            if(val > max)val = max;
-        }
-        if(item.param.lim_type == ParamLimitType::MIN || item.param.lim_type == ParamLimitType::RANGE){
-            //向下限幅
-            if(val < min)val = min;
-        }
+        if(lim_t == ParamLimitType::MAX || lim_t == ParamLimitType::RANGE)if(val > max)val = max;
+        if(lim_t == ParamLimitType::MIN || lim_t == ParamLimitType::RANGE)if(val < min)val = min;
     }
 }
 
+void sLittleMenu::setLock(const char* tittle,const char* msg){
+    lock_info.status = true;
+    strncpy(lock_info.tittle,tittle,SLM_LOCK_TITTLE_LEN);
+    strncpy(lock_info.message,msg,SLM_LOCK_MESSAGE_LEN);
+}
 
-void sLittleMenu::setLockCurrItem(bool is_lock){
-    sLM::ItemData& item = getNodeData(curr);
-    if(is_lock == true){
-        item.param.lock = ParamModifyLock::LOCK;
+void sLittleMenu::setLock(){
+    lock_info.status = true;
+    strncpy(lock_info.tittle,SLM_LOCK_DEFAULT_TITTLE,SLM_LOCK_TITTLE_LEN);
+    strncpy(lock_info.message,SLM_LOCK_DEFAULT_MESSAGE,SLM_LOCK_MESSAGE_LEN);
+}
+
+void sLittleMenu::setUnlock(){
+    lock_info.status = false;
+}
+
+
+
+void sLittleMenu::operateEnter(){
+    if(op_event == OpEvent::NONE){
+        op_event = OpEvent::ENTER;
     }else{
-        item.param.lock = ParamModifyLock::UNLOCK;
+        LOG_WARN("发生了Enter事件,但是当前的操作事件不为空");
     }
 }
 
+void sLittleMenu::operateBack(){
+    if(op_event == OpEvent::NONE){
+        op_event = OpEvent::BACK;
+    }else{
+        LOG_WARN("发生了Back事件,但是当前的操作事件不为空");
+    }
+}
+
+void sLittleMenu::operatePrev(){
+    if(op_event == OpEvent::NONE){
+        op_event = OpEvent::PREV;
+    }else{
+        LOG_WARN("发生了Prev事件,但是当前的操作事件不为空");
+    }
+}
+
+void sLittleMenu::operateNext(){
+    if(op_event == OpEvent::NONE){
+        op_event = OpEvent::NEXT;
+    }else{
+        LOG_WARN("发生了Next事件,但是当前的操作事件不为空");
+    }
+}
 
 //Enter操作
-void sLittleMenu::opEnter(){
-    sLM::ItemData& item = getNodeData(curr);
-
-    //操作时预先检查
-    if(item.param.lock == ParamModifyLock::LOCK){
-        changeHandler(OpEvent::LOCK);
-        return;
-    }
-
+void sLittleMenu::op_enter_process(ItemData& curr_item){
     //如果当前页面有子页面
     if(curr->child){
         //让旧的节点取消hover
-        item.is_hover = false;
+        curr_item.is_hover = false;
         //跳转到子页面
         curr = curr->child;
         //让新的节点hover
@@ -297,145 +301,142 @@ void sLittleMenu::opEnter(){
     }
     //没有下一级了,说明要选中
     else{
-        if(item.type == ItemType::NORMAL){
+        if(curr_item.type == ItemType::NORMAL){
             //参数可读写时才能选中
-            if(item.param.access == ParamAccess::RW)item.is_selected = true;
+            if(curr_item.param.access == ParamAccess::RW)curr_item.is_selected = true;
         }
         //如果item是一个按键,则调用用户注册的回调
-        else if(item.type == ItemType::BUTTON){
-            if(item.param.modify_cb){
+        else if(curr_item.type == ItemType::BUTTON){
+            if(curr_item.param.modify_cb){
                 //void* param传的是当前的参数的标签
-                item.param.lock = item.param.modify_cb(&item.param.param_tag,ParamType::BUTTON_PRESS);
+                lock_info.status = (bool)curr_item.param.modify_cb(&curr_item.param.param_tag,ParamType::BUTTON_PRESS);
             }
         }
         
     }
-
-    //调用变化回调
-    changeHandler(OpEvent::ENTER);
 }
 
-void sLittleMenu::opBack(){
-    sLM::ItemData& item = getNodeData(curr);
-
-    //操作时预先检查
-    if(item.param.lock == ParamModifyLock::LOCK){
-        changeHandler(OpEvent::LOCK);
-        return;
-    }
-
-
+void sLittleMenu::op_back_process(ItemData& curr_item){
     //如果当前项被选中了,就退出选中
-    if(item.is_selected == true){
-        item.is_selected = false;
+    if(curr_item.is_selected == true){
+        curr_item.is_selected = false;
     }
     //如果没有被选中,并且不是root则跳转到上一级
     else if(curr->parent != root){
         //让旧的节点取消hover
-        item.is_hover = false;
+        curr_item.is_hover = false;
         curr = curr->parent;
         //让新的节点hover
         getCurrNodeData().is_hover = true;
     }
-    changeHandler(OpEvent::BACK);
+
+    //如果配置的是退出回调,参数被修改了调用用户的函数
+    if(curr_item.param.is_param_chrg && curr_item.param.modify_cb_method == ParamModifyCbMethod::EXIT_CB){
+        //调用用户函数
+        if(curr_item.param.modify_cb != nullptr){
+            lock_info.status = (bool)curr_item.param.modify_cb(&curr_item.param.val_i,curr_item.param.type);
+        }
+        curr_item.param.is_param_chrg = false;
+    }
 }
 
-void sLittleMenu::opPrev(){
-    sLM::ItemData& item = getNodeData(curr);
-
-    //操作时预先检查
-    if(item.param.lock == ParamModifyLock::LOCK){
-        changeHandler(OpEvent::LOCK);
-        return;
-    }
-
-
+void sLittleMenu::op_prev_process(ItemData& curr_item){
     //如果已经被选中了就修改参数
-    if(item.is_selected == true && item.param.lock == ParamModifyLock::UNLOCK){
-        incDecParamHandler(item, ParamModifyDir::UP);
-        item.param.is_param_chrg = true;
+    if(curr_item.is_selected == true && lock_info.status == false){
+        incDecParamHandler(curr_item, ParamModifyDir::UP);
+        curr_item.param.is_param_chrg = true;
     }
     //没有选中就上下移动
     else if(curr->prev_sibling){
         //让旧的节点取消hover
-        item.is_hover = false;
+        curr_item.is_hover = false;
         curr = curr->prev_sibling;
         //让新的节点hover
         getNodeData(curr).is_hover = true;
     }
-    
-    changeHandler(OpEvent::PREV);
+
+    //如果配置的是修改就回调,参数被修改了调用用户的函数
+    if(curr_item.param.is_param_chrg && curr_item.param.modify_cb_method == ParamModifyCbMethod::CHRG_CB){  
+        //调用用户函数
+        if(curr_item.param.modify_cb != nullptr){
+            lock_info.status = (bool)curr_item.param.modify_cb(&curr_item.param.val_i,curr_item.param.type);
+        }
+        curr_item.param.is_param_chrg = false;
+    }
 }
 
-void sLittleMenu::opNext(){
-    sLM::ItemData& item = getNodeData(curr);
-
-    //操作时预先检查
-    if(item.param.lock == ParamModifyLock::LOCK){
-        changeHandler(OpEvent::LOCK);
-        return;
-    }
-
-
+void sLittleMenu::op_next_process(ItemData& curr_item){
     //如果已经被选中并且已解锁就修改参数
-    if(item.is_selected == true && item.param.lock == ParamModifyLock::UNLOCK){
-        incDecParamHandler(item, ParamModifyDir::DN);
-        item.param.is_param_chrg = true;
+    if(curr_item.is_selected == true && lock_info.status == false){
+        incDecParamHandler(curr_item, ParamModifyDir::DN);
+        curr_item.param.is_param_chrg = true;
     }
     //没有选中就上下移动
     else if(curr->next_sibling){
         //让旧的节点取消hover
-        item.is_hover = false;
+        curr_item.is_hover = false;
         curr = curr->next_sibling;
         //让新的节点hover
         getNodeData(curr).is_hover = true;
     }
 
-    changeHandler(OpEvent::NEXT);
+    //如果配置的是修改就回调,参数被修改了调用用户的函数
+    if(curr_item.param.is_param_chrg && curr_item.param.modify_cb_method == ParamModifyCbMethod::CHRG_CB){
+        //调用用户函数
+        if(curr_item.param.modify_cb != nullptr){
+            lock_info.status = (bool)curr_item.param.modify_cb(&curr_item.param.val_i,curr_item.param.type);
+        }
+        curr_item.param.is_param_chrg = false;
+    }
 }
 
-//有操作了的处理函数
-void sLittleMenu::changeHandler(OpEvent ev){
-    sLM::ItemData& curr_item = getCurrNodeData();
+void sLittleMenu::operate_process(){
+    if(op_event == OpEvent::NONE)return;
 
-    if(ev == OpEvent::LOCK){
-
-    }
-    else if(ev == OpEvent::ENTER){
-
-    }
-    else if(ev == OpEvent::BACK){
-        if(curr_item.param.is_param_chrg && curr_item.param.modify_cb_mthd == ParamModifyCbMethod::EXIT_CB){
-            //调用用户函数
-            if(curr_item.param.modify_cb != nullptr){
-                curr_item.param.lock = curr_item.param.modify_cb(&curr_item.param.val_i,curr_item.param.type);
-            }
-            curr_item.param.is_param_chrg = false;
-        }
-    }
-    else if(ev == OpEvent::PREV){
-        if(curr_item.param.is_param_chrg && curr_item.param.modify_cb_mthd == ParamModifyCbMethod::CHRG_CB){
-            //调用用户函数
-            if(curr_item.param.modify_cb != nullptr){
-                curr_item.param.lock = curr_item.param.modify_cb(&curr_item.param.val_i,curr_item.param.type);
-            }
-            curr_item.param.is_param_chrg = false;
-        }
-    }
-    else if(ev == OpEvent::NEXT){
-        if(curr_item.param.is_param_chrg && curr_item.param.modify_cb_mthd == ParamModifyCbMethod::CHRG_CB){
-            //调用用户函数
-            if(curr_item.param.modify_cb != nullptr){
-                curr_item.param.lock = curr_item.param.modify_cb(&curr_item.param.val_i,curr_item.param.type);
-            }
-            curr_item.param.is_param_chrg = false;
-        }
+    if(lock_info.status == true){
+        op_event = OpEvent::NONE;   //避免重复触发
+        LOG_INFO("操作无效,因为菜单被锁定");
+        return;
     }
 
+    ItemData& curr_item = getNodeData(curr);
+    
+    if(op_event == OpEvent::ENTER){
+        op_enter_process(curr_item);
+    }
+    else if(op_event == OpEvent::BACK){
+        op_back_process(curr_item);
+    }
+    else if(op_event == OpEvent::PREV){
+        op_prev_process(curr_item);
+    }
+    else if(op_event == OpEvent::NEXT){
+        op_next_process(curr_item);
+    }
 
+    //重置操作事件
+    op_event = OpEvent::NONE;
 }
 
+uint16_t sLittleMenu::getItemCount(){
+    return id_count;
+}
+
+TreeNode* sLittleMenu::getItemByID(uint16_t id){
+    return qlist[id] ? qlist[id] : nullptr;
+}
+
+//更新
 void sLittleMenu::update(){
+    //首先处理输入操作
+    operate_process();
+
+    
+
+
+    // if(getNodeData(curr).periodic_cb){
+    //     getNodeData(curr).periodic_cb(curr);
+    // }
     renderer->update();
 }
 

@@ -399,12 +399,13 @@ void AHRS::get_imu_data(){
         #ifdef AHRS_IMU_USE_ICM45686
             sDRV_ICM45686_GetData();
             //减掉偏置
-            input.acc_x  = g_icm45686.acc_x - imu_sbias.acc_x;
-            input.acc_y  = g_icm45686.acc_y - imu_sbias.acc_y;
-            input.acc_z  = g_icm45686.acc_z - imu_sbias.acc_z;
-            input.gyro_x = g_icm45686.gyr_x - imu_sbias.gyr_x;
-            input.gyro_y = g_icm45686.gyr_y - imu_sbias.gyr_y;
-            input.gyro_z = g_icm45686.gyr_z - imu_sbias.gyr_z;
+            dat.acc_x = g_icm45686.acc_x - ahrs.imu_sbias.acc_x;
+            dat.acc_y = g_icm45686.acc_y - ahrs.imu_sbias.acc_y;
+            dat.acc_z = g_icm45686.acc_z - ahrs.imu_sbias.acc_z;
+            dat.gyr_x = g_icm45686.gyr_x - ahrs.imu_sbias.gyr_x;
+            dat.gyr_y = g_icm45686.gyr_y - ahrs.imu_sbias.gyr_y;
+            dat.gyr_z = g_icm45686.gyr_z - ahrs.imu_sbias.gyr_z;
+            icm_temp  = g_icm45686.temp;
         #endif
         sDRV_LIS3_GetData();
         dat.mag_x = g_lis3.mag_x;
@@ -417,6 +418,8 @@ void AHRS::get_imu_data(){
 void sAPP_AHRS_Task(void* param){
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount();
+
+    int count = 0;
     for(;;){
         //当数据准备就绪则运行AHRS算法,此步骤消耗时间60us
         if(xSemaphoreTake(icm_data_ready_bin,200) == pdTRUE){
@@ -451,10 +454,16 @@ void sAPP_AHRS_Task(void* param){
                 ahrs.dat.q2    = ahrs.result.q2;
                 ahrs.dat.q3    = ahrs.result.q3;
 
-                // sDRV_LIS3_GetData();
-                // ahrs.dat.mag_x = g_lis3.mag_x;
-                // ahrs.dat.mag_y = g_lis3.mag_y;
-                // ahrs.dat.mag_z = g_lis3.mag_z;
+                //每0.1s获取一次磁力计数据
+                if(count >= 20){
+                    count = 0;
+                    sDRV_LIS3_GetData();
+                    ahrs.dat.mag_x = g_lis3.mag_x;
+                    ahrs.dat.mag_y = g_lis3.mag_y;
+                    ahrs.dat.mag_z = g_lis3.mag_z;
+                    ahrs.lis3_temp = g_lis3.temp;
+                }
+                count++;
 
                 //把新获取到的数据通过队列发送给blc_ctrl算法
                 // xQueueSend(g_blc_ctrl_ahrs_queue,&ahrs.dat,200);

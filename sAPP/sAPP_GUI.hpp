@@ -2,7 +2,6 @@
 
 
 #include "sLittleMenu.hpp"
-#include "sLM_Renderer.hpp"
 #include "sLM_OLED128X64.hpp"
 
 #include "FreeRTOS.h"

@@ -29,6 +29,8 @@ using namespace sLM;
 #define TAG_IMU_MAG_X      10
 #define TAG_IMU_MAG_Y      11
 #define TAG_IMU_MAG_Z      12
+#define TAG_IMU_ICM_TEMP   13
+#define TAG_IMU_LIS3_TEMP  14
 
 
 #define TAG_CALI_IMU       13
@@ -73,6 +75,7 @@ static ParamModifyLock pwrlight_event_cb(void* param,ParamType _type);
 
 
 void sAPP_GUI_Init(){
+    //初始化菜单,传入渲染器
     menu.init(new OLED128X64(&oled,&menu));
     
     /*初始化所有UI组件*/
@@ -228,18 +231,28 @@ static void imu_menu_init(TreeNode* parent){
     menu.addSubMenu(data_overview,CreateItem()
         .setText("Gyro-Z").setUnit("").setParamTag(TAG_IMU_GYR_Z)
         .setAccess(ParamAccess::RO).setParamType(ParamType::FLOAT).setUpdateCallback(imu_data_update).create());
+    
+    /*ICM Temp 只读数据*/
+    menu.addSubMenu(data_overview,CreateItem()
+        .setText("ICM-Temp").setUnit("").setParamTag(TAG_IMU_ICM_TEMP)
+        .setAccess(ParamAccess::RO).setParamType(ParamType::FLOAT).setUpdateCallback(imu_data_update).create());
 
     /*Mag-X 只读数据*/
     menu.addSubMenu(data_overview,CreateItem()
-        .setText("Mag-X").setUnit("").setParamTag(TAG_IMU_MAG_X)
+        .setText("Mag-X").setUnit("").setParamTag(TAG_IMU_MAG_X).setIntParamShowFmt("%.1f%s")
         .setAccess(ParamAccess::RO).setParamType(ParamType::FLOAT).setUpdateCallback(imu_data_update).create());
     /*Mag-Y 只读数据*/
     menu.addSubMenu(data_overview,CreateItem()
-        .setText("Mag-Y").setUnit("").setParamTag(TAG_IMU_MAG_Y)
+        .setText("Mag-Y").setUnit("").setParamTag(TAG_IMU_MAG_Y).setIntParamShowFmt("%.1f%s")
         .setAccess(ParamAccess::RO).setParamType(ParamType::FLOAT).setUpdateCallback(imu_data_update).create());
     /*Mag-Z 只读数据*/
     menu.addSubMenu(data_overview,CreateItem()
-        .setText("Mag-Z").setUnit("").setParamTag(TAG_IMU_MAG_Z)
+        .setText("Mag-Z").setUnit("").setParamTag(TAG_IMU_MAG_Z).setIntParamShowFmt("%.1f%s")
+        .setAccess(ParamAccess::RO).setParamType(ParamType::FLOAT).setUpdateCallback(imu_data_update).create());
+
+    /*LIS3 Temp 只读数据*/
+    menu.addSubMenu(data_overview,CreateItem()
+        .setText("LIS3-Temp").setUnit("").setParamTag(TAG_IMU_LIS3_TEMP)
         .setAccess(ParamAccess::RO).setParamType(ParamType::FLOAT).setUpdateCallback(imu_data_update).create());
 
     /*0偏页面*/
@@ -329,6 +342,12 @@ static void imu_data_update(void* param,uint32_t _tag){
         }
         else if(_tag == TAG_IMU_MAG_Z){
             *(float*)param = ahrs.dat.mag_z;
+        }
+        else if(_tag == TAG_IMU_ICM_TEMP){
+            *(float*)param = ahrs.icm_temp;
+        }
+        else if(_tag == TAG_IMU_LIS3_TEMP){
+            *(float*)param = ahrs.lis3_temp;
         }
 
         xSemaphoreGive(ahrs.mutex);

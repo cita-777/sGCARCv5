@@ -190,7 +190,9 @@ void sAPP_BlcCtrl_Handler(){
     // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",dat.pitch,dat.gyr_x,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
     //dbg.printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",ahrs.pitch,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
 
-    sBSP_UART_Debug_Printf("%.2f\n",inc_pos_out);
+    sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.2f\n",dat.pitch,dat.acc_x,dat.gyr_x,g_blc.right_pwm,motor.getRRPM());
+
+    // sBSP_UART_Debug_Printf("%.2f\n",inc_pos_out);
 
     // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",g_blc.left_pwm,g_blc.right_pwm,dat.pitch,dat.gyr_x,x_velo,x_pos);
 

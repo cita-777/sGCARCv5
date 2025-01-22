@@ -16,6 +16,13 @@
 //中断服务函数标识
 #define ISR_ATTR       __attribute__((used))
 
+#define APPNAME                        "sGCARCv5"
+#define HARDWARE_VERSION               "V5.2"
+#define SOFTWARE_VERSION               "V1.0"
+
+//特化版本
+//miniBlcCAR-K 我的平衡车
+#define SPECIAL_VERSION                "miniBlcCAR-K"
 
 /*User LED*/
 #define USER_LED_Pin        GPIO_PIN_13

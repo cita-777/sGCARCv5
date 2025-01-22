@@ -2,20 +2,24 @@
 
 
 
-#define LOG_INFO(_TEXT) sBSP_UART_Debug_Printf("[INFO] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
-#define LOG_WARN(_TEXT) sBSP_UART_Debug_Printf("[WARN] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
-#define LOG_ERR(_TEXT)  sBSP_UART_Debug_Printf("[ERR ] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
+#ifdef SLM_DEBUG_LOG_EN
+    #define LOG_INFO(_TEXT) dbg_info("sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
+    #define LOG_WARN(_TEXT) dbg_warn("sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
+    #define LOG_ERR(_TEXT)  dbg_printf("[ERR ] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
+#else
+    #define LOG_INFO(_TEXT) (void)0
+    #define LOG_WARN(_TEXT) (void)0
+    #define LOG_ERR(_TEXT)  (void)0
+#endif
 
-// #define LOG_INFO(_LINE,_TEXT) (void)0
-// #define LOG_WARN(_LINE,_TEXT) (void)0
-// #define LOG_ERR(_LINE,_TEXT)  (void)0
 
 
-#include "sLittleMenu.hpp"
+
 using namespace sLM;
 
 
 #define LIST_MAX_ITEMS 4
+#define LIST_PARAM_SHOW_POS     80
 
 
 OLED128X64::OLED128X64(sG2D* _screen,sLM::sLittleMenu* _menu){
@@ -124,7 +128,7 @@ void OLED128X64::showMenuList(sLM::TreeNode* parent){
                     char* value  =  (char*)&(data.param.val_i);
                     snprintf(str,10,"%s",value);
                 }
-                screen->write_string(weights_LIST_PARAM_SHOW_POS,y_offset + 1,str);
+                screen->write_string(LIST_PARAM_SHOW_POS,y_offset + 1,str);
             }
             else if(data.type == sLM::ItemType::SWITCH){
 
@@ -136,7 +140,7 @@ void OLED128X64::showMenuList(sLM::TreeNode* parent){
             screen->inv_area(0,y_offset - 1 ,128,y_offset + 9);
         }
         if(data.is_selected == true){
-            screen->inv_area(weights_LIST_PARAM_SHOW_POS - 5,y_offset - 1 ,125,y_offset + 9);
+            screen->inv_area(LIST_PARAM_SHOW_POS - 5,y_offset - 1 ,125,y_offset + 9);
         }
 
         
@@ -168,13 +172,13 @@ void OLED128X64::showWatingDialog(const char* _title, const char* _message){
     screen->printf(5,5,"%s",_title);
     screen->drawHLine(1,120,15,1);
 
-    screen->printf(10,20,"%s",_message);
+    screen->printf(10,20,"\n%s",_message);
 }
 
 
 void OLED128X64::update(){
-    if(sLittleMenu::getNodeData(menu->getCurr()).param.lock == ParamModifyLock::LOCK){
-        showWatingDialog("Processing","\n\n  Please wait");
+    if(menu->lock_info.status == true){
+        showWatingDialog(menu->lock_info.tittle,menu->lock_info.message);
     }else{
         showMenuList(menu->getCurr()->parent);
     }

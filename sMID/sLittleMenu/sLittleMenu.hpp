@@ -6,8 +6,6 @@
  * 
  * v1.0 241211Night BySightseer.inHNIP9607
  * 第一版完工! demo做好了
- * 下一版改进:
- * todo 完成按钮bool类型
  * 
  * v1.1 
  * 重构代码,使用namespace优化
@@ -17,6 +15,13 @@
  * 
  * v1.3 241229 bySightseer.
  * 加入了耗时操作锁定机制 在锁定时会显示一个对话框 但是机制还不太完善
+ * 
+ * v1.4 250114 bySightseer.
+ * 加入了最大菜单项数量限制,默认128,维护一个线性的查询数组
+ * 加入了模拟操作,可以模拟用户对菜单的操作
+ * 
+ * v1.5 250122 bySightseer.
+ * 优化代码架构,优化了lock,采用全局lock.
  * 
  * 
  * 
@@ -28,44 +33,59 @@
 #pragma once
 
 #include "stdint.h"
-#include "stdlib.h"
 #include "stdbool.h"
 
-#include <string>
 #include <cstring>
 
 //用于动态分配内存
 #include "FreeRTOS.h"
 #include "task.h"
+#include <new>
 
-
-#include "sBSP_UART.h"
-
+//屏幕驱动
 #include "sG2D.hpp"
 
-#include "sLM_Renderer.hpp"
+//调试日志开关
+#define SLM_DEBUG_LOG_EN
+
+#ifdef SLM_DEBUG_LOG_EN
+    #include "sDBG_Debug.h"
+#endif
+
 
 
 //item的显示文本字符串长度
-#define SLM_ITEM_TEXT_LEN 16
+#define SLM_ITEM_TEXT_LEN     16
 //item的显示的字符串参数最大的长度(byte)
 #define SLM_MAX_PARAM_STR_LEN 8
 //参数的单位字段长度
-#define SLM_ITEM_UNIT_LEN 6
-//根节点的文字
-#define SLM_ROOT_MENU_TEXT "sGCARCv5.2"
+#define SLM_ITEM_UNIT_LEN     6
+//根节点的标题文字
+#define SLM_ROOT_MENU_TEXT    "sGCARCv5.2"
 
-#define weights_LIST_PARAM_SHOW_POS     80
+#define SLM_LOCK_TITTLE_LEN   16
+#define SLM_LOCK_MESSAGE_LEN  32
+
+#define SLM_LOCK_DEFAULT_TITTLE "sLittleMenu"
+#define SLM_LOCK_DEFAULT_MESSAGE "Please wait a \nmoment..."
+
 //显示格式 eg:5%
-#define SLM_LIST_PARAM_SHOW_FMT_LEN     12
-#define weights_LIST_PARAM_SHOW_INT     " %d%s"
-#define weights_LIST_PARAM_SHOW_FLOAT   " %.2f%s"
+#define SLM_LIST_PARAM_SHOW_FMT_LEN 12
+#define SLM_LIST_PARAM_SHOW_INT     " %d%s"
+#define SLM_LIST_PARAM_SHOW_FLOAT   " %.2f%s"
+
+//最大菜单项数量
+#define SLM_MAX_ITEM_NUM   128
+
 
 
 
 
 namespace sLM{
-
+class Renderer;
+class TreeNode;
+struct ItemData;
+struct Param;
 
 
 //参数权限
@@ -110,16 +130,20 @@ enum class ParamModifyDir{
 using ParamModifyCb = ParamModifyLock(*)(void* param,ParamType _type);
 //参数手动更新回调,需要显示时,会先自动调用这个函数获取最新的参数,然后再显示出来
 //形参:指向参数的指针,参数tag(注册item时注册的,用于告诉用户是要更新哪个参数)
+//如果当前菜单的父菜单的显示模式是canvas,那么
 using ParamManualUpdateCb = void(*)(void* param,uint32_t _tag);
+//当选中一个item,会周期性调用这个函数,为nullptr则不调用
+//item指向选中的菜单项
+using ItemPeriodicUpdateCb = void(*)(TreeNode* item);
 
 //参数
 struct Param{
-    uint32_t param_tag;                 //参数标签,用于从用户获取数据时告诉用户的
+    uint16_t param_tag;                 //参数标签,用于从用户获取数据时告诉用户的
     ParamAccess access;                 //参数访问权限
     ParamType type;                     //参数类型
     ParamLimitType lim_type;            //参数的上下限类型
-    ParamModifyCbMethod modify_cb_mthd; //参数变化的回调方式
-    ParamModifyLock lock;               //此菜单的锁定状态
+    ParamModifyCbMethod modify_cb_method;//参数变化的回调方式
+    // ParamModifyLock lock;               //此菜单的锁定状态
     bool is_param_chrg;                 //参数是否变化了
     ParamModifyCb modify_cb;            //参数变化回调
     ParamManualUpdateCb update_cb;      //参数手动更新回调
@@ -134,10 +158,11 @@ struct Param{
     };
     char unit[SLM_ITEM_UNIT_LEN];       //单位字段
     char show_fmt[16];                  //参数的显示格式
-
+    //初始化参数列表
     Param():param_tag(0), access(ParamAccess::NO), type(ParamType::INT),
-        lim_type(ParamLimitType::NO), modify_cb_mthd(ParamModifyCbMethod::NON_CB),
-        lock(ParamModifyLock::UNLOCK), is_param_chrg(false),
+        lim_type(ParamLimitType::NO), modify_cb_method(ParamModifyCbMethod::NON_CB),
+        // lock(ParamModifyLock::UNLOCK),
+        is_param_chrg(false),
         modify_cb(nullptr), update_cb(nullptr),
         inc_i(0), dec_i(0), max_i(0), min_i(0),
         val_i(0) {
@@ -160,12 +185,14 @@ enum class ItemType{
 };
 //item的数据结构体
 struct ItemData{
-    uint32_t id;                        //唯一id,手动分配
+    uint16_t id;                        //唯一id,手动分配
     char text[SLM_ITEM_TEXT_LEN];       //显示的文本
     Param param;                        //参数部分
     bool is_selected;                   //是否选中
     bool is_hover;                      //光标是否悬停在上面
     MenuChildShowMode child_show_mode;  //子菜单显示模式
+    ItemPeriodicUpdateCb periodic_cb;   //周期性更新回调
+
     ItemType type;                      //item的类型
 };
 
@@ -233,24 +260,24 @@ public:
 //little~
 class sLittleMenu{
 public:
-    uint32_t id_count;   //id计数器,确保ID唯一
+    uint16_t id_count;   //id计数器,确保ID唯一
 
     sLittleMenu();
     ~sLittleMenu();
 
     void init(Renderer* _renderer);
     //获取根节点
-    TreeNode* getRoot();
+    TreeNode* getRoot(){return root;}
     //添加一个子节点
     int addSubMenu(TreeNode* parent,TreeNode* child);
     //设置item数据
     static void setItemData(ItemData* item_data,ItemDataCreateItemConf* config);
     //获取当前菜单节点
-    sLM::TreeNode* getCurr();
+    TreeNode* getCurr(){return curr;}
     //获取当前节点数据
-    ItemData& getCurrNodeData();
+    ItemData& getCurrNodeData(){return *reinterpret_cast<ItemData*>(curr->data);}
     //获取任意节点数据
-    static ItemData& getNodeData(TreeNode* node);
+    static ItemData& getNodeData(TreeNode* node){return *reinterpret_cast<ItemData*>(node->data);}
     //获取同级的第一个节点
     TreeNode& getFristNode();
     //使用任意兄弟节点获取同级的第一个节点
@@ -263,43 +290,70 @@ public:
     TreeNode* getIndexMenu(uint32_t index);
     //返回任意兄弟菜单的索引
     TreeNode* getIndexMenu(TreeNode* any_slibing,uint32_t index);
-    void reset();
+    //菜单返回到根节点
+    void reset(){curr = root->child;}
     //参数增量了处理
     void incDecParamHandler(ItemData& item,ParamModifyDir dir);
+    //锁定菜单
+    void setLock(const char* tittle,const char* msg);
+    void setLock();
+    //解锁菜单
+    void setUnlock();
 
-    void setLockCurrItem(bool is_lock);
+    uint16_t getItemCount();
+
+    TreeNode* getItemByID(uint16_t id);
+    //todo TreeNode* getItemByTag(uint16_t tag);
 
 
-    /*菜单操作*/
-    void opEnter();
-    void opBack();
-    void opPrev();
-    void opNext();
+    
 
-    void changeHandler(OpEvent ev);
+    /*用户的操作,非阻塞式*/
+    void operateEnter();
+    void operateBack();
+    void operatePrev();
+    void operateNext();
 
     void update();
 
 
+    //关于菜单被锁定的信息
+    struct LockInfo{
+        bool status;
+        char tittle[SLM_LOCK_TITTLE_LEN];
+        char message[SLM_LOCK_MESSAGE_LEN];
+        LockInfo(){tittle[0] = '\0';message[0] = '\0';}
+    };
+
+    LockInfo lock_info;
+
 private:
+    /*用户操作处理*/
+    //分处理
+    void op_enter_process(ItemData& now_item);
+    void op_back_process (ItemData& now_item);
+    void op_prev_process (ItemData& now_item);
+    void op_next_process (ItemData& now_item);
+    //总处理
+    void operate_process();
+
+    
+
     TreeNode* root;      //根节点
     TreeNode* curr; //当前菜单位置
+    TreeNode* qlist[SLM_MAX_ITEM_NUM]; //用于查询
 
-    Renderer* renderer; //渲染器
+    OpEvent op_event; //操作事件
+
+    Renderer* renderer; //渲染器句柄
 };
 
 
 
 
-
-
-
-
-
+//构建者
 class CreateItem{
 public:
-
-
     CreateItem(){
         // 设置默认值
         conf.param_tag = 0;
@@ -311,10 +365,7 @@ public:
         conf.change_method = ParamModifyCbMethod::NON_CB;
         conf.limit_type = ParamLimitType::NO;
         memset(conf.text, 0, SLM_ITEM_TEXT_LEN);
-
-        
     }
-
 
     CreateItem& setParamTag(uint32_t tag) {
         conf.param_tag = tag;
@@ -353,7 +404,7 @@ public:
 
     CreateItem& setChangeMethod(ParamModifyCbMethod method) {
         conf.change_method = method;
-        param.modify_cb_mthd = method;
+        param.modify_cb_method = method;
         return *this;
     }
 
@@ -450,7 +501,7 @@ public:
     }
 
     // 构建 ItemData 对象
-    TreeNode* create() {
+    TreeNode* create(){
         ItemData item;
         item.id = 0; // 可以通过其他方式设置唯一ID
         std::strncpy(item.text, conf.text, SLM_ITEM_TEXT_LEN - 1);
@@ -466,13 +517,12 @@ public:
         //如果用户没有显式指定显示格式,则帮他指定
         if(item.param.show_fmt[0] == '\0'){
             if(item.param.type == ParamType::INT){
-                strcpy(item.param.show_fmt,weights_LIST_PARAM_SHOW_INT);
+                strcpy(item.param.show_fmt,SLM_LIST_PARAM_SHOW_INT);
             }
             else if(item.param.type == ParamType::FLOAT){
-                strcpy(item.param.show_fmt,weights_LIST_PARAM_SHOW_FLOAT);
+                strcpy(item.param.show_fmt,SLM_LIST_PARAM_SHOW_FLOAT);
             }
         }
-        
 
         return TreeNode::createNode((const void*)&item,sizeof(item));
     }
@@ -481,12 +531,23 @@ public:
 private:
     ItemDataCreateItemConf conf;
     Param param;
-
     
 
-
-
 };
+
+
+class Renderer{
+public:
+    Renderer() = default;
+    virtual ~Renderer() = default;
+
+    //纯虚函数：绘制菜单列表
+    virtual void showMenuList(TreeNode* parent) = 0;
+    virtual void showWatingDialog(const char* _title, const char* _message) = 0;
+    virtual void update() = 0;
+};
+
+
 
 
 

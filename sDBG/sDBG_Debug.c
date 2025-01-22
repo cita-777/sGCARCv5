@@ -9,22 +9,38 @@
 
 #include "sBSP_UART.h"
 
-char fmt_buf[256];
+//此文件用于调试
+
+char fmt_buf[512];
 
 
 
-//! 不能用,有bug
-// void sBSP_UART_Debug_Printf(const char *fmt,...){
-//     sBSP_UART_Debug_Printf("[WARN]:");
-//     sBSP_UART_Debug_Printf(fmt);
-//     sBSP_UART_Debug_Printf("\n");
-// }
+void sDBG_Printf(const char *fmt,...){
+    va_list args;
+    va_start(args, fmt);
+    vsprintf(fmt_buf, fmt, args);
+    va_end(args);
+    //串口1输出
+    sBSP_UART_Debug_Printf("%s",fmt_buf);
+}
 
-// void sDBG_Debug_Info(const char *fmt,...){
-//     sBSP_UART_Debug_Printf("[INFO]:");
-//     sBSP_UART_Debug_Printf(fmt);
-//     sBSP_UART_Debug_Printf("\n");
-// }
+void sDBG_InfoPrintf(const char *fmt,...){
+    va_list args;
+    va_start(args, fmt);
+    vsprintf(fmt_buf, fmt, args);
+    va_end(args);
+    //串口1输出
+    sBSP_UART_Debug_Printf("[INFO] %s",fmt_buf);
+}
+
+void sDBG_WarnPrintf(const char *fmt,...){
+    va_list args;
+    va_start(args, fmt);
+    vsprintf(fmt_buf, fmt, args);
+    va_end(args);
+    //串口1输出
+    sBSP_UART_Debug_Printf("[WARN] %s",fmt_buf);
+}
 
 
 

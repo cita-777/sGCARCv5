@@ -67,21 +67,21 @@ void sAPP_Tasks_LoopTask(void* param){
 
 
 void sAPP_Tasks_FormatFeRAM(void* param){
-    menu.setLockCurrItem(true);
+    menu.setLock("FeRAM","FeRAM is \nformatting...");
     sBSP_UART_Debug_Printf("FeRAM开始格式化!\n");
     if(sDRV_MB85RCxx_Format(0) == 0){
         sBSP_UART_Debug_Printf("FeRAM格式化完成!\n");
     }else{
         sBSP_UART_Debug_Printf("FeRAM格式化失败!\n");
     }
-    menu.setLockCurrItem(false);
+    menu.setUnlock();
     vTaskDelete(NULL);
 }
 
 static void calibrateIMU(void* param){
-    menu.setLockCurrItem(true);
+    menu.setLock("IMU","IMU is \ncalibrating...");
     sAPP_ParamSave_CaliIMU();
-    menu.setLockCurrItem(false);
+    menu.setUnlock();
     vTaskDelete(NULL);
 }
 

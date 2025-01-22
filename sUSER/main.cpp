@@ -30,70 +30,43 @@ void uart_recied(char* pReciData,uint16_t length){
 
 
 
-void test(){
-    dwt.start();
-
-    String a = "hello123";
-    String b = "你好世界sBSP_UART_Debug_Printf";
-    String c = "sightseer543";
-    String d = a + b + c;
-    
-
-    int num = d.substring(5,8).toInt();
-    
-    dwt.end();
-    sBSP_UART_Debug_Printf("%s,%d\n",d.c_str(),num);
-    // sBSP_UART_Debug_Printf("%s,%d\n",d,num);
-    sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
-    
-}
-
 
 void setup();
 
 int main(){
     car.initSys();
-    sBSP_UART_Debug_Printf("STM32 System Clock Freq: %u MHz\n", car.coreClock / 1000000);
-    sBSP_UART_Debug_Printf("Hello,STM32F405RGT6    BySightseer.\n");
+    // dbg_printf("STM32 System Clock Freq: %u MHz\n", car.coreClock / 1000000);
+    dbg_printf("----Sightseer's General CAR Controller----\n");
+    dbg_printf("%s 硬件版本:%s,特化版本:%s,软件版本:%s\n",APPNAME,HARDWARE_VERSION,SPECIAL_VERSION,SOFTWARE_VERSION);
+    HAL_Delay(20); //等待上电稳定
     car.initBoard();
-    sBSP_UART_Debug_Printf("sGCARC初始化完成\n");
+    dbg_info("sGCARC初始化完成,系统剩余Heap:%u Bytes\n",(uint32_t)xPortGetFreeHeapSize());
 
+    HAL_Delay(10);
 
-
+    //读取IMU静态零偏
     sAPP_ParamSave_ReadIMUCaliVal();
 
     // sBSP_UART_Debug_RecvBegin(uart_recied);
     //sBSP_UART_Top_RecvBegin(uart_recied);
-
-
-    int i = 0;
-
     sAPP_BlcCtrl_Init();
-
-    sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
-    
-
-    //test();
-    //sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
-    //sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
-
-
     sDRV_PS2_Init();
     
-    oled.setAll(0);
-    oled.handler();
-
-    sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
-    dwt.start();
     sAPP_GUI_Init();
-    dwt.end();
-    sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
-    sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
+
+    // dwt.start();
+    // dwt.end();
+    // sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
+    // sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
 
     // 打印菜单结构
     // sBSP_UART_Debug_Printf("菜单结构：\n");
     // menu.getRoot()->printTree(0,sLM::printItemData);
     // delete menu.getRoot();
+
+    // sBSP_UART_Debug_Printf("menu id count:%u\n",menu.getItemCount());
+    // sBSP_UART_Debug_Printf("menu 21 item text:%s\n",sLM::sLittleMenu::getNodeData(menu.getItemByID(21)).text);
+    
 
     setup();
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
@@ -124,7 +97,7 @@ void loop(){
     // motor.setLM(100);
     // motor.setRM(100);
 
-    delay(200);
+    delay(30);
 }
 
 

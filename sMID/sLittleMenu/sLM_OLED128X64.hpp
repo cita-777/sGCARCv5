@@ -1,8 +1,8 @@
 #pragma once
 
 
-#include "sLM_Renderer.hpp"
 
+#include "sLittleMenu.hpp"
 #include "sG2D.hpp"
 
 //前向声明 在命名空间sLM里有这个类

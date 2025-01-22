@@ -71,6 +71,8 @@ void sG2D::init(uint16_t scr_w,uint16_t scr_h){
     this->draw_buf = (uint8_t*)portMalloc((this->scr_h * this->scr_w) / 8);
 
     portM2M_DMA_Init();
+
+    setFPSMode(DIGITS2);
 }
 
 

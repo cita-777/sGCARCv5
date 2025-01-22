@@ -24,6 +24,7 @@ int sAPP_Car::initSys(){
     HAL_Init();
     //初始化RCC
     sBSP_RCC_Init();
+    //初始化SysTick的TIM6的优先级为4
     HAL_InitTick(4);
     //获取时钟频率
     coreClock = HAL_RCC_GetSysClockFreq();
@@ -40,7 +41,7 @@ int sAPP_Car::initSys(){
     //初始化ADC
     sBSP_ADC_Init();
     
-    //启用div0异常
+    //启用除0异常
     SCB->CCR |= SCB_CCR_DIV_0_TRP_Msk;
     //初始化cm_backtrace崩溃调试
     cm_backtrace_init(APPNAME, HARDWARE_VERSION, SOFTWARE_VERSION);
@@ -56,14 +57,14 @@ int sAPP_Car::initBoard(){
     motor.init();
     //初始化按键
     sAPP_Btns_Init();
-    //初始化二值输出设备
+    //初始化二值输出设备:蜂鸣器,LED
     sAPP_BOD_Init();
     //大功率灯初始化
     sDRV_PL_Init();
     //初始化屏幕
     sDRV_GenOLED_Init();
+    //初始化OLED
     oled.init();
-    oled.setFPSMode(sG2D::DIGITS2);
     //初始化铁电
     sAPP_ParamSave_Init();
     //初始化航姿参考系统
@@ -71,8 +72,11 @@ int sAPP_Car::initBoard(){
     //初始化INA219
     sDRV_INA219_Init();
 
-    //创建数据互斥锁
+    //创建car的数据的互斥锁
     mutex = xSemaphoreCreateMutex();
+
+    //OLED清屏
+    oled.setAll(0); oled.handler();
 
     return 0;
 }

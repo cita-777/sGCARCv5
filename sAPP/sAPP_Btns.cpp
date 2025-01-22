@@ -79,16 +79,16 @@ static void trig(uint8_t btn_id,ev_flag_t btn_ev){
     }
     else if(btn_ev == ev_pres || btn_ev == ev_lp_loop){
         if(btn_id == SGBD_KEY_UP_ID || btn_id == SGBD_KEY_PS2_UP_ID){
-            menu.opPrev();
+            menu.operatePrev();
         }
         else if(btn_id == SGBD_KEY_DN_ID || btn_id == SGBD_KEY_PS2_DN_ID){
-            menu.opNext();
+            menu.operateNext();
         }
         else if(btn_id == SGBD_KEY_ET_ID || btn_id == SGBD_KEY_PS2_LE_ID){
-            menu.opEnter();
+            menu.operateEnter();
         }
         else if(btn_id == SGBD_KEY_BK_ID || btn_id == SGBD_KEY_PS2_RI_ID){
-            menu.opBack();
+            menu.operateBack();
         }
         else if(btn_id == SGBD_KEY_PS2_L1_ID){
             brightness += 20;

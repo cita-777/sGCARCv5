@@ -87,6 +87,7 @@
 
         "commentTranslate.source": "Google",
         "commentTranslate.targetLanguage": "zh-CN",
+        "commentTranslate.hover.enabled": false,
     },
     "extensions": {
         "recommendations": [

@@ -6,7 +6,7 @@ extern "C" {
 #include "stm32f4xx_hal.h"
 
 
-void sBSP_RCC_Init();
+int sBSP_RCC_Init();
 
 
 #ifdef __cplusplus

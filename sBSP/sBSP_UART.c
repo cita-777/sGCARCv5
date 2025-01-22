@@ -17,9 +17,9 @@
 UART_HandleTypeDef uart1;
 static uint32_t uart1_blocking_ms = 100;
 //printf格式化
-static char uart1_fmt_buf[256];
+static char uart1_fmt_buf[512];
 //串口接收缓冲
-static char uart1_recv_buf[256];
+static char uart1_recv_buf[512];
 //保存用户传入的接收完成回调
 static sBSP_UART_RecvEndCb_t uart1_recv_end_cb;
 //DMA

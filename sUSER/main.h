@@ -27,8 +27,8 @@
 
 /*APP*/
 #include "sAPP_BinOutDev.hpp"
-#include "sAPP_Car.hpp"
 #include "sAPP_Btns.hpp"
+#include "sAPP_Car.hpp"
 #include "sAPP_Motor.hpp"
 #include "sAPP_BlcCtrl.hpp"
 #include "sAPP_Tasks.hpp"
@@ -46,7 +46,6 @@
 #include "sDWTLib.hpp"
 
 #include "sLittleMenu.hpp"
-#include "sLM_Renderer.hpp"
 #include "sLM_OLED128X64.hpp"
 
 
@@ -83,9 +82,7 @@
 #include "sBSP_RNG.h"
 
 
-#define APPNAME                        "sGCARCv5"
-#define HARDWARE_VERSION               "V5.1"
-#define SOFTWARE_VERSION               "V1.0"
+
 
 #define delay(__MS__) vTaskDelay(__MS__)
 

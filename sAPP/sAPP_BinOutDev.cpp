@@ -1,6 +1,11 @@
 #include "sAPP_BinOutDev.hpp"
 
-
+/**
+ * sAPP_BinOutDev.cpp
+ * 用于初始化二值输出设备
+ * 包含:LED,蜂鸣器
+ * 
+ */
 
 void sAPP_BOD_Init(){
     BinOutDrv.init();
