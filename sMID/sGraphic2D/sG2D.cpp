@@ -24,12 +24,17 @@
  * 1.进一步优化性能,修改了GRAM排列方式,以便DMA发送,优化架构,DMA可选
  * 2.使用双1KB全屏缓冲区,在刷屏时同时进行绘制
  * 
- * 
+ * v1.3 250123
+ * 优化代码结构
  * 
  */
 
 
+
+
 sG2D oled;
+
+/*********************接口*********************/
 
 static inline uint32_t portGetTick(){
     return HAL_GetTick();
@@ -43,18 +48,19 @@ static inline void portFree(void* pv){
     vPortFree(pv);
 }
 
-static inline void portM2M_DMA_Init(){
-    sBSP_DMA_MemSetByte_Init();
+#ifdef SG2D_USE_DMA_MEMSET
+    static inline void portM2M_DMA_Init(){
+        sBSP_DMA_MemSetByte_Init();
+    }
+
+    static inline void portM2M_DMA_MemSetByte(uint8_t val,uint8_t* pDst,uint16_t len){
+        sBSP_DMA_MemSetByte(val,pDst,len);
+    }
+#endif
+
+static inline void portUpdateScreen(uint8_t* buf){
+    sDRV_GenOLED_UpdateScreen(buf);
 }
-
-static inline void portM2M_DMA_MemSetByte(uint8_t val,uint8_t* pDst,uint16_t len){
-    sBSP_DMA_MemSetByte(val,pDst,len);
-}
-
-//字体
-extern sCGRAM_Char_t SymbolFont[];
-extern sCGRAM_Char_t CharFont[];
-
 
 
 
@@ -62,43 +68,48 @@ sG2D::sG2D(){
 
 }
 
-void sG2D::init(uint16_t scr_w,uint16_t scr_h){
+int sG2D::init(uint16_t _scr_w,uint16_t _scr_h){
     //注册屏幕信息
-    this->scr_w = scr_w; this->scr_h = scr_h;
-    this->buf_size = (this->scr_h * this->scr_w) / 8;
+    scr_w = _scr_w; scr_h = _scr_h;
+    buf_size = (scr_h * scr_w) / 8;
     //创建缓冲区
-    this->disp_buf = (uint8_t*)portMalloc((this->scr_h * this->scr_w) / 8);
-    this->draw_buf = (uint8_t*)portMalloc((this->scr_h * this->scr_w) / 8);
+    draw_buf = (uint8_t*)portMalloc(buf_size);
+    disp_buf = (uint8_t*)portMalloc(buf_size);
 
-    portM2M_DMA_Init();
+    if(!draw_buf || !disp_buf){
+        return -1;
+    }
 
-    setFPSMode(DIGITS2);
+    #ifdef SG2D_USE_DMA_MEMSET
+        portM2M_DMA_Init();
+    #endif
+
+    return 0;
 }
 
 
 sG2D::~sG2D(){
-    portFree(this->disp_buf);
-    portFree(this->draw_buf);
-
+    portFree(draw_buf);
+    portFree(disp_buf);
 }
 
 
-void sG2D::setDot(uint16_t x, uint16_t y, bool dot_en){
-    if((x >= this->scr_w) || (y >= this->scr_h)) return;
+void sG2D::setDot(uint16_t x,uint16_t y,bool dot_en){
+    if((x >= scr_w) || (y >= scr_h)) return;
     if(dot_en){
         //和排列方式有关,这里是从左到右,一行行连续排列的
-        this->draw_buf[x + this->scr_w * (y / 8)] |=   1 << (y % 8);
+        draw_buf[x + scr_w * (y / 8)] |=   1 << (y % 8);
     }else{
-        this->draw_buf[x + this->scr_w * (y / 8)] &= ~(1 << (y % 8));
+        draw_buf[x + scr_w * (y / 8)] &= ~(1 << (y % 8));
     }
 }
 
 bool sG2D::getDot(uint16_t x, uint16_t y){
-    if((x >= this->scr_w) || (y >= this->scr_h)) return 0;
-    return (this->draw_buf[x + this->scr_w * (y / 8)]& (1 << (y % 8))) != 0;
+    if((x >= scr_w) || (y >= scr_h)) return 0;
+    return (draw_buf[x + scr_w * (y / 8)]& (1 << (y % 8))) != 0;
 }
 
-void sG2D::inv_area(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1){
+void sG2D::revArea(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1){
     uint8_t x, y;
     for (y = y0; y <= y1; y++) {
         for (x = x0; x <= x1; x++) {
@@ -117,7 +128,7 @@ void sG2D::set_byte(uint16_t x, uint16_t y, uint8_t data){
     }
 }
 
-void sG2D::write_char(uint16_t x,uint16_t y,sCGRAM_Char_t user_char){
+void sG2D::write_char(uint16_t x,uint16_t y,sG2D_Font_D5x7_t user_char){
     set_byte(x + 1,y,user_char.CharByte0);
     set_byte(x + 2,y,user_char.CharByte1);
     set_byte(x + 3,y,user_char.CharByte2);
@@ -125,7 +136,7 @@ void sG2D::write_char(uint16_t x,uint16_t y,sCGRAM_Char_t user_char){
     set_byte(x + 5,y,user_char.CharByte4);
 }
 
-void sG2D::write_number(uint8_t x,uint8_t y,uint32_t num){
+void sG2D::writeNumber(uint8_t x,uint8_t y,uint32_t num){
     uint8_t length = (num == 0)? 1 : (uint8_t)(log10(num) + 1);
     for(uint8_t i = length;i > 0;i--){
         write_char(x + (i * 6) - 6,y,SymbolFont[num / (uint16_t)powf(10 , length - i) % 10]);
@@ -156,7 +167,7 @@ void sG2D::write_string(uint16_t x,uint16_t y,const char* str){
 }
 
 void sG2D::printf(uint16_t x,uint16_t y,const char* fmt,...){
-    char buf[64] = {0};
+    char buf[128];
     va_list args;
     va_start(args, fmt);
     vsprintf(buf,fmt,args);
@@ -239,10 +250,7 @@ void sG2D::attachFPSInfo(){
     static uint32_t fps_val;
     static uint8_t fps_x,fps_y;
 
-    if(this->fps_mode == NONE){
-        return;
-    }
-    else if(this->fps_mode == DIGITS2){
+    if(this->fps_mode == DIGITS2){
         fps_x = this->scr_w - 36u;
         fps_y = this->scr_h - 8u;
     }
@@ -257,31 +265,31 @@ void sG2D::attachFPSInfo(){
 
     drawRectangle(fps_x - 1,fps_y - 1 ,128,64,0);
     write_string(fps_x,fps_y,"FPS:");
-    write_number(fps_x + 23,fps_y,fps_val);
-    inv_area(fps_x - 0,fps_y - 0 ,128,64);
+    writeNumber(fps_x + 23,fps_y,fps_val);
+    revArea(fps_x - 0,fps_y - 0 ,128,64);
 }
 
 void sG2D::setAll(bool px_en){
     if(px_en){
-        //memset(&this->draw_buf[0],0xFF,this->buf_size);
-        portM2M_DMA_MemSetByte(0xFF,(uint8_t*)&this->draw_buf[0],buf_size);
+        #ifdef SG2D_USE_DMA_MEMSET
+            portM2M_DMA_MemSetByte(0xFF,draw_buf,buf_size);
+        #else
+            memset(draw_buf,0xFF,buf_size);
+        #endif
     }else{
-        //memset(&this->draw_buf[0],0x00,this->buf_size);
-        portM2M_DMA_MemSetByte(0x00,(uint8_t*)&this->draw_buf[0],buf_size);
+        #ifdef SG2D_USE_DMA_MEMSET
+            portM2M_DMA_MemSetByte(0x00,draw_buf,buf_size);
+        #else
+            memset(draw_buf,0x00,buf_size);
+        #endif
     }
 }
 
-
-void sG2D::updateScreen(){
-    sDRV_GenOLED_SetShowEN(1);
-    
-    //附上FPS信息
-    //attachFPSInfo();
-    
-
-    sDRV_GenOLED_UpdateScreen(this->draw_buf);
-    //交换缓冲区,让DMA读取刷屏缓冲区,我写绘制缓冲区
-    swap_buf();
+void sG2D::swap_buf(){
+    //交换缓冲区
+    uint8_t* tmp = disp_buf;
+    disp_buf = draw_buf;
+    draw_buf = tmp;
 }
 
 
@@ -289,39 +297,16 @@ void sG2D::handler(){
     //检查上一帧是否刷完
     if(sDRV_GenOLED_IsIdle() == false) return;
 
-    updateScreen();
+    sDRV_GenOLED_SetShowEN(1);
     
-}
+    //附上FPS信息
+    #ifdef SG2D_SHOW_FPS_INFO
+        attachFPSInfo();
+    #endif
 
-
-/**
- * todo 1102 引入双缓冲区模式,检查上次刷新是否完成,如果完成
- * 在updateScreen里发送更新上一帧屏幕后切换缓冲区,否则return
- * 完成241103 PM0147
- * 
- * 新更新:
- * 在用户写入数据时,使用链表add画面的改动,比如在某个地方画个什么东西/字符
- * 然后return表示完成.这个过程很快.
- * 然后在DMA发送过程中,pop链表里的改动,应用到屏幕上,然后检查上一帧是否完成,
- * 如果完成则发送新的DMA,否则return.
- * 
- * 注意帧率计算
- * 
- * 动画必须基于事件,也就是不能直接写GRAM
- * 
- * 
- * 动画,简单线性动画
- * 
- * 简单非线性动画
- * 
- */
-
-
-void sG2D::swap_buf(){
-    //交换缓冲区
-    uint8_t* tmp = this->disp_buf;
-    this->disp_buf = this->draw_buf;
-    this->draw_buf = tmp;
+    portUpdateScreen(draw_buf);
+    //交换缓冲区,让DMA读取刷屏缓冲区,我写绘制缓冲区
+    swap_buf();
 }
 
 

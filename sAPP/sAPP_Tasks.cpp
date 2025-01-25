@@ -66,24 +66,24 @@ void sAPP_Tasks_LoopTask(void* param){
 
 
 
-void sAPP_Tasks_FormatFeRAM(void* param){
-    menu.setLock("FeRAM","FeRAM is \nformatting...");
-    sBSP_UART_Debug_Printf("FeRAM开始格式化!\n");
-    if(sDRV_MB85RCxx_Format(0) == 0){
-        sBSP_UART_Debug_Printf("FeRAM格式化完成!\n");
-    }else{
-        sBSP_UART_Debug_Printf("FeRAM格式化失败!\n");
-    }
-    menu.setUnlock();
-    vTaskDelete(NULL);
-}
+// void sAPP_Tasks_FormatFeRAM(void* param){
+//     menu.setLock("FeRAM","FeRAM is \nformatting...");
+//     sBSP_UART_Debug_Printf("FeRAM开始格式化!\n");
+//     if(sDRV_MB85RCxx_Format(0) == 0){
+//         sBSP_UART_Debug_Printf("FeRAM格式化完成!\n");
+//     }else{
+//         sBSP_UART_Debug_Printf("FeRAM格式化失败!\n");
+//     }
+//     menu.setUnlock();
+//     vTaskDelete(NULL);
+// }
 
-static void calibrateIMU(void* param){
-    menu.setLock("IMU","IMU is \ncalibrating...");
-    sAPP_ParamSave_CaliIMU();
-    menu.setUnlock();
-    vTaskDelete(NULL);
-}
+// static void calibrateIMU(void* param){
+//     menu.setLock("IMU","IMU is \ncalibrating...");
+//     sAPP_ParamSave_CaliIMU();
+//     menu.setUnlock();
+//     vTaskDelete(NULL);
+// }
 
 
 void sAPP_Tasks_ProtectTask(void* param){
@@ -123,11 +123,11 @@ void sAPP_Tasks_CreateAll(){
 
 
 void sAPP_Tasks_StartFormatFeRAM(){
-    xTaskCreate(sAPP_Tasks_FormatFeRAM  , "ForatFeRAM"   ,  512 / sizeof(int), NULL, 1, NULL);
+    // xTaskCreate(sAPP_Tasks_FormatFeRAM  , "ForatFeRAM"   ,  512 / sizeof(int), NULL, 1, NULL);
 }
 
 void sAPP_Tasks_StartCalibrateIMU(){
-    xTaskCreate(calibrateIMU            , "calibrateIMU" , 1024 / sizeof(int), NULL, 1, NULL);
+    // xTaskCreate(calibrateIMU            , "calibrateIMU" , 1024 / sizeof(int), NULL, 1, NULL);
 }
 
 

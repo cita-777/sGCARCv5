@@ -52,7 +52,23 @@ int main(){
     sAPP_BlcCtrl_Init();
     sDRV_PS2_Init();
     
-    sAPP_GUI_Init();
+    using namespace sLM;
+    // sAPP_GUI_Init();
+
+    menu.init(new OLED128X64(&oled,&menu));
+    // menu.init();
+
+
+    auto item1 = menu.createEnterable(menu.home,"item1");
+    auto item2 = menu.createEnterable(menu.home,"item2");
+    auto item3 = menu.createEnterable(menu.home,"item3");
+    auto item4 = menu.createEnterable(menu.home,"item4");
+
+    auto item5 = menu.createEnterable(item4,"item5");
+    auto item6 = menu.createEnterable(item4,"item6");
+    auto item7 = menu.createEnterable(item2,"item7");
+
+    menu.curr = menu.curr->child;
 
     // dwt.start();
     // dwt.end();

@@ -84,7 +84,7 @@ inline void sBSP_SPI_OLED_SendBytes(uint8_t *pData,uint16_t Size){
     oled_spi_tx_busy = 1;
     
     HAL_SPI_Transmit_DMA(&OLED_SPI_HANDLE,pData,Size);
-    //while(HAL_SPI_GetState(&OLED_SPI_HANDLE) != HAL_SPI_STATE_READY);
+    // while(HAL_SPI_GetState(&OLED_SPI_HANDLE) != HAL_SPI_STATE_READY);
 }
 
 

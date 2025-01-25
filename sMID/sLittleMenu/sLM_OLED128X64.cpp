@@ -2,18 +2,6 @@
 
 
 
-#ifdef SLM_DEBUG_LOG_EN
-    #define LOG_INFO(_TEXT) dbg_info("sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
-    #define LOG_WARN(_TEXT) dbg_warn("sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
-    #define LOG_ERR(_TEXT)  dbg_printf("[ERR ] sLM file:%s,line:%u,%s\n",__FILE__,__LINE__,_TEXT)
-#else
-    #define LOG_INFO(_TEXT) (void)0
-    #define LOG_WARN(_TEXT) (void)0
-    #define LOG_ERR(_TEXT)  (void)0
-#endif
-
-
-
 
 using namespace sLM;
 
@@ -32,13 +20,18 @@ OLED128X64::~OLED128X64(){
 }
 
 // 实现渲染器接口
-void OLED128X64::showMenuList(sLM::TreeNode* parent){
+void OLED128X64::showMenuList(sLM::ItemBase* parent){
     if(parent == nullptr){
-        LOG_ERR("错误,showList传入了空指针");
+        SLM_LOG_ERR("错误,showList传入了空指针");
         return;
     }
     //获取当前父节点的数据,用来显示标题
-    ItemData& parent_data = sLittleMenu::getNodeData(parent);
+    ItemType parent_type = parent->getItemType();
+    char* parent_tittle = nullptr;
+    if(parent_type == ItemType::ENTERABLE){
+        parent_tittle = static_cast<EnterableItem*>(parent)->tittle;
+    }
+    // ItemData& parent_data = sLittleMenu::getNodeData(parent);
 
     
 
@@ -54,7 +47,7 @@ void OLED128X64::showMenuList(sLM::TreeNode* parent){
     //画一个装饰三角形在标题栏左边
     screen->drawTriangle(1,2,9,6,1,10,1);
     //标题字
-    screen->write_string(15,3,parent_data.text);
+    screen->printf(15,3,parent_tittle);
     
     //右侧装饰线1
     uint16_t line1_x = 100;
@@ -67,7 +60,7 @@ void OLED128X64::showMenuList(sLM::TreeNode* parent){
     screen->drawLine(line2_x + 1,0,line2_x + 5 + 2,12,1);
     screen->drawLine(line2_x + 2,0,line2_x + 5 + 3,12,1);
     //反转标题栏
-    screen->inv_area(0,0,128,12);
+    screen->revArea(0,0,128,12);
 
     //让下面的操作不影响标题栏
     y_offset += line_height + 5;
@@ -75,9 +68,9 @@ void OLED128X64::showMenuList(sLM::TreeNode* parent){
     screen->drawHLine(0,128,y_offset - 2,1);
 
     //第一个
-    TreeNode* node = parent->child;
+    ItemBase* item = parent->child;
     //如果父节点没有子节点则不显示
-    if(node == nullptr)return;
+    if(item == nullptr)return;
 
     //如果当前的菜单项大于能显示的菜单项了,就增加显示偏移
     //如果当前是最后一个项了,并且大于一个屏幕能显示的范围
@@ -95,53 +88,56 @@ void OLED128X64::showMenuList(sLM::TreeNode* parent){
     //只能显示四个
     for(int i = 1;i <= LIST_MAX_ITEMS;i++){
         //获取当前节点
-        TreeNode* node = menu->getIndexMenu(scroll_index_offset + i);
-        //获取当前节点的数据
-        ItemData& data = sLittleMenu::getNodeData(node);
+        ItemBase* item = menu->getIndexMenu(scroll_index_offset + i);
 
-        if(data.param.access == ParamAccess::RO){
-            if(data.param.update_cb)data.param.update_cb(&(data.param.val_i),data.param.param_tag);
+        if(item->getItemType() == ItemType::ENTERABLE){
+            EnterableItem* now_item = static_cast<EnterableItem*>(item);
+            char* now_item_tittle = now_item->tittle;
+            
+            //绘制行的标题
+            screen->printf(0, y_offset + 1, now_item_tittle);
+            screen->drawHLine(0,128,y_offset + 10,1);
+
+
         }
 
-        //绘制行的标题
-        screen->write_string(0, y_offset + 1, data.text);
-        screen->drawHLine(0,128,y_offset + 10,1);
-        char str[10];
-        if(node->child){
-            snprintf(str,10,">");
-            screen->write_string(100,y_offset + 1,str);
-            screen->write_string(101,y_offset + 1,str);
-            screen->write_string(102,y_offset + 1,str);
-        }else{
-            if(data.type == ItemType::NORMAL && data.param.access != ParamAccess::NO){
-                if(data.param.type == ParamType::FLOAT){
-                    float& value  = *(float*)&(data.param.val_i);
-                    char* unit    =  (char*)&(data.param.unit);
-                    snprintf(str,10,data.param.show_fmt,value,unit);
-                }
-                else if(data.param.type == ParamType::INT){
-                    int& value  = *(int*)&(data.param.val_i);
-                    char* unit  =  (char*)&(data.param.unit);
-                    snprintf(str,10,data.param.show_fmt,value,unit);
-                }
-                else if(data.param.type == ParamType::STRING){
-                    char* value  =  (char*)&(data.param.val_i);
-                    snprintf(str,10,"%s",value);
-                }
-                screen->write_string(LIST_PARAM_SHOW_POS,y_offset + 1,str);
-            }
-            else if(data.type == sLM::ItemType::SWITCH){
-
-            }
-        }
         
-        //处理选中区域
-        if(data.is_hover == true){
-            screen->inv_area(0,y_offset - 1 ,128,y_offset + 9);
-        }
-        if(data.is_selected == true){
-            screen->inv_area(LIST_PARAM_SHOW_POS - 5,y_offset - 1 ,125,y_offset + 9);
-        }
+        // char str[10];
+        // if(item->child){
+        //     snprintf(str,10,">");
+        //     screen->printf(100,y_offset + 1,str);
+        //     screen->printf(101,y_offset + 1,str);
+        //     screen->printf(102,y_offset + 1,str);
+        // }else{
+        //     if(data.type == ItemType::NORMAL && data.param.access != ParamAccess::NO){
+        //         if(data.param.type == ParamType::FLOAT){
+        //             float& value  = *(float*)&(data.param.val_i);
+        //             char* unit    =  (char*)&(data.param.unit);
+        //             snprintf(str,10,data.param.show_fmt,value,unit);
+        //         }
+        //         else if(data.param.type == ParamType::INT){
+        //             int& value  = *(int*)&(data.param.val_i);
+        //             char* unit  =  (char*)&(data.param.unit);
+        //             snprintf(str,10,data.param.show_fmt,value,unit);
+        //         }
+        //         else if(data.param.type == ParamType::STRING){
+        //             char* value  =  (char*)&(data.param.val_i);
+        //             snprintf(str,10,"%s",value);
+        //         }
+        //         screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,str);
+        //     }
+        //     else if(data.type == sLM::ItemType::SWITCH){
+
+        //     }
+        // }
+        
+        // //处理选中区域
+        // if(data.is_hover == true){
+        //     screen->revArea(0,y_offset - 1 ,128,y_offset + 9);
+        // }
+        // if(data.is_selected == true){
+        //     screen->revArea(LIST_PARAM_SHOW_POS - 5,y_offset - 1 ,125,y_offset + 9);
+        // }
 
         
 
@@ -180,8 +176,15 @@ void OLED128X64::update(){
     if(menu->lock_info.status == true){
         showWatingDialog(menu->lock_info.tittle,menu->lock_info.message);
     }else{
-        showMenuList(menu->getCurr()->parent);
+        // if(menu->getNodeData(menu->getCurr()->parent).child_show_mode == MenuChildShowMode::LIST){
+        //     showMenuList(menu->getCurr()->parent);
+        // }
+
+        showMenuList(menu->getCurr());
+        
     }
+
+
     
 }
 

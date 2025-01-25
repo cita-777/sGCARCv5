@@ -21,7 +21,7 @@ namespace sLM{
         ~OLED128X64() override;
 
         //实现基类接口
-        void showMenuList(TreeNode* parent) override;
+        void showMenuList(ItemBase* parent) override;
         //一个让用户等待的对话框
         void showWatingDialog(const char* _title, const char* _message) override;
 

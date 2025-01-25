@@ -15,13 +15,24 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+#define SG2D_FONT_DEFAULT5X7
 
-#include "sAPP_Font.h"
+
+// #define SG2D_USE_DMA_MEMSET
+
+// #define SG2D_SHOW_FPS_INFO
+
+
+
+
+#ifdef SG2D_FONT_DEFAULT5X7
+    #include "fonts/sG2D_Font_Default5x7.h"
+#endif
+
+
 
 #include "sDBG_Debug.h"
 #include "FreeRTOS.h"
-
-#include "sG2D_List.hpp"
 
 
 
@@ -32,24 +43,20 @@ public:
     ~sG2D();
 
     enum FPS_ShowMode{
-        NONE = 0,
         DIGITS2 = 2,        //2位数字
         DIGITS3 = 3,        //3位数字
     };
 
-    void init(uint16_t scr_w = 128u,uint16_t scr_h = 64u);
+    int init(uint16_t _scr_w = 128u,uint16_t _scr_h = 64u);
 
 
-    void setDot(uint16_t x, uint16_t y, bool dot_en);
+    void setDot(uint16_t x,uint16_t y,bool dot_en);
     bool getDot(uint16_t x, uint16_t y);
-    void inv_area(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
-    void set_byte(uint16_t x, uint16_t y, uint8_t data);
-    void write_char(uint16_t x,uint16_t y,sCGRAM_Char_t user_char);
+    void revArea(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1);
+    
 
-    void write_number(uint8_t x,uint8_t y,uint32_t num);
-    void write_string(uint16_t x,uint16_t y,const char* str);
+    void writeNumber(uint8_t x,uint8_t y,uint32_t num);
     void printf(uint16_t x,uint16_t y,const char* fmt,...);
-
 
     void drawLine(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, bool dot_en);
     void drawVLine(uint16_t x, uint16_t y0, uint16_t y1, bool dot_en);
@@ -59,8 +66,6 @@ public:
 
 
     void setFPSMode(FPS_ShowMode mode);
-    
-
 
     void setAll(bool px_en);
 
@@ -74,17 +79,17 @@ private:
     //屏幕长宽
     uint16_t scr_w, scr_h;
     uint32_t buf_size;  //Byte
-    //显示缓冲区和绘制缓冲区
-    uint8_t* disp_buf = nullptr;
+    //绘制缓冲区
     uint8_t* draw_buf = nullptr;
-    FPS_ShowMode fps_mode = NONE;
+    uint8_t* disp_buf = nullptr;
+    FPS_ShowMode fps_mode = DIGITS2;
 
-    void swap_buf();
     void attachFPSInfo();
-    void updateScreen();
 
-
-
+    void set_byte(uint16_t x, uint16_t y, uint8_t data);
+    void write_char(uint16_t x,uint16_t y,sG2D_Font_D5x7_t user_char);
+    void write_string(uint16_t x,uint16_t y,const char* str);
+    void swap_buf();
 };
 
 
