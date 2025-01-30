@@ -29,6 +29,18 @@ void uart_recied(char* pReciData,uint16_t length){
 
 
 
+void btn_callback(sLM::ItemBase* item,uint32_t id){
+    if(item->getItemType() == sLM::ItemType::BUTTON){
+        dbg_printf("OK btn press,id=%u\n",id);
+
+    }
+    
+}
+
+void int_change_callback(sLM::ItemBase* self,uint32_t id,int value){
+    dbg_printf("OK value=%d,id=%u\n",value,id);
+
+}
 
 
 void setup();
@@ -55,20 +67,57 @@ int main(){
     using namespace sLM;
     // sAPP_GUI_Init();
 
+
     menu.init(new OLED128X64(&oled,&menu));
     // menu.init();
 
+    /*初始化*/
+    //using namespace sLM;
+    //menu初始化,创建渲染器,绑定到oled,使用menu作为显示菜单
+    //menu.init(new OLED128X64(&oled,&menu));
 
-    auto item1 = menu.createEnterable(menu.home,"item1");
-    auto item2 = menu.createEnterable(menu.home,"item2");
-    auto item3 = menu.createEnterable(menu.home,"item3");
-    auto item4 = menu.createEnterable(menu.home,"item4");
 
-    auto item5 = menu.createEnterable(item4,"item5");
-    auto item6 = menu.createEnterable(item4,"item6");
-    auto item7 = menu.createEnterable(item2,"item7");
+    /*创建可进入的菜单项*/
+    //在menu.hone下创建一个可进入的菜单项,ID号为1,标题为"item1"
+    //auto* item1 = &EnterableItem::create(menu.home,1).setTittle("Item1");
+    
+    /*创建一个文本框*/
+    //在item4下创建一个文本框,不可进入,id为8,显示标题:"this is label"
+    //LabelItem::create(item4,8).setText("this is label");
 
-    menu.curr = menu.curr->child;
+    /*创建一个按钮,可以按下*/
+    //在item4下创建一个可按下的按钮,id为10,显示标题为"a btn",按钮上显示"PRESS",触发事件调用btn_callback
+    //ButtonItem::create(item4,10).setContext("a btn","PRESS").setCallback(btn_callback);
+
+    /*创建一个int类型的数值调整项*/
+    //在item1下创建一个int类型的数值调整项,id为11,显示标题为"int val",初始默认数值20,触发修改事件调用int_change_callback
+    // IntValAdj& int_val = IntValAdj::create(item2,11)
+    //     .setCallback(int_change_callback,CallBackMethod::EXIT)
+    //     .setContext("int val","%d%%",0,5,5)
+    //     .setConstraint(ConstraintType::RANGE,10,-10);
+
+    auto* item1 = &EnterableItem::create(menu.home,1).setTittle("Item1");
+    auto* item2 = &EnterableItem::create(menu.home,2).setTittle("Item2");
+    auto* item3 = &EnterableItem::create(menu.home,3).setTittle("Item3");
+    auto* item4 = &EnterableItem::create(menu.home,4).setTittle("Item4");
+
+    auto* item5 = &EnterableItem::create(menu.home,5).setTittle("Item5");
+    auto* item7 = &EnterableItem::create(menu.home,7).setTittle("Item7");
+
+    LabelItem::create(item4,8).setText("this is label");
+
+    ButtonItem::create(item4,10).setContext("a btn","PRESS").setCallback(btn_callback);
+
+    
+
+    IntValAdj& int_val = IntValAdj::create(item2,11)
+        .setCallback(int_change_callback,CallBackMethod::EXIT)
+        .setContext("int val","%d%%",0,5,5)
+        .setConstraint(ConstraintType::RANGE,10,-10);
+
+    menu.printAllItem();
+
+
 
     // dwt.start();
     // dwt.end();

@@ -42,6 +42,13 @@
 //最大菜单项数量
 #define SLM_MAX_ITEM_NUM            128
 
+#define SLM_BUTTON_COVER_TEXT_LEN   8
+
+#define SLM_INT_VAL_ADJ_FMT_LEN     12
+#define SLM_INT_VAL_ADJ_DEFAULT     "%d"
+// #define SLM_INT_VAL_ADJ_DEFAULT     " %.2f%s"
+#define SLM_INT_VAL_ADJ_VAL_LEN     12
+
 
 
 
@@ -72,10 +79,12 @@
     #define SLM_LOG_INFO(_TEXT) dbg_info("sLM line:%u,%s\n",__LINE__,_TEXT)
     #define SLM_LOG_WARN(_TEXT) dbg_warn("sLM line:%u,%s\n",__LINE__,_TEXT)
     #define SLM_LOG_ERR(_TEXT)  dbg_printf("[ERR ] sLM line:%u,%s\n",__LINE__,_TEXT)
+    #define SLM_PRINTF          dbg_printf
 #else
     #define SLM_LOG_INFO(_TEXT) (void)0
     #define SLM_LOG_WARN(_TEXT) (void)0
     #define SLM_LOG_ERR(_TEXT)  (void)0
+    #define SLM_PRINTF          (void)0
 #endif
 
 
