@@ -31,6 +31,8 @@ namespace sLM{
         sG2D* screen;
         sLittleMenu* menu;
 
+        void drawListFrame(const char* tittle);
+
     };
 
 }

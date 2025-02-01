@@ -19,36 +19,13 @@ OLED128X64::~OLED128X64(){
     // ...
 }
 
-// 实现渲染器接口
-void OLED128X64::showMenuList(sLM::ItemBase* parent){
-    if(parent == nullptr){
-        SLM_LOG_ERR("错误,showList传入了空指针");
-        return;
-    }
-    //获取当前父节点的数据,用来显示标题
-    ItemType parent_type = parent->getItemType();
-    char* parent_tittle = nullptr;
-    if(parent_type == ItemType::ENTERABLE){
-        parent_tittle = static_cast<EnterableItem*>(parent)->tittle;
-    }
-    // ItemData& parent_data = sLittleMenu::getNodeData(parent);
 
-    
-
-    //当前菜单项索引
-    uint32_t curr_index = menu->getCurrMenuIndex();
-    //y轴偏移
-    uint32_t y_offset = 0;
-    //行高
-    static const uint16_t line_height = 12;
-    //index偏移,用于滚动
-    uint32_t scroll_index_offset = 0;
-
+void OLED128X64::drawListFrame(const char* tittle){
+    /*绘制标题栏,这些是不随着滚动而滚动的*/
     //画一个装饰三角形在标题栏左边
     screen->drawTriangle(1,2,9,6,1,10,1);
     //标题字
-    screen->printf(15,3,parent_tittle);
-    
+    screen->printf(15,3,tittle);
     //右侧装饰线1
     uint16_t line1_x = 100;
     screen->drawLine(line1_x + 0,0,line1_x + 5 + 1,12,1);
@@ -61,6 +38,31 @@ void OLED128X64::showMenuList(sLM::ItemBase* parent){
     screen->drawLine(line2_x + 2,0,line2_x + 5 + 3,12,1);
     //反转标题栏
     screen->revArea(0,0,128,12);
+}
+
+// 实现渲染器接口
+void OLED128X64::showMenuList(sLM::ItemBase* parent){
+    if(parent == nullptr){
+        SLM_LOG_ERR("错误,showList传入了空指针");
+        return;
+    }
+
+    /*显示标题字*/
+    ItemType parent_type = parent->getItemType();
+    const char* parent_tittle = nullptr;
+    if(parent_type == ItemType::ENTERABLE){
+        parent_tittle = static_cast<EnterableItem*>(parent)->getTittle();
+    }
+    drawListFrame(parent_tittle);
+
+    //当前菜单项索引
+    uint32_t curr_index = menu->getCurrMenuIndex();
+    //y轴偏移
+    uint32_t y_offset = 0;
+    //行高
+    static const uint16_t line_height = 12;
+    //index偏移,用于滚动
+    uint32_t scroll_index_offset = 0;
 
     //让下面的操作不影响标题栏
     y_offset += line_height + 5;
@@ -88,58 +90,64 @@ void OLED128X64::showMenuList(sLM::ItemBase* parent){
     //只能显示四个
     for(int i = 1;i <= LIST_MAX_ITEMS;i++){
         //获取当前节点
-        ItemBase* item = menu->getIndexMenu(scroll_index_offset + i);
+        ItemBase* curr_item = menu->getIndexMenu(scroll_index_offset + i);
+        /*获取当前节点的类型*/
+        ItemType curr_type = curr_item->getItemType();
+        //获取当前的tittle 虚函数表,启动!
+        const char* curr_tittle = curr_item->getTittle();
 
-        if(item->getItemType() == ItemType::ENTERABLE){
-            EnterableItem* now_item = static_cast<EnterableItem*>(item);
-            char* now_item_tittle = now_item->tittle;
-            
-            //绘制行的标题
-            screen->printf(0, y_offset + 1, now_item_tittle);
-            screen->drawHLine(0,128,y_offset + 10,1);
+        /*绘制item行的标题*/
+        screen->printf(0, y_offset + 1, curr_tittle);   screen->drawHLine(0,128,y_offset + 10,1);
 
+        /*处理item不同的部分*/
+        //对EnterableItem来说,右边显示一个箭头
+        if(curr_type == ItemType::ENTERABLE){
+            char arrow[2];
+            snprintf(arrow,2,">");
+            screen->printf(100,y_offset + 1,arrow);
+            screen->printf(101,y_offset + 1,arrow);
+            screen->printf(102,y_offset + 1,arrow);
+        }
+        //对Label,什么都不做
+        else if(curr_type == ItemType::LABEL){
 
         }
+        //对Button
+        else if(curr_type == ItemType::BUTTON){
+            ButtonItem* button = static_cast<ButtonItem*>(curr_item);
+            //绘制cover_text
+            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,button->getCoverText());
+            //绘制一个小方块表示button
+            screen->revArea(LIST_PARAM_SHOW_POS - 5,y_offset + 0,120,y_offset + 8);
+            
+        }
+        //对switch,画一个类似于GUI里的那种二值开关
+        else if(curr_type == ItemType::SWITCH){
+            SwitchItem* switch_item = static_cast<SwitchItem*>(curr_item);
+            if(switch_item->getStatus()){
+                //绘制text
+                screen->printf(LIST_PARAM_SHOW_POS + 0,y_offset + 1,switch_item->getText());
+                //绘制一个小方块表示button
+                screen->revArea(LIST_PARAM_SHOW_POS - 5,y_offset + 0,120,y_offset + 8);
+            }else{
+                screen->drawRectangle(LIST_PARAM_SHOW_POS - 5,y_offset + 0,120,y_offset + 8,0);
+                screen->printf(LIST_PARAM_SHOW_POS + 15,y_offset + 1,switch_item->getText());
+            }
+        }
+        //对IntValAdj
+        else if(curr_type == ItemType::INT_VAL_ADJ){
+            IntValAdj* int_val_adj = static_cast<IntValAdj*>(curr_item);
+            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,int_val_adj->getValText());
+        }
+        else if(curr_type == ItemType::FLOAT_VAL_ADJ){
+            FloatValAdj* float_val_adj = static_cast<FloatValAdj*>(curr_item);
+            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,float_val_adj->getValText());
+        }
 
-        
-        // char str[10];
-        // if(item->child){
-        //     snprintf(str,10,">");
-        //     screen->printf(100,y_offset + 1,str);
-        //     screen->printf(101,y_offset + 1,str);
-        //     screen->printf(102,y_offset + 1,str);
-        // }else{
-        //     if(data.type == ItemType::NORMAL && data.param.access != ParamAccess::NO){
-        //         if(data.param.type == ParamType::FLOAT){
-        //             float& value  = *(float*)&(data.param.val_i);
-        //             char* unit    =  (char*)&(data.param.unit);
-        //             snprintf(str,10,data.param.show_fmt,value,unit);
-        //         }
-        //         else if(data.param.type == ParamType::INT){
-        //             int& value  = *(int*)&(data.param.val_i);
-        //             char* unit  =  (char*)&(data.param.unit);
-        //             snprintf(str,10,data.param.show_fmt,value,unit);
-        //         }
-        //         else if(data.param.type == ParamType::STRING){
-        //             char* value  =  (char*)&(data.param.val_i);
-        //             snprintf(str,10,"%s",value);
-        //         }
-        //         screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,str);
-        //     }
-        //     else if(data.type == sLM::ItemType::SWITCH){
 
-        //     }
-        // }
-        
-        // //处理选中区域
-        // if(data.is_hover == true){
-        //     screen->revArea(0,y_offset - 1 ,128,y_offset + 9);
-        // }
-        // if(data.is_selected == true){
-        //     screen->revArea(LIST_PARAM_SHOW_POS - 5,y_offset - 1 ,125,y_offset + 9);
-        // }
-
-        
+        /*处理选中区域(光标)*/
+        if(curr_item->is_hover)screen->revArea(0,y_offset - 1 ,128,y_offset + 9);
+        if(curr_item->is_selected)screen->revArea(LIST_PARAM_SHOW_POS - 5,y_offset - 1 ,125,y_offset + 9);
 
         //如果下一个是空的了
         if(menu->getIndexMenu(scroll_index_offset + i + 1) == nullptr){
@@ -148,7 +156,6 @@ void OLED128X64::showMenuList(sLM::ItemBase* parent){
             //下一行
             y_offset += line_height;
         }
-        
     }
 }
 
@@ -180,7 +187,17 @@ void OLED128X64::update(){
         //     showMenuList(menu->getCurr()->parent);
         // }
 
-        showMenuList(menu->getCurr());
+        // if(menu->getCurr()->parent)
+        if(menu->curr->getItemType() == ItemType::ENTERABLE){
+            EnterableItem* item = static_cast<EnterableItem*>(menu->curr);
+            if(item->getChildShowType() == ItemShowType::CANVAS && !item->is_hover){
+                oled.clear();
+                item->CallCanvasPeriodciallyCallback();
+                return;
+            }
+        }
+        
+        showMenuList(menu->getCurr()->parent);
         
     }
 

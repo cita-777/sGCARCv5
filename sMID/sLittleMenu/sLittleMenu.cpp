@@ -151,11 +151,18 @@ void sLittleMenu::update(){
 
     printAllItem();
 
+    // if(curr->getItemType() == ItemType::ENTERABLE){
+    //     EnterableItem* item = static_cast<EnterableItem*>(curr);
+    //     if(item->getChildShowType() == ItemShowType::CANVAS && !item->is_hover){
+    //         item->CallCanvasPeriodciallyCallback();
+    //     }
+    // }
+
     //处理完了,复位
     op_event = OpEvent::NONE;
 SHOW:
     (void)0;
-    // renderer->update();
+    renderer->update();
 }
 
 //调试用
@@ -223,7 +230,8 @@ void ItemBase::operate_enter(sLittleMenu& menu){
 }
 
 void ItemBase::operate_back(sLittleMenu& menu){
-    if(menu.curr->parent){
+    //不能回到根节点
+    if(menu.curr->parent->parent){
         menu.curr->is_hover = false;
         menu.curr = menu.curr->parent;
         menu.curr->is_hover = true;
@@ -255,7 +263,7 @@ void ItemBase::operate_next(sLittleMenu& menu){
 
 
 EnterableItem& EnterableItem::create(ItemBase* parent,uint32_t _id){
-    EnterableItem* item = SLM_CREATE_SUBITEM(EnterableItem,);
+    EnterableItem* item = SLM_CREATE_CLASS(EnterableItem,);
     if(!item){
         SLM_LOG_ERR("malloc返回空指针,EnterableItem创建失败");
     }
@@ -271,8 +279,75 @@ EnterableItem& EnterableItem::setTittle(const char* tittle){
     return *this;
 }
 
+EnterableItem& EnterableItem::setChildShowType(ItemShowType type){
+    child_show_type = type;
+    return *this;
+}
+
+void EnterableItem::operate_enter(sLittleMenu& menu){
+    if(child_show_type == ItemShowType::LIST){
+        if(menu.curr->child){
+            menu.curr->is_hover = false;
+            menu.curr = menu.curr->child;
+            menu.curr->is_hover = true;
+        }else{
+            SLM_LOG_WARN("ENTER操作失败,子菜单为空");
+        }
+    }
+    else if(child_show_type == ItemShowType::CANVAS){
+        if(canvas_enter_callback && menu.curr->is_hover){
+            canvas_enter_callback(static_cast<EnterableItem*>(this),this->id);
+        }
+        menu.curr->is_hover = false;
+    }
+}
+
+void EnterableItem::operate_back(sLittleMenu& menu){
+    if(child_show_type == ItemShowType::LIST){
+        //不能回到根节点
+        if(menu.curr->parent->parent){
+            menu.curr->is_hover = false;
+            menu.curr = menu.curr->parent;
+            menu.curr->is_hover = true;
+        }else{
+            SLM_LOG_WARN("BACK操作失败,父菜单为空");
+        }
+    }
+    else if(child_show_type == ItemShowType::CANVAS){
+        if(canvas_exit_callback && !menu.curr->is_hover){
+            canvas_exit_callback(static_cast<EnterableItem*>(this),this->id);
+        }
+        menu.curr->is_hover = true;
+    }
+}
+
+void EnterableItem::operate_prev(sLittleMenu& menu){
+    if(menu.curr->prev_sibling){
+        menu.curr->is_hover = false;
+        menu.curr = menu.curr->prev_sibling;
+        menu.curr->is_hover = true;
+        
+    }else{
+        SLM_LOG_WARN("PREV操作失败,上级菜单为空");
+    }
+}
+
+void EnterableItem::operate_next(sLittleMenu& menu){
+    if(menu.curr->next_sibling){
+        menu.curr->is_hover = false;
+        menu.curr = menu.curr->next_sibling;
+        menu.curr->is_hover = true;
+    }else{
+        SLM_LOG_WARN("NEXT操作失败,下级菜单为空");
+    }
+}
+
+
+
+
+
 LabelItem& LabelItem::create(ItemBase* parent,uint32_t _id){
-    LabelItem* item = SLM_CREATE_SUBITEM(LabelItem,);
+    LabelItem* item = SLM_CREATE_CLASS(LabelItem,);
     if(!item){
         SLM_LOG_ERR("malloc返回空指针,LabelItem创建失败");
     }
@@ -283,13 +358,13 @@ LabelItem& LabelItem::create(ItemBase* parent,uint32_t _id){
     return *item;
 }
 
-LabelItem& LabelItem::setText(const char* text){
-    strncpy(this->text,text,SLM_ITEM_TEXT_LEN);
+LabelItem& LabelItem::setTittle(const char* tittle){
+    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
     return *this;
 }
 
 ButtonItem& ButtonItem::create(ItemBase* parent,uint32_t _id){
-    ButtonItem* item = SLM_CREATE_SUBITEM(ButtonItem,);
+    ButtonItem* item = SLM_CREATE_CLASS(ButtonItem,);
     if(!item){
         SLM_LOG_ERR("malloc返回空指针,LabelItem创建失败");
     }
@@ -316,7 +391,7 @@ ButtonItem& ButtonItem::setCallback(ButtonPressCb press_cb){
 
 
 IntValAdj& IntValAdj::create(ItemBase* parent,uint32_t _id){
-    IntValAdj* item = SLM_CREATE_SUBITEM(IntValAdj,);
+    IntValAdj* item = SLM_CREATE_CLASS(IntValAdj,);
     if(!item){
         SLM_LOG_ERR("malloc返回空指针,IntValAdj创建失败");
     }
@@ -437,8 +512,160 @@ void IntValAdj::incDecProcess(bool is_inc){
 
 
 
+FloatValAdj& FloatValAdj::create(ItemBase* parent,uint32_t _id){
+    FloatValAdj* item = SLM_CREATE_CLASS(FloatValAdj,);
+    if(!item){
+        SLM_LOG_ERR("malloc返回空指针,FloatValAdj创建失败");
+    }
+    SLM_LOG_INFO("FloatValAdj创建成功");
+    item->bindParent(parent);
+    item->id = _id;
+    strncpy(item->show_fmt,SLM_FLOAT_VAL_ADJ_DEFAULT,SLM_FLOAT_VAL_ADJ_FMT_LEN);
+    return *item;
+}
+
+FloatValAdj& FloatValAdj::setContext(const char* tittle,const char* show_fmt,float default_val,float increment,float decrement){
+    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
+    //如果fmt是空指针,则是默认值
+    if(show_fmt){
+        strncpy(this->show_fmt,show_fmt,SLM_INT_VAL_ADJ_FMT_LEN);
+    }
+    value = default_val;
+    this->increment = increment;
+    this->decrement = decrement;
+    return *this;
+}
+
+FloatValAdj& FloatValAdj::setCallback(FloatValChangeCb change_cb,CallBackMethod cb_method){
+    this->change_callback = change_cb;
+    this->callback_method = cb_method;
+    return *this;
+}
+
+FloatValAdj& FloatValAdj::setConstraint(ConstraintType cons_type,float max,float min){
+    this->cons_t = cons_type;
+    this->max = max;
+    this->min = min;
+    return *this;
+}
+
+void FloatValAdj::operate_enter(sLittleMenu& menu){
+    if(!is_selected){is_selected = true;}
+}
+
+void FloatValAdj::operate_back(sLittleMenu& menu){
+    //先解锁
+    if(is_selected == true){
+        if(callback_method == CallBackMethod::EXIT && change_callback != nullptr){
+            change_callback(this,id,value);
+        }
+        is_selected = false;
+    }else{
+        if(menu.curr->parent){
+            menu.curr->is_hover = false;
+            menu.curr = menu.curr->parent;
+            menu.curr->is_hover = true;
+        }else{
+            SLM_LOG_WARN("BACK操作失败,父菜单为空");
+        }
+    }
+}
+
+void FloatValAdj::operate_prev(sLittleMenu& menu){
+    //没选中时执行prev操作
+    if(!is_selected){
+        if(menu.curr->prev_sibling){
+            menu.curr->is_hover = false;
+            menu.curr = menu.curr->prev_sibling;
+            menu.curr->is_hover = true;
+        }else{
+            SLM_LOG_WARN("PREV操作失败,上级菜单为空");
+        }
+    }
+    //选中时执行修改
+    else{
+        incDecProcess(true);
+        if(callback_method == CallBackMethod::CHANGE && change_callback != nullptr){
+            change_callback(this,id,value);
+        }
+        SLM_LOG_INFO("IntValAdj修改完成");
+    }
+}
+
+void FloatValAdj::operate_next(sLittleMenu& menu){
+    if(!is_selected){
+        if(menu.curr->next_sibling){
+            menu.curr->is_hover = false;
+            menu.curr = menu.curr->next_sibling;
+            menu.curr->is_hover = true;
+        }else{
+            SLM_LOG_WARN("NEXT操作失败,下级菜单为空");
+        }
+    }
+    else{
+        incDecProcess(false);
+        if(callback_method == CallBackMethod::CHANGE && change_callback != nullptr){
+            change_callback(this,id,value);
+        }
+        SLM_LOG_INFO("IntValAdj修改完成");
+    }
+}
+
+void FloatValAdj::print() const{
+    const char* text_ptr = getValText();
+    SLM_PRINTF("id=%u,FloatValueAdj:%s,val:%s,S=%d,H=%d\n",id,tittle,text_ptr,is_selected?1:0,is_hover?1:0);
+}
 
 
+
+const char* FloatValAdj::getValText() const{
+    snprintf((char*)value_text,SLM_FLOAT_VAL_ADJ_VAL_LEN,show_fmt,value);
+    return value_text;
+}
+
+void FloatValAdj::incDecProcess(bool is_inc){
+    //先加减再限幅
+    is_inc ? value += increment : value -= decrement;
+    //限幅处理
+    if(cons_t == ConstraintType::MAX || cons_t == ConstraintType::RANGE)if(value > max)value = max;
+    if(cons_t == ConstraintType::MIN || cons_t == ConstraintType::RANGE)if(value < min)value = min;
+}
+
+
+SwitchItem& SwitchItem::create(uint32_t _id){
+    SwitchItem* item = SLM_CREATE_CLASS(SwitchItem,_id);
+    if(!item)SLM_LOG_ERR("malloc返回空指针,SwitchItem创建失败");
+    return *item;
+}
+
+SwitchItem& SwitchItem::create(ItemBase* parent,uint32_t _id){
+    SwitchItem* item = SLM_CREATE_CLASS(SwitchItem,_id);
+    if(!item)SLM_LOG_ERR("malloc返回空指针,SwitchItem创建失败");
+    item->bindParent(parent);
+    return *item;
+}
+
+SwitchItem& SwitchItem::setContext(const char* tittle){
+    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
+    return *this;
+}
+
+SwitchItem& SwitchItem::setContext(const char* tittle,const char* on_text,const char* off_text){
+    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
+    if(on_text)strncpy(this->on_text,on_text,SLM_SWITCH_TEXT_LEN);
+    if(off_text)strncpy(this->off_text,off_text,SLM_SWITCH_TEXT_LEN);
+    return *this;
+}
+
+SwitchItem& SwitchItem::setCallback(SwitchPressCb press_cb){
+    press_callback = press_cb;
+    return *this;
+}
+
+SwitchItem& SwitchItem::setStatus(bool status){
+    this->status = status;
+    return *this;
+}
 
 
 

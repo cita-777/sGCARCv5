@@ -37,11 +37,33 @@ void btn_callback(sLM::ItemBase* item,uint32_t id){
     
 }
 
-void int_change_callback(sLM::ItemBase* self,uint32_t id,int value){
+void int_change_callback(sLM::IntValAdj* item,uint32_t id,int value){
     dbg_printf("OK value=%d,id=%u\n",value,id);
 
 }
 
+void float_change_callback(sLM::FloatValAdj* item,uint32_t id,float value){
+    dbg_printf("OK float=%.1f,id=%u\n",value,id);
+}
+
+void switch_callback(sLM::SwitchItem* item,uint32_t id,bool status){
+    dbg_printf("OK switch=%u,id=%u\n",status?1:0,id);
+}
+
+void canvas_enter_callback(sLM::EnterableItem* parent_item,uint32_t id){
+    dbg_printf("OK canvas_enter_callback,id=%u\n",id);
+}
+
+void canvas_periodically_callback(sLM::EnterableItem* parent_item,uint32_t id){
+    // dbg_printf("OK canvas_periodically_callback,id=%u\n",id);
+    static uint32_t i = 0;
+    i++;
+    oled.printf(10,10,"Hello,count=%u",i);
+}
+
+void canvas_exit_callback(sLM::EnterableItem* parent_item,uint32_t id){
+    dbg_printf("OK canvas_exit_callback,id=%u\n",id);
+}
 
 void setup();
 
@@ -104,18 +126,36 @@ int main(){
     auto* item5 = &EnterableItem::create(menu.home,5).setTittle("Item5");
     auto* item7 = &EnterableItem::create(menu.home,7).setTittle("Item7");
 
-    LabelItem::create(item4,8).setText("this is label");
+    LabelItem::create(item4,8).setTittle("this is label");
 
     ButtonItem::create(item4,10).setContext("a btn","PRESS").setCallback(btn_callback);
-
-    
 
     IntValAdj& int_val = IntValAdj::create(item2,11)
         .setCallback(int_change_callback,CallBackMethod::EXIT)
         .setContext("int val","%d%%",0,5,5)
         .setConstraint(ConstraintType::RANGE,10,-10);
 
+    FloatValAdj& float_val = FloatValAdj::create(item2,12)
+        .setCallback(float_change_callback,CallBackMethod::CHANGE)
+        .setContext("float",nullptr,2.4,0.1,0.1)
+        .setConstraint(ConstraintType::RANGE,3,-3);
+
+    SwitchItem& switch1 = SwitchItem::create(item2,13)
+        .setContext("a switch")
+        .setCallback(switch_callback);
+
+    auto* canvas_item = &EnterableItem::create(menu.home,14).setTittle("Canvas Item")
+        .setChildShowType(ItemShowType::CANVAS)
+        .setCanvasEnterCallback(canvas_enter_callback)
+        .setCanvasPeriodicallyCallback(canvas_periodically_callback)
+        .setCanvasExitCallback(canvas_exit_callback);
+
+    // menu.curr = menu.curr->child;
+    menu.operateEnter();
+
     menu.printAllItem();
+
+    // sizeof(ButtonItem)
 
 
 

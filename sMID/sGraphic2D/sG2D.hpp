@@ -63,7 +63,7 @@ public:
     void drawHLine(uint16_t x0, uint16_t x1,uint16_t y, bool dot_en);
     void drawTriangle(uint8_t x0, uint8_t y0, uint8_t x1, uint8_t y1, uint8_t x2, uint8_t y2, bool dot_en);
     void drawRectangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, bool is_fill);
-
+    void clear();
 
     void setFPSMode(FPS_ShowMode mode);
 

@@ -46,10 +46,15 @@
 
 #define SLM_INT_VAL_ADJ_FMT_LEN     12
 #define SLM_INT_VAL_ADJ_DEFAULT     "%d"
-// #define SLM_INT_VAL_ADJ_DEFAULT     " %.2f%s"
 #define SLM_INT_VAL_ADJ_VAL_LEN     12
 
+#define SLM_FLOAT_VAL_ADJ_FMT_LEN   12
+#define SLM_FLOAT_VAL_ADJ_DEFAULT   "%.1f"
+#define SLM_FLOAT_VAL_ADJ_VAL_LEN   12
 
+#define SLM_SWITCH_TEXT_LEN          6
+#define SLM_SWITCH_ON_TEXT_DEFAULT  "ON"
+#define SLM_SWITCH_OFF_TEXT_DEFAULT "OFF"
 
 
 

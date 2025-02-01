@@ -237,6 +237,10 @@ void sG2D::drawRectangle(uint16_t x0, uint16_t y0, uint16_t x1, uint16_t y1, boo
     }
 }
 
+void sG2D::clear(){
+    setAll(0);
+}
+
 
 void sG2D::setFPSMode(FPS_ShowMode mode){
     this->fps_mode = mode;

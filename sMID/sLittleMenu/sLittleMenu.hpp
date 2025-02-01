@@ -23,9 +23,9 @@
  * v1.5 250122 bySightseer.
  * 优化代码架构,优化了lock,采用全局lock.
  * 
- * v1.6 
- * todo 加入CANVAS支持,实现一个简易的动画渲染器
- * 
+ * v1.6 250201 bySightseer.
+ * 使用多态重写整个sLittleMenu,实现了CANVAS功能,重构了sLittleMenu和OLED128X64渲染器
+ * 优化了菜单项创建流程,取消查询数组,没有菜单项限制
  * 
  * 
  * 
@@ -37,27 +37,36 @@
 
 #include "sLM_Conf.hpp"
 
-#include "item/sLM_EnterableItem.hpp"
-#include "sLM_Namespace.hpp"
-
 
 #include <string>
 
-
-#define SLM_CREATE_SUBITEM(_ITEM_NAME,_PARAM,...) new(SLM_PORT_MALLOC(sizeof(_ITEM_NAME))) _ITEM_NAME(_PARAM);
+//placement new创建类
+#define SLM_CREATE_CLASS(_ITEM_NAME,_PARAM,...) new(SLM_PORT_MALLOC(sizeof(_ITEM_NAME))) _ITEM_NAME(_PARAM);
 
 
 namespace sLM{
 /*前向声明*/
 class sLittleMenu;
 class Renderer;
+
+/*Item类*/
 class ItemBase;
 class EnterableItem;
 class LabelItem;
 class ButtonItem;
 class IntValAdj;
+class FloatValAdj;
+class SwitchItem;
+class BarItem;
 
+//子菜单显示方式
+enum class ItemShowType{
+    LIST = 0,
+    PAGE,
+    CANVAS
+};
 
+//Item类型
 enum class ItemType{
     ENTERABLE = 0,
     BUTTON = 1,
@@ -68,6 +77,7 @@ enum class ItemType{
     FLOAT_VAL_ADJ = 6,
 };
 
+//约束类型
 enum class ConstraintType{
     NONE = 0,
     MAX,
@@ -75,25 +85,27 @@ enum class ConstraintType{
     RANGE,
 };
 
+//回调时机
 enum class CallBackMethod{
-    NON = 0,
-    EXIT,
-    CHANGE,
+    NON = 0,    //不回调
+    EXIT,       //退出时回调
+    CHANGE,     //修改时就回调
 };
 
-using ButtonPressCb = void(*)(ItemBase* self,uint32_t id);
-using IntValChangeCb = void(*)(ItemBase* self,uint32_t id,int value);
+using ButtonPressCb = void(*)(ItemBase* item,uint32_t id);
+using IntValChangeCb = void(*)(IntValAdj* item,uint32_t id,int value);
+using FloatValChangeCb = void(*)(FloatValAdj* item,uint32_t id,float value);
+using SwitchPressCb = void(*)(SwitchItem* item,uint32_t id,bool status);
 
+using CanvasEnterCb = void(*)(EnterableItem* parent_item,uint32_t id);
+using CanvasPeriodicallyCb = void(*)(EnterableItem* parent_item,uint32_t id);
+using CanvasExitCb  = void(*)(EnterableItem* parent_item,uint32_t id);
 
 
 class sLittleMenu{
 public:
 
-    enum class ItemShowType{
-        LIST = 0,
-        PAGE,
-        CANVAS
-    };
+    
     
     //操作事件类型
     enum class OpEvent{
@@ -190,6 +202,7 @@ public:
     bool is_hover    = false;
 
     virtual ItemType getItemType() const = 0;
+    virtual const char* getTittle() const = 0;
 
     //菜单默认操作
     virtual void operate_enter(sLittleMenu& menu);
@@ -221,10 +234,47 @@ public:
     //创建方式
     static EnterableItem& create(ItemBase* parent,uint32_t _id);
     EnterableItem& setTittle(const char* tittle);
+    EnterableItem& setChildShowType(ItemShowType type);
 
+    EnterableItem& setCanvasEnterCallback(CanvasEnterCb enter_cb){
+        canvas_enter_callback = enter_cb;
+        return *this;
+    }
+    EnterableItem& setCanvasPeriodicallyCallback(CanvasPeriodicallyCb cb){
+        canvas_periodically_callback = cb;
+        return *this;
+    }
+    EnterableItem& setCanvasExitCallback(CanvasExitCb exit_cb){
+        canvas_exit_callback = exit_cb;
+        return *this;
+    }
 
+    /*重载操作方式*/
+    void operate_enter(sLittleMenu& menu) override;
+    void operate_back (sLittleMenu& menu) override;
+    void operate_prev (sLittleMenu& menu) override;
+    void operate_next (sLittleMenu& menu) override;
+
+    const char* getTittle() const override{
+        return tittle;
+    }
+
+    ItemShowType getChildShowType() const{
+        return child_show_type;
+    }
+
+    void CallCanvasPeriodciallyCallback(){
+        canvas_periodically_callback(static_cast<EnterableItem*>(this),id);
+    }
+
+private:
+    //默认以list方式显示
+    ItemShowType child_show_type = ItemShowType::LIST;
     //标题字
     char tittle[SLM_ITEM_TEXT_LEN];
+    CanvasEnterCb canvas_enter_callback = nullptr;
+    CanvasPeriodicallyCb canvas_periodically_callback = nullptr;
+    CanvasExitCb canvas_exit_callback = nullptr;
 };
 
 
@@ -239,19 +289,23 @@ public:
     }
 
     void print() const override{
-        SLM_PRINTF("id=%u,Label:%s,H=%d\n",id,text,is_hover?1:0);
+        SLM_PRINTF("id=%u,Label:%s,H=%d\n",id,tittle,is_hover?1:0);
     }
 
     //创建方式
     static LabelItem& create(ItemBase* parent,uint32_t _id);
-    LabelItem& setText(const char* text);
+    LabelItem& setTittle(const char* tittle);
+
+    const char* getTittle() const override{
+        return tittle;
+    }
 
 private:
     LabelItem(){
-        text[0] = '\0';
+        tittle[0] = '\0';
     }
 
-    char text[SLM_ITEM_TEXT_LEN];
+    char tittle[SLM_ITEM_TEXT_LEN];
 };
 
 //按钮
@@ -275,6 +329,14 @@ public:
     ButtonItem& setContext(const char* tittle,const char* cover_text);
     ButtonItem& setCallback(ButtonPressCb press_cb);
 
+    const char* getTittle() const override{
+        return tittle;
+    }
+
+    const char* getCoverText(){
+        return cover_text;
+    }
+
 
 private:
     //按钮标题
@@ -290,14 +352,58 @@ private:
     }
 };
 
-
-//todo 完成这两个
-
 class SwitchItem : public ItemBase{
 public:
+    ItemType getItemType() const override{return ItemType::SWITCH;}
 
+    //按钮控件,按下Enter则调用回调,不可选中
+    void operate_enter(sLittleMenu& menu) override{
+        status = !status;
+        if(press_callback){
+            press_callback(this,id,status);
+        }
+    }
 
+    void print() const override{
+        SLM_PRINTF("id=%u,Switch:%s,Status:%s,H=%d\n",id,tittle,status?on_text:off_text,is_hover?1:0);
+    }
 
+    //创建方式
+    static SwitchItem& create(uint32_t _id);
+    static SwitchItem& create(ItemBase* parent,uint32_t _id);
+    SwitchItem& setContext(const char* tittle);
+    SwitchItem& setContext(const char* tittle,const char* on_text,const char* off_text);
+    SwitchItem& setCallback(SwitchPressCb press_cb);
+    SwitchItem& setStatus(bool status);
+
+    const char* getTittle() const override{
+        return tittle;
+    }
+
+    const char* getText() const{
+        return status ? on_text : off_text;
+    }
+
+    bool getStatus() const{
+        return status;
+    }
+
+private:
+    //标题
+    char tittle[SLM_ITEM_TEXT_LEN];
+    //拨到ON位置时文本
+    char on_text[SLM_SWITCH_TEXT_LEN];
+    char off_text[SLM_SWITCH_TEXT_LEN];
+    //回调
+    SwitchPressCb press_callback = nullptr;
+    bool status = false;
+
+    SwitchItem(uint32_t id){
+        tittle[0] = '\0';
+        //设置默认值
+        strncpy(on_text,SLM_SWITCH_ON_TEXT_DEFAULT,SLM_SWITCH_TEXT_LEN);
+        strncpy(off_text,SLM_SWITCH_OFF_TEXT_DEFAULT,SLM_SWITCH_TEXT_LEN);
+    }
 };
 
 class BarItem : public ItemBase{
@@ -309,8 +415,6 @@ public:
 
 class IntValAdj : public ItemBase{
 public:
-    
-    
     //用户使用create来创建一个int类型的数值调整项
     static IntValAdj& create(ItemBase* parent,uint32_t _id);
     IntValAdj& setContext(const char* tittle,const char* show_fmt,int default_val,int increment,int decrement);
@@ -329,10 +433,9 @@ public:
     void print() const override;
 
     //获取标题
-    const char* getTittle() const{return tittle;}
+    const char* getTittle() const override{return tittle;}
     //获取值的文本
     const char* getValText() const;
-
 
 private:
     IntValAdj(){
@@ -362,7 +465,60 @@ private:
 
     //处理增量,参数:1为加,0为减
     void incDecProcess(bool is_inc);
+};
 
+class FloatValAdj : public ItemBase{
+public:
+    //用户使用create来创建一个int类型的数值调整项
+    static FloatValAdj& create(ItemBase* parent,uint32_t _id);
+    FloatValAdj& setContext(const char* tittle,const char* show_fmt,float default_val,float increment,float decrement);
+    FloatValAdj& setCallback(FloatValChangeCb change_cb,CallBackMethod cb_method);
+    FloatValAdj& setConstraint(ConstraintType cons_type,float max,float min);
+    
+    //获取item类型
+    ItemType getItemType() const override{return ItemType::FLOAT_VAL_ADJ;}
+    /*重载操作方式*/
+    void operate_enter(sLittleMenu& menu) override;
+    void operate_back (sLittleMenu& menu) override;
+    void operate_prev (sLittleMenu& menu) override;
+    void operate_next (sLittleMenu& menu) override;
+    
+    /*重载print方法*/
+    void print() const override;
+
+    //获取标题
+    const char* getTittle() const override{return tittle;}
+    //获取值的文本
+    const char* getValText() const;
+
+private:
+    FloatValAdj(){
+        tittle[0] = '\0';
+        value_text[0] = '\0';
+        show_fmt[0] = '\0';
+    }
+
+    //值
+    float value = 0.0f;
+    //增减量
+    float increment = 0.1f;float decrement = 0.1f;
+    //阈值
+    float max = 1.0f;float min = -1.0f;
+    //约束类型
+    ConstraintType cons_t = ConstraintType::NONE;
+    //被修改时的回调
+    FloatValChangeCb change_callback = nullptr;
+    //调用回调的时机
+    CallBackMethod callback_method = CallBackMethod::CHANGE;
+    //显示的标题
+    char tittle[SLM_ITEM_TEXT_LEN];
+    //数值的文本
+    char value_text[SLM_INT_VAL_ADJ_VAL_LEN];
+    //格式化显示的方式
+    char show_fmt[SLM_INT_VAL_ADJ_FMT_LEN];
+
+    //处理增量,参数:1为加,0为减
+    void incDecProcess(bool is_inc);
 };
 
 
