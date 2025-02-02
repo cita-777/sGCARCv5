@@ -370,7 +370,7 @@ int8_t sDRV_GenOLED_Init(){
         setRST(0);
         HAL_Delay(1);
         setRST(1);
-        HAL_Delay(50);
+        HAL_Delay(10);
     #endif
 
 

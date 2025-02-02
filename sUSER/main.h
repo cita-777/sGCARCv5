@@ -34,7 +34,7 @@
 #include "sAPP_Tasks.hpp"
 #include "sAPP_AHRS.hpp"
 #include "sAPP_BlcCtrl.hpp"
-// #include "sAPP_GUI.hpp"
+#include "sAPP_GUI.hpp"
 #include "sAPP_ParamSave.hpp"
 
 

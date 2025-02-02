@@ -27,6 +27,8 @@
  * 使用多态重写整个sLittleMenu,实现了CANVAS功能,重构了sLittleMenu和OLED128X64渲染器
  * 优化了菜单项创建流程,取消查询数组,没有菜单项限制
  * 
+ * v1.7 250202 bySightseer.
+ * 把所有字符串的深拷贝改为浅拷贝(除了格式化结果value_text),降低RAM占用,但是用户如果动态创建需要保证字符串生命周期
  * 
  * 
  * 
@@ -34,14 +36,7 @@
 
 #pragma once
 
-
 #include "sLM_Conf.hpp"
-
-
-#include <string>
-
-//placement new创建类
-#define SLM_CREATE_CLASS(_ITEM_NAME,_PARAM,...) new(SLM_PORT_MALLOC(sizeof(_ITEM_NAME))) _ITEM_NAME(_PARAM);
 
 
 namespace sLM{
@@ -58,23 +53,26 @@ class IntValAdj;
 class FloatValAdj;
 class SwitchItem;
 class BarItem;
+class IntValShow;
 
 //子菜单显示方式
 enum class ItemShowType{
     LIST = 0,
-    PAGE,
+    PAGE,   //todo 目前未完成
     CANVAS
 };
 
 //Item类型
 enum class ItemType{
     ENTERABLE = 0,
-    BUTTON = 1,
-    LABEL = 2,
-    SWITCH = 3,
-    BAR = 4,
-    INT_VAL_ADJ = 5,
-    FLOAT_VAL_ADJ = 6,
+    BUTTON,
+    LABEL,
+    SWITCH,
+    BAR,
+    INT_VAL_ADJ,
+    FLOAT_VAL_ADJ,
+    INT_VAL_SHOW,
+    FLOAT_VAL_SHOW,
 };
 
 //约束类型
@@ -101,12 +99,12 @@ using CanvasEnterCb = void(*)(EnterableItem* parent_item,uint32_t id);
 using CanvasPeriodicallyCb = void(*)(EnterableItem* parent_item,uint32_t id);
 using CanvasExitCb  = void(*)(EnterableItem* parent_item,uint32_t id);
 
+using IntValGetCb = int(*)(uint32_t id);
+using FloatValGetCb = float(*)(uint32_t id);
+
 
 class sLittleMenu{
 public:
-
-    
-    
     //操作事件类型
     enum class OpEvent{
         NONE = 0,
@@ -116,11 +114,6 @@ public:
         BACK,
         LOCK,
     };
-
-    
-
-
-
 
     int init(Renderer* _renderer);
     int init();
@@ -148,29 +141,36 @@ public:
 
     void update();
 
-    ItemBase* getCurr(){
-        return curr;
-    }
+    ItemBase* getCurr(){return curr;}
+
+    ItemBase* getHome(){return home;}
 
 
     void printAllItem();
+
+    //锁定菜单
+    void setLock(const char* tittle,const char* msg);
+    void setLock();
+    //解锁菜单
+    void setUnlock();
+    bool getIsLock(){return lock_info.status;}
+    const char* getLockTittle(){return lock_info.tittle;}
+    const char* getLockMessage(){return lock_info.message;}
 
 
     ItemBase* curr;
     ItemBase* home;
 
+private:
     //关于菜单被锁定的信息
     struct LockInfo{
         bool status;
-        char tittle[SLM_LOCK_TITTLE_LEN];
-        char message[SLM_LOCK_MESSAGE_LEN];
-        LockInfo(){tittle[0] = '\0';message[0] = '\0';}
+        const char* tittle = nullptr;
+        const char* message = nullptr;
     };
 
     LockInfo lock_info;
 
-private:
-    
     Renderer* renderer;
     OpEvent op_event;
 
@@ -271,7 +271,7 @@ private:
     //默认以list方式显示
     ItemShowType child_show_type = ItemShowType::LIST;
     //标题字
-    char tittle[SLM_ITEM_TEXT_LEN];
+    const char* tittle = nullptr;
     CanvasEnterCb canvas_enter_callback = nullptr;
     CanvasPeriodicallyCb canvas_periodically_callback = nullptr;
     CanvasExitCb canvas_exit_callback = nullptr;
@@ -301,11 +301,7 @@ public:
     }
 
 private:
-    LabelItem(){
-        tittle[0] = '\0';
-    }
-
-    char tittle[SLM_ITEM_TEXT_LEN];
+    const char* tittle = nullptr;
 };
 
 //按钮
@@ -340,16 +336,11 @@ public:
 
 private:
     //按钮标题
-    char tittle[SLM_ITEM_TEXT_LEN];
+    const char* tittle = nullptr;
     //按钮上的文本
-    char cover_text[SLM_BUTTON_COVER_TEXT_LEN];
+    const char* cover_text = nullptr;
     //按下回调
     ButtonPressCb press_callback = nullptr;
-
-    ButtonItem(){
-        tittle[0] = '\0';
-        cover_text[0] = '\0';
-    }
 };
 
 class SwitchItem : public ItemBase{
@@ -390,20 +381,13 @@ public:
 
 private:
     //标题
-    char tittle[SLM_ITEM_TEXT_LEN];
+    const char* tittle = nullptr;
     //拨到ON位置时文本
-    char on_text[SLM_SWITCH_TEXT_LEN];
-    char off_text[SLM_SWITCH_TEXT_LEN];
+    const char* on_text = nullptr;
+    const char* off_text = nullptr;
     //回调
     SwitchPressCb press_callback = nullptr;
     bool status = false;
-
-    SwitchItem(uint32_t id){
-        tittle[0] = '\0';
-        //设置默认值
-        strncpy(on_text,SLM_SWITCH_ON_TEXT_DEFAULT,SLM_SWITCH_TEXT_LEN);
-        strncpy(off_text,SLM_SWITCH_OFF_TEXT_DEFAULT,SLM_SWITCH_TEXT_LEN);
-    }
 };
 
 class BarItem : public ItemBase{
@@ -439,11 +423,8 @@ public:
 
 private:
     IntValAdj(){
-        tittle[0] = '\0';
         value_text[0] = '\0';
-        show_fmt[0] = '\0';
     }
-
     //值
     int value = 0;
     //增减量
@@ -457,11 +438,11 @@ private:
     //调用回调的时机
     CallBackMethod callback_method = CallBackMethod::CHANGE;
     //显示的标题
-    char tittle[SLM_ITEM_TEXT_LEN];
+    const char* tittle = nullptr;
     //数值的文本
     char value_text[SLM_INT_VAL_ADJ_VAL_LEN];
     //格式化显示的方式
-    char show_fmt[SLM_INT_VAL_ADJ_FMT_LEN];
+    const char* show_fmt = nullptr;
 
     //处理增量,参数:1为加,0为减
     void incDecProcess(bool is_inc);
@@ -493,11 +474,8 @@ public:
 
 private:
     FloatValAdj(){
-        tittle[0] = '\0';
         value_text[0] = '\0';
-        show_fmt[0] = '\0';
     }
-
     //值
     float value = 0.0f;
     //增减量
@@ -511,17 +489,85 @@ private:
     //调用回调的时机
     CallBackMethod callback_method = CallBackMethod::CHANGE;
     //显示的标题
-    char tittle[SLM_ITEM_TEXT_LEN];
+    const char* tittle = nullptr;
     //数值的文本
-    char value_text[SLM_INT_VAL_ADJ_VAL_LEN];
+    char value_text[SLM_FLOAT_VAL_ADJ_VAL_LEN];
     //格式化显示的方式
-    char show_fmt[SLM_INT_VAL_ADJ_FMT_LEN];
+    const char* show_fmt = nullptr;
 
     //处理增量,参数:1为加,0为减
     void incDecProcess(bool is_inc);
 };
 
+class IntValShow : public ItemBase{
+public:
+    //用户使用create来创建一个int类型的数值调整项
+    static IntValShow& create(ItemBase* parent,uint32_t _id);
+    IntValShow& setContext(const char* tittle,const char* show_fmt);
+    IntValShow& setCallback(IntValGetCb get_cb);
+    
+    //获取item类型
+    ItemType getItemType() const override{return ItemType::INT_VAL_SHOW;}
+    
+    /*重载print方法*/
+    void print() const override;
 
+    void update_value(){if(get_callback)value = get_callback(id);}
+
+    //获取标题
+    const char* getTittle() const override{return tittle;}
+    //获取值的文本
+    const char* getValText();
+
+private:
+    IntValShow(){
+        value_text[0] = '\0';
+    }
+    //值
+    int value = 0;
+    //显示的标题
+    const char* tittle = nullptr;
+    //数值的文本
+    char value_text[SLM_INT_VAL_SHOW_VAL_LEN];
+    //格式化显示的方式
+    const char* show_fmt = nullptr;
+    IntValGetCb get_callback = nullptr;
+};
+
+class FloatValShow : public ItemBase{
+public:
+    //用户使用create来创建一个int类型的数值调整项
+    static FloatValShow& create(ItemBase* parent,uint32_t _id);
+    FloatValShow& setContext(const char* tittle,const char* show_fmt);
+    FloatValShow& setCallback(FloatValGetCb get_cb);
+    
+    //获取item类型
+    ItemType getItemType() const override{return ItemType::FLOAT_VAL_SHOW;}
+    
+    /*重载print方法*/
+    void print() const override;
+
+    void update_value(){if(get_callback)value = get_callback(id);}
+
+    //获取标题
+    const char* getTittle() const override{return tittle;}
+    //获取值的文本
+    const char* getValText();
+
+private:
+    FloatValShow(){
+        value_text[0] = '\0';
+    }
+    //值
+    float value = 0;
+    //显示的标题
+    const char* tittle = nullptr;
+    //数值的文本
+    char value_text[SLM_FLOAT_VAL_SHOW_VAL_LEN];
+    //格式化显示的方式
+    const char* show_fmt = nullptr;
+    FloatValGetCb get_callback = nullptr;
+};
 
 
 

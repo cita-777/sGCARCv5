@@ -69,14 +69,10 @@ void setup();
 
 int main(){
     car.initSys();
-    // dbg_printf("STM32 System Clock Freq: %u MHz\n", car.coreClock / 1000000);
     dbg_printf("----Sightseer's General CAR Controller----\n");
     dbg_printf("%s 硬件版本:%s,特化版本:%s,软件版本:%s\n",APPNAME,HARDWARE_VERSION,SPECIAL_VERSION,SOFTWARE_VERSION);
-    HAL_Delay(20); //等待上电稳定
     car.initBoard();
     dbg_info("sGCARC初始化完成,系统剩余Heap:%u Bytes\n",(uint32_t)xPortGetFreeHeapSize());
-
-    HAL_Delay(10);
 
     //读取IMU静态零偏
     sAPP_ParamSave_ReadIMUCaliVal();
@@ -85,89 +81,31 @@ int main(){
     //sBSP_UART_Top_RecvBegin(uart_recied);
     sAPP_BlcCtrl_Init();
     sDRV_PS2_Init();
+
+    dwt.start();
+    sAPP_GUI_Init();//创建36个项o0花费306us,o3花费66us
+
     
-    using namespace sLM;
-    // sAPP_GUI_Init();
-
-
-    menu.init(new OLED128X64(&oled,&menu));
-    // menu.init();
-
-    /*初始化*/
-    //using namespace sLM;
-    //menu初始化,创建渲染器,绑定到oled,使用menu作为显示菜单
-    //menu.init(new OLED128X64(&oled,&menu));
-
-
-    /*创建可进入的菜单项*/
-    //在menu.hone下创建一个可进入的菜单项,ID号为1,标题为"item1"
-    //auto* item1 = &EnterableItem::create(menu.home,1).setTittle("Item1");
-    
-    /*创建一个文本框*/
-    //在item4下创建一个文本框,不可进入,id为8,显示标题:"this is label"
-    //LabelItem::create(item4,8).setText("this is label");
-
-    /*创建一个按钮,可以按下*/
-    //在item4下创建一个可按下的按钮,id为10,显示标题为"a btn",按钮上显示"PRESS",触发事件调用btn_callback
-    //ButtonItem::create(item4,10).setContext("a btn","PRESS").setCallback(btn_callback);
-
-    /*创建一个int类型的数值调整项*/
-    //在item1下创建一个int类型的数值调整项,id为11,显示标题为"int val",初始默认数值20,触发修改事件调用int_change_callback
-    // IntValAdj& int_val = IntValAdj::create(item2,11)
-    //     .setCallback(int_change_callback,CallBackMethod::EXIT)
-    //     .setContext("int val","%d%%",0,5,5)
-    //     .setConstraint(ConstraintType::RANGE,10,-10);
-
-    auto* item1 = &EnterableItem::create(menu.home,1).setTittle("Item1");
-    auto* item2 = &EnterableItem::create(menu.home,2).setTittle("Item2");
-    auto* item3 = &EnterableItem::create(menu.home,3).setTittle("Item3");
-    auto* item4 = &EnterableItem::create(menu.home,4).setTittle("Item4");
-
-    auto* item5 = &EnterableItem::create(menu.home,5).setTittle("Item5");
-    auto* item7 = &EnterableItem::create(menu.home,7).setTittle("Item7");
-
-    LabelItem::create(item4,8).setTittle("this is label");
-
-    ButtonItem::create(item4,10).setContext("a btn","PRESS").setCallback(btn_callback);
-
-    IntValAdj& int_val = IntValAdj::create(item2,11)
-        .setCallback(int_change_callback,CallBackMethod::EXIT)
-        .setContext("int val","%d%%",0,5,5)
-        .setConstraint(ConstraintType::RANGE,10,-10);
-
-    FloatValAdj& float_val = FloatValAdj::create(item2,12)
-        .setCallback(float_change_callback,CallBackMethod::CHANGE)
-        .setContext("float",nullptr,2.4,0.1,0.1)
-        .setConstraint(ConstraintType::RANGE,3,-3);
-
-    SwitchItem& switch1 = SwitchItem::create(item2,13)
-        .setContext("a switch")
-        .setCallback(switch_callback);
-
-    auto* canvas_item = &EnterableItem::create(menu.home,14).setTittle("Canvas Item")
-        .setChildShowType(ItemShowType::CANVAS)
-        .setCanvasEnterCallback(canvas_enter_callback)
-        .setCanvasPeriodicallyCallback(canvas_periodically_callback)
-        .setCanvasExitCallback(canvas_exit_callback);
 
     // menu.curr = menu.curr->child;
     menu.operateEnter();
+    dwt.end();
 
     menu.printAllItem();
 
-    // sizeof(ButtonItem)
+    // sizeof(FloatValAdj);
 
 
 
     // dwt.start();
     // dwt.end();
-    // sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
+    sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
     // sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
-
-    // 打印菜单结构
-    // sBSP_UART_Debug_Printf("菜单结构：\n");
-    // menu.getRoot()->printTree(0,sLM::printItemData);
-    // delete menu.getRoot();
+    
+    //! delete内存泄漏问题
+    // sBSP_UART_Debug_Printf("DELETE Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
+    // delete menu.getHome();
+    // sBSP_UART_Debug_Printf("DELETE Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
 
     // sBSP_UART_Debug_Printf("menu id count:%u\n",menu.getItemCount());
     // sBSP_UART_Debug_Printf("menu 21 item text:%s\n",sLM::sLittleMenu::getNodeData(menu.getItemByID(21)).text);
@@ -208,7 +146,61 @@ void loop(){
 
 //10min 偏1.5度
 
+/*初始化*/
+    //using namespace sLM;
+    //menu初始化,创建渲染器,绑定到oled,使用menu作为显示菜单
+    //menu.init(new OLED128X64(&oled,&menu));
 
+    /*创建可进入的菜单项*/
+    //在menu.hone下创建一个可进入的菜单项,ID号为1,标题为"item1"
+    //auto* item1 = &EnterableItem::create(menu.home,1).setTittle("Item1");
+    
+    /*创建一个文本框*/
+    //在item4下创建一个文本框,不可进入,id为8,显示标题:"this is label"
+    //LabelItem::create(item4,8).setText("this is label");
+
+    /*创建一个按钮,可以按下*/
+    //在item4下创建一个可按下的按钮,id为10,显示标题为"a btn",按钮上显示"PRESS",触发事件调用btn_callback
+    //ButtonItem::create(item4,10).setContext("a btn","PRESS").setCallback(btn_callback);
+
+    /*创建一个int类型的数值调整项*/
+    //在item1下创建一个int类型的数值调整项,id为11,显示标题为"int val",初始默认数值20,触发修改事件调用int_change_callback
+    // IntValAdj& int_val = IntValAdj::create(item2,11)
+    //     .setCallback(int_change_callback,CallBackMethod::EXIT)
+    //     .setContext("int val","%d%%",0,5,5)
+    //     .setConstraint(ConstraintType::RANGE,10,-10);
+
+    // auto* item1 = &EnterableItem::create(menu.home,1).setTittle("Item1");
+    // auto* item2 = &EnterableItem::create(menu.home,2).setTittle("Item2");
+    // auto* item3 = &EnterableItem::create(menu.home,3).setTittle("Item3");
+    // auto* item4 = &EnterableItem::create(menu.home,4).setTittle("Item4");
+
+    // auto* item5 = &EnterableItem::create(menu.home,5).setTittle("Item5");
+    // auto* item7 = &EnterableItem::create(menu.home,7).setTittle("Item7");
+
+    // LabelItem::create(item4,8).setTittle("this is label");
+
+    // ButtonItem::create(item4,10).setContext("a btn","PRESS").setCallback(btn_callback);
+
+    // IntValAdj& int_val = IntValAdj::create(item2,11)
+    //     .setCallback(int_change_callback,CallBackMethod::EXIT)
+    //     .setContext("int val","%d%%",0,5,5)
+    //     .setConstraint(ConstraintType::RANGE,10,-10);
+
+    // FloatValAdj& float_val = FloatValAdj::create(item2,12)
+    //     .setCallback(float_change_callback,CallBackMethod::CHANGE)
+    //     .setContext("float",nullptr,2.4,0.1,0.1)
+    //     .setConstraint(ConstraintType::RANGE,3,-3);
+
+    // SwitchItem& switch1 = SwitchItem::create(item2,13)
+    //     .setContext("a switch")
+    //     .setCallback(switch_callback);
+
+    // auto* canvas_item = &EnterableItem::create(menu.home,14).setTittle("Canvas Item")
+    //     .setChildShowType(ItemShowType::CANVAS)
+    //     .setCanvasEnterCallback(canvas_enter_callback)
+    //     .setCanvasPeriodicallyCallback(canvas_periodically_callback)
+    //     .setCanvasExitCallback(canvas_exit_callback);
 
 
 /**

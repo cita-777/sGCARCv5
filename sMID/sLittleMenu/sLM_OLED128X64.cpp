@@ -116,7 +116,7 @@ void OLED128X64::showMenuList(sLM::ItemBase* parent){
         else if(curr_type == ItemType::BUTTON){
             ButtonItem* button = static_cast<ButtonItem*>(curr_item);
             //绘制cover_text
-            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,button->getCoverText());
+            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,"%s",button->getCoverText());
             //绘制一个小方块表示button
             screen->revArea(LIST_PARAM_SHOW_POS - 5,y_offset + 0,120,y_offset + 8);
             
@@ -126,22 +126,30 @@ void OLED128X64::showMenuList(sLM::ItemBase* parent){
             SwitchItem* switch_item = static_cast<SwitchItem*>(curr_item);
             if(switch_item->getStatus()){
                 //绘制text
-                screen->printf(LIST_PARAM_SHOW_POS + 0,y_offset + 1,switch_item->getText());
+                screen->printf(LIST_PARAM_SHOW_POS + 0,y_offset + 1,"%s",switch_item->getText());
                 //绘制一个小方块表示button
                 screen->revArea(LIST_PARAM_SHOW_POS - 5,y_offset + 0,120,y_offset + 8);
             }else{
                 screen->drawRectangle(LIST_PARAM_SHOW_POS - 5,y_offset + 0,120,y_offset + 8,0);
-                screen->printf(LIST_PARAM_SHOW_POS + 15,y_offset + 1,switch_item->getText());
+                screen->printf(LIST_PARAM_SHOW_POS + 15,y_offset + 1,"%s",switch_item->getText());
             }
         }
         //对IntValAdj
         else if(curr_type == ItemType::INT_VAL_ADJ){
             IntValAdj* int_val_adj = static_cast<IntValAdj*>(curr_item);
-            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,int_val_adj->getValText());
+            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,"%s",int_val_adj->getValText());
         }
         else if(curr_type == ItemType::FLOAT_VAL_ADJ){
             FloatValAdj* float_val_adj = static_cast<FloatValAdj*>(curr_item);
-            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,float_val_adj->getValText());
+            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,"%s",float_val_adj->getValText());
+        }
+        else if(curr_type == ItemType::INT_VAL_SHOW){
+            IntValShow* int_val_show = static_cast<IntValShow*>(curr_item);
+            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,"%s",int_val_show->getValText());
+        }
+        else if(curr_type == ItemType::FLOAT_VAL_SHOW){
+            FloatValShow* float_val_show = static_cast<FloatValShow*>(curr_item);
+            screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,"%s",float_val_show->getValText());
         }
 
 
@@ -180,14 +188,9 @@ void OLED128X64::showWatingDialog(const char* _title, const char* _message){
 
 
 void OLED128X64::update(){
-    if(menu->lock_info.status == true){
-        showWatingDialog(menu->lock_info.tittle,menu->lock_info.message);
+    if(menu->getIsLock()){
+        showWatingDialog(menu->getLockTittle(),menu->getLockMessage());
     }else{
-        // if(menu->getNodeData(menu->getCurr()->parent).child_show_mode == MenuChildShowMode::LIST){
-        //     showMenuList(menu->getCurr()->parent);
-        // }
-
-        // if(menu->getCurr()->parent)
         if(menu->curr->getItemType() == ItemType::ENTERABLE){
             EnterableItem* item = static_cast<EnterableItem*>(menu->curr);
             if(item->getChildShowType() == ItemShowType::CANVAS && !item->is_hover){
@@ -196,7 +199,7 @@ void OLED128X64::update(){
                 return;
             }
         }
-        
+
         showMenuList(menu->getCurr()->parent);
         
     }

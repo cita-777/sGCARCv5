@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstring>
+#include <string>
 #include "stdint.h"
 #include "stdbool.h"
 
@@ -8,7 +9,7 @@
 
 
 //调试日志开关
-#define SLM_DEBUG_LOG_EN
+// #define SLM_DEBUG_LOG_EN
 
 /*内存分配方式*/
 //使用标准库
@@ -42,19 +43,21 @@
 //最大菜单项数量
 #define SLM_MAX_ITEM_NUM            128
 
-#define SLM_BUTTON_COVER_TEXT_LEN   8
-
-#define SLM_INT_VAL_ADJ_FMT_LEN     12
 #define SLM_INT_VAL_ADJ_DEFAULT     "%d"
 #define SLM_INT_VAL_ADJ_VAL_LEN     12
 
-#define SLM_FLOAT_VAL_ADJ_FMT_LEN   12
 #define SLM_FLOAT_VAL_ADJ_DEFAULT   "%.1f"
 #define SLM_FLOAT_VAL_ADJ_VAL_LEN   12
 
 #define SLM_SWITCH_TEXT_LEN          6
 #define SLM_SWITCH_ON_TEXT_DEFAULT  "ON"
 #define SLM_SWITCH_OFF_TEXT_DEFAULT "OFF"
+
+#define SLM_INT_VAL_SHOW_DEFAULT    "%d"
+#define SLM_INT_VAL_SHOW_VAL_LEN    12
+
+#define SLM_FLOAT_VAL_SHOW_DEFAULT  "%.1f"
+#define SLM_FLOAT_VAL_SHOW_VAL_LEN  12
 
 
 
@@ -86,11 +89,15 @@
     #define SLM_LOG_ERR(_TEXT)  dbg_printf("[ERR ] sLM line:%u,%s\n",__LINE__,_TEXT)
     #define SLM_PRINTF          dbg_printf
 #else
-    #define SLM_LOG_INFO(_TEXT) (void)0
-    #define SLM_LOG_WARN(_TEXT) (void)0
-    #define SLM_LOG_ERR(_TEXT)  (void)0
-    #define SLM_PRINTF          (void)0
+    #define SLM_LOG_INFO(_TEXT) do{(void)0;}while(0)
+    #define SLM_LOG_WARN(_TEXT) do{(void)0;}while(0)
+    #define SLM_LOG_ERR(_TEXT)  do{(void)0;}while(0)
+    #define SLM_PRINTF(...)     do{(void)0;}while(0)
 #endif
+
+//placement new创建类
+#define SLM_CREATE_CLASS(_ITEM_NAME,_PARAM,...) new(SLM_PORT_MALLOC(sizeof(_ITEM_NAME))) _ITEM_NAME(_PARAM);
+
 
 
 

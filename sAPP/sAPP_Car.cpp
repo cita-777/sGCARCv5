@@ -51,6 +51,8 @@ int sAPP_Car::initSys(){
 
 
 int sAPP_Car::initBoard(){
+    HAL_Delay(10); //等待上电稳定
+
     sBSP_I2C1_Init(400000);
 
     //初始化电机

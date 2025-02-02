@@ -149,15 +149,7 @@ void sLittleMenu::update(){
         curr->operate_next(*this);
     }
 
-    printAllItem();
-
-    // if(curr->getItemType() == ItemType::ENTERABLE){
-    //     EnterableItem* item = static_cast<EnterableItem*>(curr);
-    //     if(item->getChildShowType() == ItemShowType::CANVAS && !item->is_hover){
-    //         item->CallCanvasPeriodciallyCallback();
-    //     }
-    // }
-
+    // printAllItem();
     //处理完了,复位
     op_event = OpEvent::NONE;
 SHOW:
@@ -194,6 +186,21 @@ void sLittleMenu::printAllItemRecursively(ItemBase* item, int level, const std::
     }
 }
 
+void sLittleMenu::setLock(const char* tittle,const char* msg){
+    lock_info.status = true;
+    lock_info.tittle = tittle;
+    lock_info.message = msg;
+}
+
+void sLittleMenu::setLock(){
+    lock_info.status = true;
+    lock_info.tittle = SLM_LOCK_DEFAULT_TITTLE;
+    lock_info.message = SLM_LOCK_DEFAULT_MESSAGE;
+}
+
+void sLittleMenu::setUnlock(){
+    lock_info.status = false;
+}
 
 
 int ItemBase::bindParent(ItemBase* parent){
@@ -275,7 +282,7 @@ EnterableItem& EnterableItem::create(ItemBase* parent,uint32_t _id){
 }
 
 EnterableItem& EnterableItem::setTittle(const char* tittle){
-    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
+    this->tittle = tittle;
     return *this;
 }
 
@@ -359,7 +366,7 @@ LabelItem& LabelItem::create(ItemBase* parent,uint32_t _id){
 }
 
 LabelItem& LabelItem::setTittle(const char* tittle){
-    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
+    this->tittle = tittle;
     return *this;
 }
 
@@ -376,8 +383,8 @@ ButtonItem& ButtonItem::create(ItemBase* parent,uint32_t _id){
 }
 
 ButtonItem& ButtonItem::setContext(const char* tittle,const char* cover_text){
-    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
-    strncpy(this->cover_text,cover_text,SLM_BUTTON_COVER_TEXT_LEN);
+    this->tittle = tittle;
+    this->cover_text = cover_text;
     return *this;
 }
 
@@ -398,16 +405,14 @@ IntValAdj& IntValAdj::create(ItemBase* parent,uint32_t _id){
     SLM_LOG_INFO("IntValAdj创建成功");
     item->bindParent(parent);
     item->id = _id;
-    strncpy(item->show_fmt,SLM_INT_VAL_ADJ_DEFAULT,SLM_INT_VAL_ADJ_FMT_LEN);
+    item->show_fmt = SLM_INT_VAL_ADJ_DEFAULT;
     return *item;
 }
 
 IntValAdj& IntValAdj::setContext(const char* tittle,const char* show_fmt,int default_val,int increment,int decrement){
-    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
+    this->tittle = tittle;
     //如果fmt是空指针,则是默认值
-    if(show_fmt){
-        strncpy(this->show_fmt,show_fmt,SLM_INT_VAL_ADJ_FMT_LEN);
-    }
+    if(show_fmt){this->show_fmt = show_fmt;}
     value = default_val;
     this->increment = increment;
     this->decrement = decrement;
@@ -439,7 +444,8 @@ void IntValAdj::operate_back(sLittleMenu& menu){
         }
         is_selected = false;
     }else{
-        if(menu.curr->parent){
+        //不能回到根节点
+        if(menu.curr->parent->parent){
             menu.curr->is_hover = false;
             menu.curr = menu.curr->parent;
             menu.curr->is_hover = true;
@@ -520,16 +526,14 @@ FloatValAdj& FloatValAdj::create(ItemBase* parent,uint32_t _id){
     SLM_LOG_INFO("FloatValAdj创建成功");
     item->bindParent(parent);
     item->id = _id;
-    strncpy(item->show_fmt,SLM_FLOAT_VAL_ADJ_DEFAULT,SLM_FLOAT_VAL_ADJ_FMT_LEN);
+    item->show_fmt = SLM_FLOAT_VAL_ADJ_DEFAULT;
     return *item;
 }
 
 FloatValAdj& FloatValAdj::setContext(const char* tittle,const char* show_fmt,float default_val,float increment,float decrement){
-    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
+    this->tittle = tittle;
     //如果fmt是空指针,则是默认值
-    if(show_fmt){
-        strncpy(this->show_fmt,show_fmt,SLM_INT_VAL_ADJ_FMT_LEN);
-    }
+    if(show_fmt){this->show_fmt = show_fmt;}
     value = default_val;
     this->increment = increment;
     this->decrement = decrement;
@@ -561,7 +565,8 @@ void FloatValAdj::operate_back(sLittleMenu& menu){
         }
         is_selected = false;
     }else{
-        if(menu.curr->parent){
+        //不能回到根节点
+        if(menu.curr->parent->parent){
             menu.curr->is_hover = false;
             menu.curr = menu.curr->parent;
             menu.curr->is_hover = true;
@@ -633,27 +638,29 @@ void FloatValAdj::incDecProcess(bool is_inc){
 
 
 SwitchItem& SwitchItem::create(uint32_t _id){
-    SwitchItem* item = SLM_CREATE_CLASS(SwitchItem,_id);
+    SwitchItem* item = SLM_CREATE_CLASS(SwitchItem,);
     if(!item)SLM_LOG_ERR("malloc返回空指针,SwitchItem创建失败");
+    item->id = _id;
     return *item;
 }
 
 SwitchItem& SwitchItem::create(ItemBase* parent,uint32_t _id){
-    SwitchItem* item = SLM_CREATE_CLASS(SwitchItem,_id);
+    SwitchItem* item = SLM_CREATE_CLASS(SwitchItem,);
     if(!item)SLM_LOG_ERR("malloc返回空指针,SwitchItem创建失败");
     item->bindParent(parent);
+    item->id = _id;
     return *item;
 }
 
 SwitchItem& SwitchItem::setContext(const char* tittle){
-    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
+    this->tittle = tittle;
     return *this;
 }
 
 SwitchItem& SwitchItem::setContext(const char* tittle,const char* on_text,const char* off_text){
-    strncpy(this->tittle,tittle,SLM_ITEM_TEXT_LEN);
-    if(on_text)strncpy(this->on_text,on_text,SLM_SWITCH_TEXT_LEN);
-    if(off_text)strncpy(this->off_text,off_text,SLM_SWITCH_TEXT_LEN);
+    this->tittle = tittle;
+    if(on_text)this->on_text = on_text;
+    if(off_text)this->off_text = off_text;
     return *this;
 }
 
@@ -665,6 +672,80 @@ SwitchItem& SwitchItem::setCallback(SwitchPressCb press_cb){
 SwitchItem& SwitchItem::setStatus(bool status){
     this->status = status;
     return *this;
+}
+
+IntValShow& IntValShow::create(ItemBase* parent,uint32_t _id){
+    IntValShow* item = SLM_CREATE_CLASS(IntValShow,);
+    if(!item){
+        SLM_LOG_ERR("malloc返回空指针,IntValShow创建失败");
+    }
+    SLM_LOG_INFO("IntValShow创建成功");
+    item->bindParent(parent);
+    item->id = _id;
+    item->show_fmt = SLM_INT_VAL_SHOW_DEFAULT;
+    return *item;
+}
+
+IntValShow& IntValShow::setContext(const char* tittle,const char* show_fmt){
+    this->tittle = tittle;
+    //如果fmt是空指针,则是默认值
+    if(show_fmt){this->show_fmt = show_fmt;}
+    return *this;
+}
+
+IntValShow& IntValShow::setCallback(IntValGetCb get_cb){
+    get_callback = get_cb;
+    return *this;
+}
+
+
+void IntValShow::print() const{
+    const char* text_ptr = const_cast<IntValShow*>(this)->getValText();
+    SLM_PRINTF("id=%u,IntValueShow:%s,val:%s,H=%d\n",id,tittle,text_ptr,is_hover?1:0);
+}
+
+
+const char* IntValShow::getValText(){
+    update_value();
+    snprintf((char*)value_text,SLM_INT_VAL_SHOW_VAL_LEN,show_fmt,value);
+    return value_text;
+}
+
+FloatValShow& FloatValShow::create(ItemBase* parent,uint32_t _id){
+    FloatValShow* item = SLM_CREATE_CLASS(FloatValShow,);
+    if(!item){
+        SLM_LOG_ERR("malloc返回空指针,FloatValShow创建失败");
+    }
+    SLM_LOG_INFO("FloatValShow创建成功");
+    item->bindParent(parent);
+    item->id = _id;
+    item->show_fmt = SLM_FLOAT_VAL_SHOW_DEFAULT;
+    return *item;
+}
+
+FloatValShow& FloatValShow::setContext(const char* tittle,const char* show_fmt){
+    this->tittle = tittle;
+    //如果fmt是空指针,则是默认值
+    if(show_fmt){this->show_fmt = show_fmt;}
+    return *this;
+}
+
+FloatValShow& FloatValShow::setCallback(FloatValGetCb get_cb){
+    get_callback = get_cb;
+    return *this;
+}
+
+
+void FloatValShow::print() const{
+    const char* text_ptr = const_cast<FloatValShow*>(this)->getValText();
+    SLM_PRINTF("id=%u,FloatValueShow:%s,val:%s,H=%d\n",id,tittle,text_ptr,is_hover?1:0);
+}
+
+
+const char* FloatValShow::getValText(){
+    update_value();
+    snprintf((char*)value_text,SLM_FLOAT_VAL_SHOW_VAL_LEN,show_fmt,value);
+    return value_text;
 }
 
 
