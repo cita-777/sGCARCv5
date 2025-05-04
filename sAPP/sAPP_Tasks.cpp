@@ -34,9 +34,19 @@ void sAPP_Tasks_Devices(void* param){
 }
 
 
-void sAPP_Tasks_500ms(void* param){
+#include "sDRV_AHT20.h"
 
+void sAPP_Tasks_500ms(void* param){
+    float temp,humi;
     for(;;){
+
+        // sDRV_AHT20_StartMeasure();
+        vTaskDelay(100);
+        
+        // sDRV_AHT20_GetMeasure(&temp,&humi);
+
+        // dbg_printf("TEMP:%.2f,HUMI:%.2f\n",temp,humi);
+
 
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
@@ -106,18 +116,18 @@ void sAPP_Tasks_ProtectTask(void* param){
 
 void sAPP_Tasks_CreateAll(){
     //控制算法
-    xTaskCreate(sAPP_BlcCtrl_CtrlTask   , "CtrlTask"     , 2048 / sizeof(int), NULL, 4, NULL);
+    xTaskCreate(sAPP_BlcCtrl_CtrlTask   , "CtrlTask"     , 4096 / sizeof(int), NULL, 4, NULL);
     //姿态估计算法
-    xTaskCreate(sAPP_AHRS_Task          , "AHRS"         , 1024 / sizeof(int), NULL, 3, NULL);
+    xTaskCreate(sAPP_AHRS_Task          , "AHRS"         , 16384 / sizeof(int), NULL, 3, NULL);
     //OLED刷屏 20Hz  
-    xTaskCreate(sAPP_Tasks_OLEDHdr      , "OLED"         , 8192 / sizeof(int), NULL, 1, NULL);
+    xTaskCreate(sAPP_Tasks_OLEDHdr      , "OLED"         , 16384 / sizeof(int), NULL, 2, NULL);
     xTaskCreate(sAPP_Tasks_Devices      , "Devices"      , 1024 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Car_InfoUpdateTask , "CarInfoUp"    , 2048 / sizeof(int), NULL, 1, NULL);
     // xTaskCreate(sAPP_Tasks_ProtectTask  , "Protect"      , 2048 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_500ms        , "500ms"        , 1024 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_1000ms       , "1000ms"       , 1024 / sizeof(int), NULL, 1, NULL);
     // xTaskCreate(sAPP_Tasks_TaskMang     , "TaskMang"     , 2048 / sizeof(int), NULL, 1, NULL);
-    xTaskCreate(sAPP_Tasks_LoopTask     , "Loop"         , 8192 / sizeof(int), NULL, 4, NULL);
+    // xTaskCreate(sAPP_Tasks_LoopTask     , "Loop"         , 8192 / sizeof(int), NULL, 4, NULL);
 
 }
 

@@ -36,6 +36,8 @@ int sAPP_Car::initSys(){
     sDRV_NTC_Init();
     //初始化调试串口
     sBSP_UART_Debug_Init(115200);
+    // sBSP_UART_Debug_Init(512000);
+
     //初始化顶层通信串口
     sBSP_UART_Top_Init(115200);
     //初始化ADC

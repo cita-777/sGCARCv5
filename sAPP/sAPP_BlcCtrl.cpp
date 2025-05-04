@@ -7,6 +7,7 @@
 //直立环初始值
 #define STAND_KP                (-14.00f * 0.6f)
 #define STAND_KD                (- 0.85f * 0.6f)
+
 //速度环初始值
 #define SPD_KP                  ( 0.30f)
 #define SPD_KI                  (SPD_KP / 200.0f)
@@ -169,7 +170,8 @@ void sAPP_BlcCtrl_Handler(){
     g_blc.left_pwm  = g_blc.stand_out + g_blc.spd_out + g_blc.turn_out - g_ctrl.tar_spd2;
     g_blc.right_pwm = g_blc.stand_out + g_blc.spd_out - g_blc.turn_out - g_ctrl.tar_spd2;
 
-
+    g_blc.left_pwm  *= 1.0f;
+    g_blc.right_pwm *= 1.0f;
 
 
     //输出限幅
@@ -190,7 +192,7 @@ void sAPP_BlcCtrl_Handler(){
     // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",dat.pitch,dat.gyr_x,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
     //dbg.printf("%.2f,%.2f,%.2f,%.2f,%.4f,%.2f\n",ahrs.pitch,g_blc.left_pwm,g_blc.right_pwm,motor.getLRPM(),motor.getRRPM());
 
-    sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.2f\n",dat.pitch,dat.acc_x,dat.gyr_x,g_blc.right_pwm,motor.getRRPM());
+    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.2f\n",dat.pitch,dat.acc_x,dat.gyr_x,g_blc.right_pwm,motor.getRRPM());
 
     // sBSP_UART_Debug_Printf("%.2f\n",inc_pos_out);
 

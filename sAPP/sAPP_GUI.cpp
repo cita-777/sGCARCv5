@@ -25,6 +25,7 @@ static void feram_menu_init(ItemBase* parent);
 static void pwrlight_menu_init(ItemBase* parent);
 static void sys_setting_init(ItemBase* parent);
 static void battary_info_init(ItemBase* parent);
+static void alt_est_info_init(ItemBase* parent);
 
 /*参数更新和事件响应的声明*/
 static int int_val_show_update(uint32_t id);
@@ -32,6 +33,7 @@ static float sys_update(uint32_t id);
 static float battary_info_update(uint32_t id);
 static float imu_data_update(uint32_t id);
 static float imu_bias_update(uint32_t id);
+static float alt_est_update(uint32_t id);
 
 static void button_event_cb(ItemBase* item,uint32_t id);
 static void int_val_adj_event_cb(IntValAdj* item,uint32_t id,int value);
@@ -78,6 +80,14 @@ static void int_val_adj_event_cb(IntValAdj* item,uint32_t id,int value);
 #define ID_IMU_BIAS_GZ                              35
 #define ID_IMU_CALIBIAS                             36
 
+#define ID_ALT_EST_INFO                             37
+#define ID_ALT_EST_ALGO                             38
+#define ID_ALT_EST_R                                39
+#define ID_ALT_EST_P                                40
+#define ID_ALT_EST_CHI                              41
+#define ID_ALT_EST_EK                               42
+#define ID_ALT_EST_ACC_NORM                         43
+
 void sAPP_GUI_Init(){
     //初始化菜单,传入渲染器
     menu.init(new OLED128X64(&oled,&menu));
@@ -88,7 +98,9 @@ void sAPP_GUI_Init(){
     auto* sys_settings = &EnterableItem::create(menu.getHome(),ID_SYS_SETTINGS).setTittle("Sys settings");
     
     /*IMU*/
-    auto* imu = &EnterableItem::create(menu.getHome(),ID_IMU).setTittle("IMU");
+    auto* imu_data = &EnterableItem::create(menu.getHome(),ID_IMU).setTittle("IMU data");
+
+    auto* alt_est_info = &EnterableItem::create(menu.getHome(),ID_ALT_EST_INFO).setTittle("AltEst info");
     /*battary info*/
     auto* battary_info = &EnterableItem::create(menu.getHome(),ID_BATTARY_INFO).setTittle("Battary info");
     /*balance ctrl*/
@@ -102,7 +114,9 @@ void sAPP_GUI_Init(){
     //创建里面的菜单项
     sys_setting_init(sys_settings);
     battary_info_init(battary_info);
-    imu_menu_init(imu);
+    imu_menu_init(imu_data);
+
+    alt_est_info_init(alt_est_info);
 }
 
 static void sys_setting_init(ItemBase* parent){
@@ -195,6 +209,19 @@ static void imu_menu_init(ItemBase* parent){
     /*0偏校准 是一个按钮*/
     ButtonItem::create(zero_bias,ID_IMU_CALIBIAS).setContext("Calibrate","START").setCallback(button_event_cb);
 }
+
+static void alt_est_info_init(ItemBase* parent){
+    LabelItem::create(parent,ID_ALT_EST_ALGO).setTittle("Algorithm: AEKF-AE6");
+    FloatValShow::create(parent,ID_ALT_EST_R).setContext("matrix-R","%.0f").setCallback(alt_est_update);
+    FloatValShow::create(parent,ID_ALT_EST_P).setContext("matrix-P","%.1f").setCallback(alt_est_update);
+    FloatValShow::create(parent,ID_ALT_EST_CHI).setContext("Chi Square","%.3f").setCallback(alt_est_update);
+    FloatValShow::create(parent,ID_ALT_EST_EK).setContext("acc error","%.3f").setCallback(alt_est_update);
+    FloatValShow::create(parent,ID_ALT_EST_ACC_NORM).setContext("acc norm","%.3f").setCallback(alt_est_update);
+
+
+
+}
+
 
 static float imu_data_update(uint32_t id){
     float tmp = 0;
@@ -306,6 +333,30 @@ static float battary_info_update(uint32_t id){
             tmp = car.batt_power;
         }
         xSemaphoreGive(car.mutex);
+    }
+    return tmp;
+}
+
+static float alt_est_update(uint32_t id){
+    float tmp = 0;
+
+    if(xSemaphoreTake(ahrs.aekf_ae6_info.lock,200) == pdTRUE){
+        if(id == ID_ALT_EST_R){
+            tmp = ahrs.aekf_ae6_info.trace_R;
+        }
+        else if(id == ID_ALT_EST_P){
+            tmp = ahrs.aekf_ae6_info.trace_P;
+        }
+        else if(id == ID_ALT_EST_CHI){
+            tmp = ahrs.aekf_ae6_info.chi_square;
+        }
+        else if(id == ID_ALT_EST_EK){
+            tmp = ahrs.aekf_ae6_info.trace_acc_err;
+        }
+        else if(id == ID_ALT_EST_ACC_NORM){
+            tmp = ahrs.aekf_ae6_info.acc_norm;
+        }
+        xSemaphoreGive(ahrs.aekf_ae6_info.lock);
     }
     return tmp;
 }

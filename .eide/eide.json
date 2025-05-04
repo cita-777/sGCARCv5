@@ -141,7 +141,8 @@
           "sMID/sBinOutDrv",
           "sMID/sLittleMenu",
           "sMID/sDWTLib",
-          "sMID/ArduinoFramework"
+          "sMID/ArduinoFramework",
+          "sAPP/ekf_AltEst6"
         ],
         "libList": [],
         "defineList": [

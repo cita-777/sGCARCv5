@@ -37,6 +37,9 @@
 #include "sAPP_GUI.hpp"
 #include "sAPP_ParamSave.hpp"
 
+#include "ekf_AltEst6.h"
+
+
 
 /*MID*/
 // #include "sGraphic2D.h"

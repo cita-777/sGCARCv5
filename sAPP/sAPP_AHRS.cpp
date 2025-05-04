@@ -15,7 +15,6 @@
 
 
 
-
 #include "main.h"
 
 
@@ -150,129 +149,6 @@ static void complementary_filter(sLIB_6AXIS_INPUT_t* input,sLIB_ATTITUDE_RESULT_
 
 }
 
-// static void complementary_filter(sLIB_6AXIS_INPUT_t* input,sLIB_ATTITUDE_RESULT_t* result\
-// ,float mag_x,float mag_y,float mag_z){
-//     static uint32_t prev_time;
-//     static uint32_t now_time;
-//     static float dts;
-//     prev_time = now_time;
-//     now_time = HAL_GetTick();
-//     dts = (now_time - prev_time) / 1000.0f;
-
-//     if(flag){
-//         dts = 0;
-//         flag = 0;
-//     }
-
-//     const float Kp = 0.05f;
-// 	const float Ki = 0.001f;
-
-//     static float q0 = 1.0f;
-// 	static float q1 = 0.0f;
-// 	static float q2 = 0.0f;
-// 	static float q3 = 0.0f;	
-
-//     //误差积分累计
-// 	float exInt = 0.0f;
-// 	float eyInt = 0.0f;
-// 	float ezInt = 0.0f;
-
-//     //用于缓存数据,便于修改
-//     static sLIB_6AXIS_INPUT_t data;
-//     //拷贝数据
-//     memcpy(&data, input, sizeof(sLIB_6AXIS_INPUT_t));
-
-//     //把陀螺仪的角度单位换算成弧度
-//     data.gyro_x *= DEG2RAD;
-// 	data.gyro_y *= DEG2RAD;
-// 	data.gyro_z *= DEG2RAD;
-
-// 	//标准化加速计测量值
-// 	float acc_norm = sLib_InvSqrt(data.acc_x * data.acc_x + data.acc_y * data.acc_y + data.acc_z * data.acc_z);
-// 	data.acc_x *= acc_norm;
-// 	data.acc_y *= acc_norm;
-// 	data.acc_z *= acc_norm;
-
-//     float mag_norm = sLib_InvSqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
-//     mag_x *= mag_norm;
-//     mag_y *= mag_norm;
-//     mag_z *= mag_norm;
-
-
-//     static float rMat[3][3];
-
-
-// 	float a_vx = rMat[2][0];
-// 	float a_vy = rMat[2][1];
-// 	float a_vz = rMat[2][2];
-
-//     float a_ex = data.acc_y * a_vz - data.acc_z * a_vy;
-//     float a_ey = data.acc_z * a_vx - data.acc_x * a_vz;
-//     float a_ez = data.acc_x * a_vy - data.acc_y * a_vx;
-
-//     //误差累计，与积分常数相乘
-// 	exInt += Ki * a_ex * dts;  
-// 	eyInt += Ki * a_ey * dts;
-// 	ezInt += Ki * a_ez * dts;
-
-// 	//用叉积误差来做PI修正陀螺零偏，即抵消陀螺读数中的偏移量
-// 	data.gyro_x += Kp * a_ex + exInt;
-// 	data.gyro_y += Kp * a_ey + eyInt;
-// 	data.gyro_z += Kp * a_ez + ezInt;
-
-//     //一阶近似算法，四元数运动学方程的离散化形式和积分
-// 	float q0Last = q0;
-// 	float q1Last = q1;
-// 	float q2Last = q2;
-// 	float q3Last = q3;
-// 	q0 += (-q1Last * data.gyro_x - q2Last * data.gyro_y - q3Last * data.gyro_z) * 0.5f * dts;
-// 	q1 += ( q0Last * data.gyro_x + q2Last * data.gyro_z - q3Last * data.gyro_y) * 0.5f * dts;
-// 	q2 += ( q0Last * data.gyro_y - q1Last * data.gyro_z + q3Last * data.gyro_x) * 0.5f * dts;
-// 	q3 += ( q0Last * data.gyro_z + q1Last * data.gyro_y - q2Last * data.gyro_x) * 0.5f * dts;
-
-//     //标准化四元数
-// 	float q_norm = sLib_InvSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
-// 	q0 *= q_norm;
-// 	q1 *= q_norm;
-// 	q2 *= q_norm;
-// 	q3 *= q_norm;
-
-
-//     //计算方向余弦矩阵
-//     float q1q1 = q1 * q1;
-//     float q2q2 = q2 * q2;
-//     float q3q3 = q3 * q3;
-
-//     float q0q1 = q0 * q1;
-//     float q0q2 = q0 * q2;
-//     float q0q3 = q0 * q3;
-//     float q1q2 = q1 * q2;
-//     float q1q3 = q1 * q3;
-//     float q2q3 = q2 * q3;
-
-//     rMat[0][0] = 1.0f - 2.0f * q2q2 - 2.0f * q3q3;
-//     rMat[0][1] = 2.0f * (q1q2 + -q0q3);
-//     rMat[0][2] = 2.0f * (q1q3 - -q0q2);
-
-//     rMat[1][0] = 2.0f * (q1q2 - -q0q3);
-//     rMat[1][1] = 1.0f - 2.0f * q1q1 - 2.0f * q3q3;
-//     rMat[1][2] = 2.0f * (q2q3 + -q0q1);
-
-//     rMat[2][0] = 2.0f * (q1q3 - q0q2);
-//     rMat[2][1] = 2.0f * (q2q3 + q0q1);
-//     rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
-
-//     //计算roll pitch yaw 欧拉角
-// 	result->roll  = -asinf(rMat[2][0]) * RAD2DEG; 
-// 	result->pitch =  atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
-// 	result->yaw   =  atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
-//     //保存四元数
-//     result->q0 = q0;
-//     result->q1 = q1;
-//     result->q2 = q2;
-//     result->q3 = q3;
-
-// }
 
 
 
@@ -320,20 +196,23 @@ int AHRS::init(){
         #endif
         if(sDRV_LIS3_Init() != 0){
             sBSP_UART_Debug_Printf("[ERR ]LIS3MDLTR初始化失败\n");
-            return -2;
+            // return -2;
         }
-        
         
 
     #endif
+
+    ekf_AltEst6_init();
+
+
+    aekf_ae6_info.lock = xSemaphoreCreateMutex();
     
     return 0;
 }
 
 
 int AHRS::calcBias(){
-    #define POINT_COUNT 3000
-    // HAL_Delay(1000);
+    #define POINT_COUNT 5000
     vTaskDelay(1000);
 	float acc_x_accu = 0;
 	float acc_y_accu = 0;
@@ -349,8 +228,6 @@ int AHRS::calcBias(){
 		gyro_x_accu += dat.gyr_x + imu_sbias.gyr_x;
 		gyro_y_accu += dat.gyr_y + imu_sbias.gyr_y;
 		gyro_z_accu += dat.gyr_z + imu_sbias.gyr_z;
-        // dwt.delay_us(10);
-		// HAL_Delay(1);
         vTaskDelay(1);
 	}
 	imu_sbias.acc_x  = acc_x_accu  / POINT_COUNT;
@@ -414,10 +291,16 @@ void AHRS::get_imu_data(){
     #endif
 }
 
+
 //AHRS任务,非阻塞式获取数据
 void sAPP_AHRS_Task(void* param){
     TickType_t xLastWakeTime;
     xLastWakeTime = xTaskGetTickCount();
+    float state[5] = {0};
+
+    static uint32_t last_ts_ms = 0;
+    static uint32_t ts_ms = 0;
+    static uint32_t dt_ms = 0;
 
     int count = 0;
     for(;;){
@@ -445,26 +328,92 @@ void sAPP_AHRS_Task(void* param){
                 ahrs.input.gyro_z = ahrs.dat.gyr_z;
                 //融合算法
                 // sLib_6AxisCompFilter(&ahrs.input, &ahrs.result);
-                complementary_filter(&ahrs.input, &ahrs.result);
-                ahrs.dat.pitch = ahrs.result.pitch;
-                ahrs.dat.roll  = ahrs.result.roll;
-                ahrs.dat.yaw   = ahrs.result.yaw;
-                ahrs.dat.q0    = ahrs.result.q0;
-                ahrs.dat.q1    = ahrs.result.q1;
-                ahrs.dat.q2    = ahrs.result.q2;
-                ahrs.dat.q3    = ahrs.result.q3;
+                // complementary_filter(&ahrs.input, &ahrs.result);
+                float input_gyro[3] = {ahrs.dat.gyr_x,ahrs.dat.gyr_y,ahrs.dat.gyr_z};
+                float input_acc[3] = {ahrs.dat.acc_x,ahrs.dat.acc_y,ahrs.dat.acc_z};
+                float input_mag[3] = {ahrs.dat.mag_x,ahrs.dat.mag_y,ahrs.dat.mag_z};
 
-                //每0.1s获取一次磁力计数据
-                if(count >= 20){
+                float eul[3] = {0};
+                float quat[4] = {0};
+                // dwt.start();
+
+                last_ts_ms = ts_ms;
+                ts_ms = HAL_GetTick();
+                dt_ms = ts_ms - last_ts_ms;
+                if(dt_ms > 20){
+                    dt_ms = 20;
+                    ahrs.set_fatal_flag(AHRS::Fatal_Flag::DT_MS_TOO_LARGE);
+                }
+                
+                ekf_AltEst6(input_gyro,input_acc,2,0.005,eul,quat,state);
+                // dwt.end();
+                // sBSP_UART_Debug_Printf("%u\n",dwt.get_us());
+                // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.6f,%.6f,",\
+                //     ahrs.dat.pitch,ahrs.dat.roll,ahrs.dat.yaw,eul[0],eul[1],eul[2],bias[0],bias[1]);
+                // sBSP_UART_Debug_Printf("%u,%u\n",HAL_GetTick(),dwt.get_us());
+
+                
+                // ahrs.dat.pitch = ahrs.result.pitch;
+                // ahrs.dat.roll  = ahrs.result.roll;
+                // ahrs.dat.yaw   = ahrs.result.yaw;
+                // ahrs.dat.q0    = ahrs.result.q0;
+                // ahrs.dat.q1    = ahrs.result.q1;
+                // ahrs.dat.q2    = ahrs.result.q2;
+                // ahrs.dat.q3    = ahrs.result.q3;
+
+                // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.6f,%.6f,",\
+                eul[0],eul[1],eul[2],bias[0],bias[1]);
+                // sBSP_UART_Debug_Printf("%u,%u\n",HAL_GetTick(),dwt.get_us());
+
+                ahrs.dat.pitch = eul[0];
+                ahrs.dat.roll  = eul[1];
+                ahrs.dat.yaw   = eul[2];
+                ahrs.dat.q0    = quat[0];
+                ahrs.dat.q1    = quat[1];
+                ahrs.dat.q2    = quat[2]; 
+                ahrs.dat.q3    = quat[3];
+
+
+
+
+                
+
+                //每0.05s获取一次磁力计数据
+                if(count >= 10){
                     count = 0;
                     sDRV_LIS3_GetData();
                     ahrs.dat.mag_x = g_lis3.mag_x;
                     ahrs.dat.mag_y = g_lis3.mag_y;
                     ahrs.dat.mag_z = g_lis3.mag_z;
                     ahrs.lis3_temp = g_lis3.temp;
+                    
+                    //硬磁校准
+                    const float hard_bias_x =  5.226f;
+                    const float hard_bias_y = -9.756f;
+                    const float hard_bias_z = -115.873f;
+
+                    ahrs.dat.mag_x -= hard_bias_x;
+                    ahrs.dat.mag_y -= hard_bias_y;
+                    ahrs.dat.mag_z -= hard_bias_z;
+
+                    //软磁校准,经过矩阵变换
+                    float soft_C[9] = {
+                        1.0194,0.0351,0.0007,
+                        0.0351,0.9927,0.0023,
+                        0.0007,0.0023,0.9909,
+                    };
+                    ahrs.dat.mag_x = soft_C[0] * ahrs.dat.mag_x + soft_C[1] * ahrs.dat.mag_y + soft_C[2] * ahrs.dat.mag_z;
+                    ahrs.dat.mag_y = soft_C[3] * ahrs.dat.mag_x + soft_C[4] * ahrs.dat.mag_y + soft_C[5] * ahrs.dat.mag_z;
+                    ahrs.dat.mag_z = soft_C[6] * ahrs.dat.mag_x + soft_C[7] * ahrs.dat.mag_y + soft_C[8] * ahrs.dat.mag_z;
+
+
+                    // float yaw = atan2f(ahrs.dat.mag_y,ahrs.dat.mag_x) * RAD2DEG;
+                    // float yaw = atan2f(ahrs.dat.mag_x,ahrs.dat.mag_y) * RAD2DEG;
+
+
+                    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%u\n",ahrs.dat.mag_x,ahrs.dat.mag_y,ahrs.dat.mag_z,yaw,HAL_GetTick());
                 }
                 count++;
-
                 //把新获取到的数据通过队列发送给blc_ctrl算法
                 // xQueueSend(g_blc_ctrl_ahrs_queue,&ahrs.dat,200);
                 xQueueOverwrite(g_blc_ctrl_ahrs_queue,&ahrs.dat); 
@@ -474,22 +423,35 @@ void sAPP_AHRS_Task(void* param){
                 sBSP_UART_Debug_Printf("[ERR]AHRS错误: 获取ahrs.mutex超时\n");
                 Error_Handler();
             }
-            // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,",ahrs.dat.acc_x,ahrs.dat.acc_y,ahrs.dat.acc_z);
-            // sBSP_UART_Debug_Printf("%6.2f,%6.2f,%6.2f,%u\n",ahrs.dat.gyr_x,ahrs.dat.gyr_y,ahrs.dat.gyr_z,HAL_GetTick());
+
+
+            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,",ahrs.dat.acc_x,ahrs.dat.acc_y,ahrs.dat.acc_z);
+            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%u\n",ahrs.dat.gyr_x,ahrs.dat.gyr_y,ahrs.dat.gyr_z,HAL_GetTick());
             // sBSP_UART_Debug_Printf("%6.2f\n",ahrs.icm_temp);
             // sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
 
-            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,",ahrs.dat.acc_x,ahrs.dat.acc_y,ahrs.dat.acc_z);
-            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,",ahrs.dat.gyr_x,ahrs.dat.gyr_y,ahrs.dat.gyr_z);
-            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,",g_jy901s.pitch,g_jy901s.roll,g_jy901s.yaw);
-            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,",ahrs.dat.pitch,ahrs.dat.roll,ahrs.dat.yaw);
-            // sBSP_UART_Debug_Printf("%u\n",HAL_GetTick());
+
+            
         }
         //如果等待200ms还没有获取到信号量则报错
         else{
             sBSP_UART_Debug_Printf("[ERR]AHRS错误:获取icm_data_ready_bin超时\n");
             Error_Handler();
         }
+
+        
+        if(xSemaphoreTake(ahrs.aekf_ae6_info.lock,200) == pdTRUE){
+            ahrs.aekf_ae6_info.trace_R = state[0];
+            ahrs.aekf_ae6_info.trace_P = state[1];
+            ahrs.aekf_ae6_info.chi_square = state[2];
+            ahrs.aekf_ae6_info.trace_acc_err = state[3];
+            ahrs.aekf_ae6_info.acc_norm = state[4];
+
+            xSemaphoreGive(ahrs.aekf_ae6_info.lock);
+        }
+
+        // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,",ahrs.dat.acc_x,ahrs.dat.acc_y,ahrs.dat.acc_z,ahrs.dat.gyr_x,ahrs.dat.gyr_y,ahrs.dat.gyr_z,ahrs.dat.mag_x,ahrs.dat.mag_y,ahrs.dat.mag_z);
+        // sBSP_UART_Debug_Printf("%u\n",HAL_GetTick());
         //高精确度延时10ms
         // xTaskDelayUntil(&xLastWakeTime,10 / portTICK_PERIOD_MS);
     }

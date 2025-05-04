@@ -67,6 +67,11 @@ void canvas_exit_callback(sLM::EnterableItem* parent_item,uint32_t id){
 
 void setup();
 
+
+
+
+
+
 int main(){
     car.initSys();
     dbg_printf("----Sightseer's General CAR Controller----\n");
@@ -95,11 +100,13 @@ int main(){
 
     // sizeof(FloatValAdj);
 
+    // sDRV_AHT20_Init();
+
 
 
     // dwt.start();
     // dwt.end();
-    sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
+    // sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
     // sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
     
     //! delete内存泄漏问题
@@ -227,6 +234,7 @@ void loop(){
         oled.handler();
         oled.setAll(0);
         dwt.end();
+
         // sBSP_UART_Debug_Printf("%uus\n",dwt.get_us());
 
         HAL_Delay(30);

@@ -350,7 +350,7 @@ int8_t sDRV_GenOLED_Init(){
     #ifdef USE_4WSPI
         init_dc_gpio();
         
-        if(sBSP_SPI_OLED_Init(SPI_BAUDRATEPRESCALER_4) != 0){
+        if(sBSP_SPI_OLED_Init(SPI_BAUDRATEPRESCALER_16) != 0){
             return -1;
         }
         //设置默认电平
