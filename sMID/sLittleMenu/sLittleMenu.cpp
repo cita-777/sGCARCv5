@@ -131,6 +131,15 @@ void sLittleMenu::update(){
         goto SHOW;
     }
     
+    if(lock_info.status){
+        SLM_LOG_ERR("菜单被锁定,无法操作");
+        goto SHOW;
+    }
+    else if(tips_info.status){
+        //? tips dialog和lock dialog的区别就是,tips dialog会在按下任意键后消失,lock dialog需要等待程序自己解锁
+        tips_info.status = false;
+        goto SHOW;
+    }
 
     if(op_event == OpEvent::ENTER){
         SLM_LOG_INFO("发生了ENTER事件");
@@ -151,8 +160,9 @@ void sLittleMenu::update(){
 
     // printAllItem();
     //处理完了,复位
-    op_event = OpEvent::NONE;
 SHOW:
+    op_event = OpEvent::NONE;
+
     (void)0;
     renderer->update();
 }
@@ -747,6 +757,47 @@ const char* FloatValShow::getValText(){
     snprintf((char*)value_text,SLM_FLOAT_VAL_SHOW_VAL_LEN,show_fmt,value);
     return value_text;
 }
+
+
+//todo 
+StringValShow& StringValShow::create(ItemBase* parent,uint32_t _id){
+    StringValShow* item = SLM_CREATE_CLASS(StringValShow,);
+    if(!item){
+        SLM_LOG_ERR("malloc返回空指针,StringValShow创建失败");
+    }
+    SLM_LOG_INFO("StringValShow创建成功");
+    item->bindParent(parent);
+    item->id = _id;
+    return *item;
+}
+
+StringValShow& StringValShow::setContext(const char* tittle){
+    this->value_text = tittle;
+    return *this;
+}
+
+StringValShow& StringValShow::setCallback(StringValGetCb get_cb){
+    get_callback = get_cb;
+    return *this;
+}
+
+StringValShow& StringValShow::setTittle(const char* tittle){
+    this->tittle = tittle;
+    return *this;
+}
+
+
+void StringValShow::print() const{
+    const char* text_ptr = const_cast<StringValShow*>(this)->getValText();
+    SLM_PRINTF("id=%u,StringValShow:%s,val:%s,H=%d\n",id,tittle,text_ptr,is_hover?1:0);
+}
+
+
+const char* StringValShow::getValText(){
+    update_value();
+    return value_text;
+}
+
 
 
 

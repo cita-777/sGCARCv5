@@ -2,29 +2,23 @@
 
 
 void uart_recied(char* pReciData,uint16_t length){
+    static char title[20];
+    static char message[20];
     // sBSP_UART_Debug_SendBytes((uint8_t*)pReciData,length);
-    unsigned u_cir, u_rect, u_tri, u_x; // 暂存无符号整型数
-    int t_leftX, t_leftY, t_rightX, t_rightY;
-    
-    //sBSP_UART_Debug_Printf("%s\n",pReciData);
-    //parseSerialData(pReciData);
-    if(sscanf(pReciData, "S:%2X,%2X,%2X,%2X,%u,%u,%u,%u:E",
-                        &t_leftX, &t_leftY, &t_rightX, &t_rightY,
-                        &u_cir, &u_rect, &u_tri, &u_x) == 8){
-                            // 转换为uint8_t类型
-        // ps2.leftX = (uint8_t)t_leftX;
-        // ps2.leftY = (uint8_t)t_leftY;
-        // ps2.rightX = (uint8_t)t_rightX;
-        // ps2.rightY = (uint8_t)t_rightY;
-                            // ps2.cir  = (u_cir  != 0);
-                            // ps2.rect = (u_rect != 0);
-                            // ps2.tri  = (u_tri  != 0);
-                            // ps2.x    = (u_x    != 0);
-// sBSP_UART_Debug_Printf("OK\n");
-// sBSP_UART_Debug_Printf("0x%2X,0x%2X\n", ps2.leftY,ps2.rightX);
-                        }
 
-    sBSP_UART_Top_RecvBegin(uart_recied);
+
+    if(sscanf(pReciData,"S:%c,%c:e",title,message) == 2){
+        menu.createTipsBox(title,message);
+    }
+    else if(sscanf(pReciData,"D:%c,%c:e",title,message) == 2){
+        menu.setLock(title,message);
+    }
+    else if(sscanf(pReciData,"C:%c,%c:e",title,message) == 2){
+        menu.setUnlock();
+    }
+
+
+    sBSP_UART_Debug_RecvBegin(uart_recied);
 }
 
 
@@ -80,9 +74,9 @@ int main(){
     dbg_info("sGCARC初始化完成,系统剩余Heap:%u Bytes\n",(uint32_t)xPortGetFreeHeapSize());
 
     //读取IMU静态零偏
-    sAPP_ParamSave_ReadIMUCaliVal();
+    sAPP_Tasks_ReadIMUCaliVal();
 
-    // sBSP_UART_Debug_RecvBegin(uart_recied);
+    sBSP_UART_Debug_RecvBegin(uart_recied);
     //sBSP_UART_Top_RecvBegin(uart_recied);
     sAPP_BlcCtrl_Init();
     sDRV_PS2_Init();

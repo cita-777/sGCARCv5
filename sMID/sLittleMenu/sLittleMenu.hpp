@@ -73,6 +73,7 @@ enum class ItemType{
     FLOAT_VAL_ADJ,
     INT_VAL_SHOW,
     FLOAT_VAL_SHOW,
+    STRING_VAL_SHOW,
 };
 
 //约束类型
@@ -101,6 +102,7 @@ using CanvasExitCb  = void(*)(EnterableItem* parent_item,uint32_t id);
 
 using IntValGetCb = int(*)(uint32_t id);
 using FloatValGetCb = float(*)(uint32_t id);
+using StringValGetCb = const char*(*)(uint32_t id);
 
 
 class sLittleMenu{
@@ -157,6 +159,18 @@ public:
     const char* getLockTittle(){return lock_info.tittle;}
     const char* getLockMessage(){return lock_info.message;}
 
+    //创建一个提示框,用户按下任意键继续(就会退出)
+    void createTipsBox(const char* tittle,const char* message){
+        tips_info.status = true;
+        tips_info.tittle = tittle;
+        tips_info.message = message;
+    }
+    bool getIsTipsBox(){return tips_info.status;}
+    const char* getTipsBoxTittle(){return tips_info.tittle;}
+    const char* getTipsBoxMessage(){return tips_info.message;}
+
+
+
 
     ItemBase* curr;
     ItemBase* home;
@@ -169,7 +183,15 @@ private:
         const char* message = nullptr;
     };
 
+    //关于菜单提示框的信息
+    struct TipsInfo{
+        bool status;
+        const char* tittle = nullptr;
+        const char* message = nullptr;
+    };
+
     LockInfo lock_info;
+    TipsInfo tips_info;
 
     Renderer* renderer;
     OpEvent op_event;
@@ -567,6 +589,42 @@ private:
     //格式化显示的方式
     const char* show_fmt = nullptr;
     FloatValGetCb get_callback = nullptr;
+};
+
+class StringValShow : public ItemBase{
+public:
+    //用户使用create来创建一个int类型的数值调整项
+    static StringValShow& create(ItemBase* parent,uint32_t _id);
+    StringValShow& setContext(const char* tittle);
+    StringValShow& setCallback(StringValGetCb get_cb);
+    //设置标题
+    StringValShow& setTittle(const char* tittle);
+    
+    //获取item类型
+    ItemType getItemType() const override{return ItemType::STRING_VAL_SHOW;}
+    
+    /*重载print方法*/
+    void print() const override;
+
+    void update_value(){if(get_callback)value_text = get_callback(id);}
+
+    
+    //获取标题
+    const char* getTittle() const override{return tittle;}
+    //获取值的文本
+    const char* getValText();
+
+private:
+    StringValShow(){
+
+    }
+
+    //显示的标题
+    const char* tittle = nullptr;
+    //文本
+    const char* value_text = nullptr;
+    StringValGetCb get_callback = nullptr;
+
 };
 
 

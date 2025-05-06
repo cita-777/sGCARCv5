@@ -124,7 +124,9 @@ public:
 
     int init(IMUType imu_type,MAGType mag_type);
 
-    int calcBias();
+    int calcBias(uint16_t points,IMU_StaticBias& imu_sbias);
+    void updateAccSBias(float x_bias,float y_bias,float z_bias);
+    void updateGyrSBias(float x_bias,float y_bias,float z_bias);
     void getIMUData();
 
     sLIB_6AXIS_INPUT_t input;
@@ -161,6 +163,12 @@ public:
 
     void error_handler();
 
+    IMUState getIMUState(){return imu_state;}
+
+    void setIMUState(IMUState status){imu_state = status;}
+
+    IMUType getIMUType(){return imu_type;}
+    MAGType getMAGType(){return mag_type;}
 
 
 private:

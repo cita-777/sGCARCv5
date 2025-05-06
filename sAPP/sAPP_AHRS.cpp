@@ -200,34 +200,45 @@ void AHRS::error_handler(){
 }
 
 
-int AHRS::calcBias(){
-    #define POINT_COUNT 2000
-    vTaskDelay(1000);
+int AHRS::calcBias(uint16_t points,IMU_StaticBias& imu_sbias){
 	float acc_x_accu = 0;
 	float acc_y_accu = 0;
 	float acc_z_accu = 0;
 	float gyro_x_accu = 0;
 	float gyro_y_accu = 0;
 	float gyro_z_accu = 0;
-	for(uint16_t i = 0; i < POINT_COUNT; i++){
+	for(uint16_t i = 0; i < points; i++){
         //减掉偏置是为了读到原始数据
-		acc_x_accu  += output.acc_x + imu_sbias.acc_x;
-		acc_y_accu  += output.acc_y + imu_sbias.acc_y;
-		acc_z_accu  += output.acc_z + imu_sbias.acc_z;
-		gyro_x_accu += output.gyr_x + imu_sbias.gyr_x;
-		gyro_y_accu += output.gyr_y + imu_sbias.gyr_y;
-		gyro_z_accu += output.gyr_z + imu_sbias.gyr_z;
+		acc_x_accu  += raw_data.acc_x;
+		acc_y_accu  += raw_data.acc_y;
+		acc_z_accu  += raw_data.acc_z;
+		gyro_x_accu += raw_data.gyr_x;
+		gyro_y_accu += raw_data.gyr_y;
+		gyro_z_accu += raw_data.gyr_z;
         vTaskDelay(5);
 	}
-	imu_sbias.acc_x  = acc_x_accu  / POINT_COUNT;
-	imu_sbias.acc_y  = acc_y_accu  / POINT_COUNT;
-	imu_sbias.acc_z  = acc_z_accu  / POINT_COUNT - 9.81398f;	//重力加速度
-	imu_sbias.gyr_x  = gyro_x_accu / POINT_COUNT;
-	imu_sbias.gyr_y  = gyro_y_accu / POINT_COUNT;
-	imu_sbias.gyr_z  = gyro_z_accu / POINT_COUNT;
+	imu_sbias.acc_x  = acc_x_accu  / points;
+	imu_sbias.acc_y  = acc_y_accu  / points;
+	imu_sbias.acc_z  = acc_z_accu  / points - M_GRAVITY;	//重力加速度 NED坐标系
+	imu_sbias.gyr_x  = gyro_x_accu / points;
+	imu_sbias.gyr_y  = gyro_y_accu / points;
+	imu_sbias.gyr_z  = gyro_z_accu / points;
 
     return 0;
 }
+
+void AHRS::updateAccSBias(float x_bias,float y_bias,float z_bias){
+    imu_sbias.acc_x = x_bias;
+    imu_sbias.acc_y = y_bias;
+    imu_sbias.acc_z = z_bias;
+}
+
+void AHRS::updateGyrSBias(float x_bias,float y_bias,float z_bias){
+    imu_sbias.gyr_x = x_bias;
+    imu_sbias.gyr_y = y_bias;
+    imu_sbias.gyr_z = z_bias;
+}
+
 
 
 

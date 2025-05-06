@@ -151,6 +151,10 @@ void OLED128X64::showMenuList(sLM::ItemBase* parent){
             FloatValShow* float_val_show = static_cast<FloatValShow*>(curr_item);
             screen->printf(LIST_PARAM_SHOW_POS,y_offset + 1,"%s",float_val_show->getValText());
         }
+        else if(curr_type == ItemType::STRING_VAL_SHOW){
+            StringValShow* string_val_show = static_cast<StringValShow*>(curr_item);
+            screen->printf(LIST_PARAM_SHOW_POS - 10,y_offset + 1,"%s",string_val_show->getValText());
+        }
 
 
         /*处理选中区域(光标)*/
@@ -190,7 +194,12 @@ void OLED128X64::showWatingDialog(const char* _title, const char* _message){
 void OLED128X64::update(){
     if(menu->getIsLock()){
         showWatingDialog(menu->getLockTittle(),menu->getLockMessage());
-    }else{
+    }
+    else if(menu->getIsTipsBox()){
+        showWatingDialog(menu->getTipsBoxTittle(),menu->getTipsBoxMessage());
+        
+    }
+    else{
         if(menu->curr->getItemType() == ItemType::ENTERABLE){
             EnterableItem* item = static_cast<EnterableItem*>(menu->curr);
             if(item->getChildShowType() == ItemShowType::CANVAS && !item->is_hover){
