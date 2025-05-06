@@ -24,7 +24,7 @@
 
 
 QueueHandle_t g_blc_ctrl_ahrs_queue;
-static AHRS::AHRS_Data dat;
+static AHRS::AHRSData dat;
 
 
 sAPP_BlcCtrl_Blc_t g_blc;
@@ -45,7 +45,7 @@ static float TurnPDCtrler(float gyro_z);
 //平衡控制初始化
 void sAPP_BlcCtrl_Init(){
     //创建平衡控制算法需要的AHRS数据队列
-    g_blc_ctrl_ahrs_queue = xQueueCreate(1,sizeof(AHRS::AHRS_Data));
+    g_blc_ctrl_ahrs_queue = xQueueCreate(1,sizeof(AHRS::AHRSData));
 
     //设置各个参数的初始值
     g_blc.m_angle = MECHINE_CENTER_ANGLE;

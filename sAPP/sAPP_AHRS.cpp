@@ -21,8 +21,6 @@
 AHRS ahrs;
 
 
-//ICM数据就绪二值信号量
-SemaphoreHandle_t icm_data_ready_bin;
 
 
 AHRS::AHRS(){
@@ -30,189 +28,180 @@ AHRS::AHRS(){
 }
 
 
-static bool flag = 1;
 
-static void complementary_filter(sLIB_6AXIS_INPUT_t* input,sLIB_ATTITUDE_RESULT_t* result){
-    static uint32_t prev_time;
-    static uint32_t now_time;
-    static float dts;
-    prev_time = now_time;
-    now_time = HAL_GetTick();
-    dts = (now_time - prev_time) / 1000.0f;
+int AHRS::init(IMUType imu_type,MAGType mag_type){
+    //创建ICM数据就绪的二值信号量
+    imu_data_ready = xSemaphoreCreateBinary();
 
-    if(flag){
-        dts = 0;
-        flag = 0;
+    output.lock = xSemaphoreCreateMutex();
+
+    //创建EKF算法的状态数据的互斥锁
+    ekf_altest6_info.lock = xSemaphoreCreateMutex();
+
+    if(imu_data_ready == NULL || output.lock == NULL || ekf_altest6_info.lock == NULL){
+        fatal_flag = FatalFlag::MUTEX_INIT_FATAL;
     }
 
-    const float Kp = 0.05f;
-	const float Ki = 0.001f;
-
-    static float q0 = 1.0f;
-	static float q1 = 0.0f;
-	static float q2 = 0.0f;
-	static float q3 = 0.0f;	
-
-    //误差积分累计
-	float exInt = 0.0f;
-	float eyInt = 0.0f;
-	float ezInt = 0.0f;
-
-    //用于缓存数据,便于修改
-    static sLIB_6AXIS_INPUT_t data;
-    //拷贝数据
-    memcpy(&data, input, sizeof(sLIB_6AXIS_INPUT_t));
-
-    //把陀螺仪的角度单位换算成弧度
-    data.gyro_x *= DEG2RAD;
-	data.gyro_y *= DEG2RAD;
-	data.gyro_z *= DEG2RAD;
-
-	//标准化加速计测量值
-	float acc_norm = sLib_InvSqrt(data.acc_x * data.acc_x + data.acc_y * data.acc_y + data.acc_z * data.acc_z);
-	data.acc_x *= acc_norm;
-	data.acc_y *= acc_norm;
-	data.acc_z *= acc_norm;
-
-    static float rMat[3][3];
-
-
-	float a_vx = rMat[2][0];
-	float a_vy = rMat[2][1];
-	float a_vz = rMat[2][2];
-
-    float a_ex = data.acc_y * a_vz - data.acc_z * a_vy;
-    float a_ey = data.acc_z * a_vx - data.acc_x * a_vz;
-    float a_ez = data.acc_x * a_vy - data.acc_y * a_vx;
-
-    //误差累计，与积分常数相乘
-	exInt += Ki * a_ex * dts;  
-	eyInt += Ki * a_ey * dts;
-	ezInt += Ki * a_ez * dts;
-
-	//用叉积误差来做PI修正陀螺零偏，即抵消陀螺读数中的偏移量
-	data.gyro_x += Kp * a_ex + exInt;
-	data.gyro_y += Kp * a_ey + eyInt;
-	data.gyro_z += Kp * a_ez + ezInt;
-
-    //一阶近似算法，四元数运动学方程的离散化形式和积分
-	float q0Last = q0;
-	float q1Last = q1;
-	float q2Last = q2;
-	float q3Last = q3;
-	q0 += (-q1Last * data.gyro_x - q2Last * data.gyro_y - q3Last * data.gyro_z) * 0.5f * dts;
-	q1 += ( q0Last * data.gyro_x + q2Last * data.gyro_z - q3Last * data.gyro_y) * 0.5f * dts;
-	q2 += ( q0Last * data.gyro_y - q1Last * data.gyro_z + q3Last * data.gyro_x) * 0.5f * dts;
-	q3 += ( q0Last * data.gyro_z + q1Last * data.gyro_y - q2Last * data.gyro_x) * 0.5f * dts;
-
-    //标准化四元数
-	float q_norm = sLib_InvSqrt(q0 * q0 + q1 * q1 + q2 * q2 + q3 * q3);
-	q0 *= q_norm;
-	q1 *= q_norm;
-	q2 *= q_norm;
-	q3 *= q_norm;
-
-
-    //计算方向余弦矩阵
-    float q1q1 = q1 * q1;
-    float q2q2 = q2 * q2;
-    float q3q3 = q3 * q3;
-
-    float q0q1 = q0 * q1;
-    float q0q2 = q0 * q2;
-    float q0q3 = q0 * q3;
-    float q1q2 = q1 * q2;
-    float q1q3 = q1 * q3;
-    float q2q3 = q2 * q3;
-
-    rMat[0][0] = 1.0f - 2.0f * q2q2 - 2.0f * q3q3;
-    rMat[0][1] = 2.0f * (q1q2 + -q0q3);
-    rMat[0][2] = 2.0f * (q1q3 - -q0q2);
-
-    rMat[1][0] = 2.0f * (q1q2 - -q0q3);
-    rMat[1][1] = 1.0f - 2.0f * q1q1 - 2.0f * q3q3;
-    rMat[1][2] = 2.0f * (q2q3 + -q0q1);
-
-    rMat[2][0] = 2.0f * (q1q3 - q0q2);
-    rMat[2][1] = 2.0f * (q2q3 + q0q1);
-    rMat[2][2] = 1.0f - 2.0f * q1q1 - 2.0f * q2q2;
-
-    //计算roll pitch yaw 欧拉角
-	result->roll  = -asinf(rMat[2][0]) * RAD2DEG; 
-	result->pitch =  atan2f(rMat[2][1], rMat[2][2]) * RAD2DEG;
-	result->yaw   =  atan2f(rMat[1][0], rMat[0][0]) * RAD2DEG;
-    //保存四元数
-    result->q0 = q0;
-    result->q1 = q1;
-    result->q2 = q2;
-    result->q3 = q3;
-
-}
-
-
-
-
-
-int AHRS::init(){
-    //创建ICM数据就绪的二值信号量
-    icm_data_ready_bin = xSemaphoreCreateBinary();
-    //创建AHRS数据互斥锁
-    mutex = xSemaphoreCreateMutex();
     
-    #ifdef AHRS_IMU_SOURCE_WIT
+    /*初始化通信接口*/
+    if(imu_type == IMUType::ICM45686 || imu_type == IMUType::ICM42688 || mag_type == MAGType::LIS3MDLTR){
+        //11.25MBit/s
+        if(sBSP_SPI_IMU_Init(SPI_BAUDRATEPRESCALER_4) != 0){
+            fatal_flag = FatalFlag::SPI_COMM_FATAL;
+        }
+    }
+
+    /*初始化必要的6DoF器件*/
+    if(imu_type == IMUType::JY901S){
         sDRV_JY901S_Init();
         HAL_NVIC_SetPriority(USART3_IRQn,4,0);
         HAL_NVIC_EnableIRQ(USART3_IRQn);
-    #endif
-    #ifdef AHRS_IMU_SOURCE_9DOF
-        this->icm42688  = &g_icm;
-        this->icm45686  = &g_icm45686;
-        this->lis3      = &g_lis3;
-
-        /*把IMU的2个CS都上拉*/
-        __GPIOC_CLK_ENABLE();
-        GPIO_InitTypeDef gpio = {0};
-        gpio.Mode  = GPIO_MODE_OUTPUT_PP;
-        gpio.Pull  = GPIO_PULLUP;
-        gpio.Speed = GPIO_SPEED_FREQ_MEDIUM;
-        gpio.Pin   = ICM_CS_Pin | LIS3_CS_Pin;
-        HAL_GPIO_Init(GPIOC,&gpio);
-        HAL_GPIO_WritePin(GPIOC,ICM_CS_Pin ,GPIO_PIN_SET);
-        HAL_GPIO_WritePin(GPIOC,LIS3_CS_Pin,GPIO_PIN_SET);
-
-        /*SPI2 <-> IMU_SPI*/
-        sBSP_SPI_IMU_Init(SPI_BAUDRATEPRESCALER_4);   //11.25MBits/s
-
-        #ifdef AHRS_IMU_USE_ICM42688
-            if(sDRV_ICM_Init() != 0){
-                return -1;
-            }
-        #endif
-        #ifdef AHRS_IMU_USE_ICM45686
-            if(sDRV_ICM45686_Init() != 0){
-                sBSP_UART_Debug_Printf("[ERR ]ICM45688初始化失败\n");
-                return -1;
-            }
-        #endif
-        if(sDRV_LIS3_Init() != 0){
-            sBSP_UART_Debug_Printf("[ERR ]LIS3MDLTR初始化失败\n");
-            // return -2;
+    }
+    else if(imu_type == IMUType::ICM42688){
+        //! 暂时不可用
+        log_error("ICM42688 IMU不支持中断式获取数据,请使用ICM45686或JY901S\n");
+        Error_Handler();
+    }
+    else if(imu_type == IMUType::ICM45686){
+        if(sDRV_ICM45686_Init() != 0){
+            fatal_flag = FatalFlag::IMU_INIT_FATAL;
         }
-        
+    }
 
-    #endif
+
+    /*初始化磁力计*/
+    if(mag_type == MAGType::LIS3MDLTR){
+        if(sDRV_LIS3_Init() != 0){
+            mag_state = MAGState::NO_MAG;
+        }
+    }
+
+
 
     ekf_AltEst6_init();
 
+        //     /*把IMU的2个CS都上拉*/
+        // __GPIOC_CLK_ENABLE();
+        // GPIO_InitTypeDef gpio = {0};
+        // gpio.Mode  = GPIO_MODE_OUTPUT_PP;
+        // gpio.Pull  = GPIO_PULLUP;
+        // gpio.Speed = GPIO_SPEED_FREQ_MEDIUM;
+        // gpio.Pin   = ICM_CS_Pin | LIS3_CS_Pin;
+        // HAL_GPIO_Init(GPIOC,&gpio);
+        // HAL_GPIO_WritePin(GPIOC,ICM_CS_Pin ,GPIO_PIN_SET);
+        // HAL_GPIO_WritePin(GPIOC,LIS3_CS_Pin,GPIO_PIN_SET);
 
-    aekf_ae6_info.lock = xSemaphoreCreateMutex();
+    /*检查初始化标志位*/
+    if(fatal_flag != FatalFlag::NONE || imu_state != IMUState::OK){
+        error_handler();
+        return -1;
+    }
+
     
     return 0;
 }
 
+void AHRS::error_handler(){
+    log_error("AHRS:发生了错误");
+
+    /*打印IMU类型和MAG类型*/
+    switch(imu_type){
+        case IMUType::ICM42688:
+            log_info("AHRS:IMU类型 ICM42688");
+            break;
+        case IMUType::ICM45686:
+            log_info("AHRS:IMU类型 ICM45686");
+            break;
+        case IMUType::JY901S:
+            log_info("AHRS:IMU类型 JY901S");
+            break;
+        default:
+            Error_Handler();
+            break;
+    }
+
+    switch(mag_type){
+        case MAGType::LIS3MDLTR:
+            log_info("AHRS:磁力计类型 LIS3MDLTR");
+            break;
+        case MAGType::NONE:
+            log_info("AHRS:无磁力计 NONE");
+            break;
+        default:
+            Error_Handler();
+            break;
+    }
+
+    /*检查致命错误标志位*/
+    switch(fatal_flag){
+        case FatalFlag::NONE:
+            log_info("AHRS:无致命错误 NONE");
+            break;
+        case FatalFlag::UNKNOW_FATAL:
+            log_error("AHRS:未知致命错误 UNKNOW_FATAL");
+            break;
+        case FatalFlag::IMU_INIT_FATAL:
+            log_error("AHRS:IMU初始化错误 IMU_INIT_FATAL");
+            break;
+        case FatalFlag::DT_MS_TOO_LARGE:
+            log_error("AHRS:两次获取IMU的数据间隔时间过大,可能是IMU出错 DT_MS_TOO_LARGE");
+            break;
+        case FatalFlag::AE_ALGO_FATAL:
+            log_error("AHRS:姿态估计算法内部错误 AE_ALGO_FATAL");
+            break;
+        case FatalFlag::IMU_FATAL:
+            log_error("AHRS:IMU错误 IMU_FATAL");
+            break;
+        case FatalFlag::SPI_COMM_FATAL:
+            log_error("AHRS:SPI通信错误 SPI_COMM_FATAL");
+            break;
+        case FatalFlag::MUTEX_FATAL:
+            log_error("AHRS:互斥锁错误 MUTEX_FATAL");
+            break;
+        case FatalFlag::MUTEX_INIT_FATAL:
+            log_error("AHRS:互斥锁初始化错误 MUTEX_INIT_FATAL");
+            break;
+        default:
+            Error_Handler();
+            break;
+    }
+
+    /*检查IMU状态*/
+    switch(imu_state){
+        case IMUState::OK:
+            log_info("AHRS:IMU状态正常 OK");
+            break;
+        case IMUState::NEED_CALIB:
+            log_warn("AHRS:IMU需要校准 NEED_CALIB");
+            break;
+        default:
+            Error_Handler();
+            break;
+    }
+
+    /*检查磁力计状态*/
+    switch(mag_state){
+        case MAGState::OK:
+            log_info("AHRS:磁力计状态正常 OK");
+            break;
+        case MAGState::NEED_CALIB:
+            log_warn("AHRS:磁力计需要校准 NEED_CALIB");
+            break;
+        case MAGState::NO_MAG:
+            log_warn("AHRS:无磁力计 NO_MAG");
+            break;
+        case MAGState::DATA_DISTURBED:
+            log_warn("AHRS:磁力计数据被干扰,不可信 DATA_DISTURBED");
+            break;
+        default:
+            Error_Handler();
+            break;
+    }
+}
+
 
 int AHRS::calcBias(){
-    #define POINT_COUNT 5000
+    #define POINT_COUNT 2000
     vTaskDelay(1000);
 	float acc_x_accu = 0;
 	float acc_y_accu = 0;
@@ -222,13 +211,13 @@ int AHRS::calcBias(){
 	float gyro_z_accu = 0;
 	for(uint16_t i = 0; i < POINT_COUNT; i++){
         //减掉偏置是为了读到原始数据
-		acc_x_accu  += dat.acc_x + imu_sbias.acc_x;
-		acc_y_accu  += dat.acc_y + imu_sbias.acc_y;
-		acc_z_accu  += dat.acc_z + imu_sbias.acc_z;
-		gyro_x_accu += dat.gyr_x + imu_sbias.gyr_x;
-		gyro_y_accu += dat.gyr_y + imu_sbias.gyr_y;
-		gyro_z_accu += dat.gyr_z + imu_sbias.gyr_z;
-        vTaskDelay(1);
+		acc_x_accu  += output.acc_x + imu_sbias.acc_x;
+		acc_y_accu  += output.acc_y + imu_sbias.acc_y;
+		acc_z_accu  += output.acc_z + imu_sbias.acc_z;
+		gyro_x_accu += output.gyr_x + imu_sbias.gyr_x;
+		gyro_y_accu += output.gyr_y + imu_sbias.gyr_y;
+		gyro_z_accu += output.gyr_z + imu_sbias.gyr_z;
+        vTaskDelay(5);
 	}
 	imu_sbias.acc_x  = acc_x_accu  / POINT_COUNT;
 	imu_sbias.acc_y  = acc_y_accu  / POINT_COUNT;
@@ -242,53 +231,61 @@ int AHRS::calcBias(){
 
 
 
-void AHRS::get_imu_data(){
-    #ifdef AHRS_IMU_SOURCE_WIT
+void AHRS::getIMUData(){
+    static int count;
+
+    if(imu_type == IMUType::JY901S){
         sDRV_JY901S_Handler();
-        // imu.acc_x = g_jy901s.acc_x;
-        // imu.acc_y = g_jy901s.acc_y;
-        // imu.acc_z = g_jy901s.acc_z;
-        // imu.gyr_x = g_jy901s.gyr_x;
-        // imu.gyr_y = g_jy901s.gyr_y;
-        // imu.gyr_z = g_jy901s.gyr_z;
-        // imu.mag_x = g_jy901s.mag_x;
-        // imu.mag_y = g_jy901s.mag_y;
-        // imu.mag_z = g_jy901s.mag_z;
-        // ahrs.pitch = g_jy901s.pitch;
-        // ahrs.roll  = g_jy901s.roll;
-        // ahrs.yaw   = g_jy901s.yaw;
-        // ahrs.q0    = g_jy901s.q0;
-        // ahrs.q1    = g_jy901s.q1;
-        // ahrs.q2    = g_jy901s.q2;
-        // ahrs.q3    = g_jy901s.q3;
-    #endif
-    #ifdef AHRS_IMU_SOURCE_9DOF
-        #ifdef AHRS_IMU_USE_ICM42688
-            sDRV_ICM_GetData();
-            //减掉偏置
-            input.acc_x  = g_icm.acc_x  - imu_sbias.acc_x;
-            input.acc_y  = g_icm.acc_y  - imu_sbias.acc_y;
-            input.acc_z  = g_icm.acc_z  - imu_sbias.acc_z;
-            input.gyro_x = g_icm.gyro_x - imu_sbias.gyr_x;
-            input.gyro_y = g_icm.gyro_y - imu_sbias.gyr_y;
-            input.gyro_z = g_icm.gyro_z - imu_sbias.gyr_z;
-        #endif
-        #ifdef AHRS_IMU_USE_ICM45686
-            sDRV_ICM45686_GetData();
-            //减掉偏置
-            dat.acc_x = g_icm45686.acc_x - ahrs.imu_sbias.acc_x;
-            dat.acc_y = g_icm45686.acc_y - ahrs.imu_sbias.acc_y;
-            dat.acc_z = g_icm45686.acc_z - ahrs.imu_sbias.acc_z;
-            dat.gyr_x = g_icm45686.gyr_x - ahrs.imu_sbias.gyr_x;
-            dat.gyr_y = g_icm45686.gyr_y - ahrs.imu_sbias.gyr_y;
-            dat.gyr_z = g_icm45686.gyr_z - ahrs.imu_sbias.gyr_z;
-            icm_temp  = g_icm45686.temp;
-        #endif
-        sDRV_LIS3_GetData();
-        dat.mag_x = g_lis3.mag_x;
-        dat.mag_y = g_lis3.mag_y;
-        dat.mag_z = g_lis3.mag_z;
-    #endif
+        raw_data.acc_x = g_jy901s.acc_x;
+        raw_data.acc_y = g_jy901s.acc_y;
+        raw_data.acc_z = g_jy901s.acc_z;
+        raw_data.gyr_x = g_jy901s.gyr_x;
+        raw_data.gyr_y = g_jy901s.gyr_y;
+        raw_data.gyr_z = g_jy901s.gyr_z;
+        raw_data.mag_x = g_jy901s.mag_x;
+        raw_data.mag_y = g_jy901s.mag_y;
+        raw_data.mag_z = g_jy901s.mag_z;
+        output.pitch   = g_jy901s.pitch;
+        output.roll    = g_jy901s.roll;
+        output.yaw     = g_jy901s.yaw;
+        output.q0      = g_jy901s.q0;
+        output.q1      = g_jy901s.q1;
+        output.q2      = g_jy901s.q2;
+        output.q3      = g_jy901s.q3;
+    }
+    else if(imu_type == IMUType::ICM42688){
+        sDRV_ICM_GetData();
+        raw_data.acc_x = g_icm.acc_x;
+        raw_data.acc_y = g_icm.acc_y;
+        raw_data.acc_z = g_icm.acc_z;
+        raw_data.gyr_x = g_icm.gyro_x;
+        raw_data.gyr_y = g_icm.gyro_y;
+        raw_data.gyr_z = g_icm.gyro_z;
+    }
+    else if(imu_type == IMUType::ICM45686){
+        sDRV_ICM45686_GetData();
+        raw_data.acc_x = g_icm45686.acc_x;
+        raw_data.acc_y = g_icm45686.acc_y;
+        raw_data.acc_z = g_icm45686.acc_z;
+        raw_data.gyr_x = g_icm45686.gyr_x;
+        raw_data.gyr_y = g_icm45686.gyr_y;
+        raw_data.gyr_z = g_icm45686.gyr_z;
+        raw_data.imu_temp = g_icm45686.temp;
+    }
+
+    if(mag_type == MAGType::LIS3MDLTR){
+        //每0.05s获取一次磁力计数据
+        if(count >= 10){
+            sDRV_LIS3_GetData();
+            raw_data.mag_x = g_lis3.mag_x;
+            raw_data.mag_y = g_lis3.mag_y;
+            raw_data.mag_z = g_lis3.mag_z;
+            raw_data.mag_temp = g_lis3.temp;
+            count = 0;
+        }else{
+            count++;
+        }
+    }
 }
 
 
@@ -298,138 +295,121 @@ void sAPP_AHRS_Task(void* param){
     xLastWakeTime = xTaskGetTickCount();
     float state[5] = {0};
 
+    bool is_first = true;
+
     static uint32_t last_ts_ms = 0;
     static uint32_t ts_ms = 0;
     static uint32_t dt_ms = 0;
 
-    int count = 0;
     for(;;){
         //当数据准备就绪则运行AHRS算法,此步骤消耗时间60us
-        if(xSemaphoreTake(icm_data_ready_bin,200) == pdTRUE){
-            sDRV_JY901S_Handler();
-            sDRV_ICM45686_GetData();
-            //获取AHRS数据互斥锁
-            if(xSemaphoreTake(ahrs.mutex,200) == pdTRUE){
-                //减掉静态偏置,这里g_icm45686只在这个task里运行,所以不用加锁
-                ahrs.dat.acc_x = g_icm45686.acc_x - ahrs.imu_sbias.acc_x;
-                ahrs.dat.acc_y = g_icm45686.acc_y - ahrs.imu_sbias.acc_y;
-                ahrs.dat.acc_z = g_icm45686.acc_z - ahrs.imu_sbias.acc_z;
-                ahrs.dat.gyr_x = g_icm45686.gyr_x - ahrs.imu_sbias.gyr_x;
-                ahrs.dat.gyr_y = g_icm45686.gyr_y - ahrs.imu_sbias.gyr_y;
-                ahrs.dat.gyr_z = g_icm45686.gyr_z - ahrs.imu_sbias.gyr_z;
-                ahrs.icm_temp  = g_icm45686.temp;
+        if(xSemaphoreTake(ahrs.imu_data_ready,200) == pdTRUE){
+            dwt.start();
 
-                //给互补滤波准备数据
-                ahrs.input.acc_x  = ahrs.dat.acc_x; 
-                ahrs.input.acc_y  = ahrs.dat.acc_y; 
-                ahrs.input.acc_z  = ahrs.dat.acc_z; 
-                ahrs.input.gyro_x = ahrs.dat.gyr_x;
-                ahrs.input.gyro_y = ahrs.dat.gyr_y;
-                ahrs.input.gyro_z = ahrs.dat.gyr_z;
-                //融合算法
-                // sLib_6AxisCompFilter(&ahrs.input, &ahrs.result);
-                // complementary_filter(&ahrs.input, &ahrs.result);
-                float input_gyro[3] = {ahrs.dat.gyr_x,ahrs.dat.gyr_y,ahrs.dat.gyr_z};
-                float input_acc[3] = {ahrs.dat.acc_x,ahrs.dat.acc_y,ahrs.dat.acc_z};
-                float input_mag[3] = {ahrs.dat.mag_x,ahrs.dat.mag_y,ahrs.dat.mag_z};
+            /*获取原始数据*/
+            ahrs.getIMUData();
 
-                float eul[3] = {0};
-                float quat[4] = {0};
-                // dwt.start();
+            /*复制温度数据*/
+            ahrs.output.imu_temp = ahrs.raw_data.imu_temp;
+            ahrs.output.mag_temp = ahrs.raw_data.mag_temp;
 
+            /*对IMU进行零偏校准*/
+            ahrs.output.acc_x = ahrs.raw_data.acc_x - ahrs.imu_sbias.acc_x;
+            ahrs.output.acc_y = ahrs.raw_data.acc_y - ahrs.imu_sbias.acc_y;
+            ahrs.output.acc_z = ahrs.raw_data.acc_z - ahrs.imu_sbias.acc_z;
+            ahrs.output.gyr_x = ahrs.raw_data.gyr_x - ahrs.imu_sbias.gyr_x;
+            ahrs.output.gyr_y = ahrs.raw_data.gyr_y - ahrs.imu_sbias.gyr_y;
+            ahrs.output.gyr_z = ahrs.raw_data.gyr_z - ahrs.imu_sbias.gyr_z;
+
+            /*对磁力计进行校准*/
+            //硬磁校准
+            ahrs.output.mag_x = ahrs.output.mag_x - ahrs.mag_cali.hard[0];
+            ahrs.output.mag_y = ahrs.output.mag_y - ahrs.mag_cali.hard[1];
+            ahrs.output.mag_z = ahrs.output.mag_z - ahrs.mag_cali.hard[2];
+            //软磁校准
+            ahrs.output.mag_x = ahrs.mag_cali.soft[0] * ahrs.raw_data.mag_x + ahrs.mag_cali.soft[1] * ahrs.raw_data.mag_y + ahrs.mag_cali.soft[2] * ahrs.raw_data.mag_z;
+            ahrs.output.mag_y = ahrs.mag_cali.soft[3] * ahrs.raw_data.mag_x + ahrs.mag_cali.soft[4] * ahrs.raw_data.mag_y + ahrs.mag_cali.soft[5] * ahrs.raw_data.mag_z;
+            ahrs.output.mag_z = ahrs.mag_cali.soft[6] * ahrs.raw_data.mag_x + ahrs.mag_cali.soft[7] * ahrs.raw_data.mag_y + ahrs.mag_cali.soft[8] * ahrs.raw_data.mag_z;
+                
+            /*给姿态解算准备数据*/
+            float input_gyr[3] = {ahrs.output.gyr_x,ahrs.output.gyr_y,ahrs.output.gyr_z};
+            float input_acc[3] = {ahrs.output.acc_x,ahrs.output.acc_y,ahrs.output.acc_z};
+            float input_mag[3] = {ahrs.output.mag_x,ahrs.output.mag_y,ahrs.output.mag_z};
+            float eul[3] = {0};
+            float quat[4] = {0};
+
+            /*计算两次调用的时间间隔*/
+            if(!is_first){
                 last_ts_ms = ts_ms;
                 ts_ms = HAL_GetTick();
                 dt_ms = ts_ms - last_ts_ms;
-                if(dt_ms > 20){
-                    dt_ms = 20;
-                    ahrs.set_fatal_flag(AHRS::Fatal_Flag::DT_MS_TOO_LARGE);
-                }
-                
-                ekf_AltEst6(input_gyro,input_acc,2,0.005,eul,quat,state);
-                // dwt.end();
-                // sBSP_UART_Debug_Printf("%u\n",dwt.get_us());
-                // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.6f,%.6f,",\
-                //     ahrs.dat.pitch,ahrs.dat.roll,ahrs.dat.yaw,eul[0],eul[1],eul[2],bias[0],bias[1]);
-                // sBSP_UART_Debug_Printf("%u,%u\n",HAL_GetTick(),dwt.get_us());
-
-                
-                // ahrs.dat.pitch = ahrs.result.pitch;
-                // ahrs.dat.roll  = ahrs.result.roll;
-                // ahrs.dat.yaw   = ahrs.result.yaw;
-                // ahrs.dat.q0    = ahrs.result.q0;
-                // ahrs.dat.q1    = ahrs.result.q1;
-                // ahrs.dat.q2    = ahrs.result.q2;
-                // ahrs.dat.q3    = ahrs.result.q3;
-
-                // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.6f,%.6f,",\
-                eul[0],eul[1],eul[2],bias[0],bias[1]);
-                // sBSP_UART_Debug_Printf("%u,%u\n",HAL_GetTick(),dwt.get_us());
-
-                ahrs.dat.pitch = eul[0];
-                ahrs.dat.roll  = eul[1];
-                ahrs.dat.yaw   = eul[2];
-                ahrs.dat.q0    = quat[0];
-                ahrs.dat.q1    = quat[1];
-                ahrs.dat.q2    = quat[2]; 
-                ahrs.dat.q3    = quat[3];
-
-
-
-
-                
-
-                //每0.05s获取一次磁力计数据
-                if(count >= 10){
-                    count = 0;
-                    sDRV_LIS3_GetData();
-                    ahrs.dat.mag_x = g_lis3.mag_x;
-                    ahrs.dat.mag_y = g_lis3.mag_y;
-                    ahrs.dat.mag_z = g_lis3.mag_z;
-                    ahrs.lis3_temp = g_lis3.temp;
-                    
-                    //硬磁校准
-                    const float hard_bias_x =  5.226f;
-                    const float hard_bias_y = -9.756f;
-                    const float hard_bias_z = -115.873f;
-
-                    ahrs.dat.mag_x -= hard_bias_x;
-                    ahrs.dat.mag_y -= hard_bias_y;
-                    ahrs.dat.mag_z -= hard_bias_z;
-
-                    //软磁校准,经过矩阵变换
-                    float soft_C[9] = {
-                        1.0194,0.0351,0.0007,
-                        0.0351,0.9927,0.0023,
-                        0.0007,0.0023,0.9909,
-                    };
-                    ahrs.dat.mag_x = soft_C[0] * ahrs.dat.mag_x + soft_C[1] * ahrs.dat.mag_y + soft_C[2] * ahrs.dat.mag_z;
-                    ahrs.dat.mag_y = soft_C[3] * ahrs.dat.mag_x + soft_C[4] * ahrs.dat.mag_y + soft_C[5] * ahrs.dat.mag_z;
-                    ahrs.dat.mag_z = soft_C[6] * ahrs.dat.mag_x + soft_C[7] * ahrs.dat.mag_y + soft_C[8] * ahrs.dat.mag_z;
-
-
-                    // float yaw = atan2f(ahrs.dat.mag_y,ahrs.dat.mag_x) * RAD2DEG;
-                    // float yaw = atan2f(ahrs.dat.mag_x,ahrs.dat.mag_y) * RAD2DEG;
-
-
-                    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%u\n",ahrs.dat.mag_x,ahrs.dat.mag_y,ahrs.dat.mag_z,yaw,HAL_GetTick());
-                }
-                count++;
-                //把新获取到的数据通过队列发送给blc_ctrl算法
-                // xQueueSend(g_blc_ctrl_ahrs_queue,&ahrs.dat,200);
-                xQueueOverwrite(g_blc_ctrl_ahrs_queue,&ahrs.dat); 
-
-                xSemaphoreGive(ahrs.mutex);
             }else{
-                sBSP_UART_Debug_Printf("[ERR]AHRS错误: 获取ahrs.mutex超时\n");
-                Error_Handler();
+                last_ts_ms = HAL_GetTick();
+                ts_ms = last_ts_ms;
+                is_first = false;
             }
 
+            
+            
+            //超时则报错
+            if(dt_ms > 50){
+                dt_ms = 50;
+                ahrs.fatal_flag = AHRS::FatalFlag::DT_MS_TOO_LARGE;
+                ahrs.error_handler();
+            }
 
-            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,",ahrs.dat.acc_x,ahrs.dat.acc_y,ahrs.dat.acc_z);
-            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%u\n",ahrs.dat.gyr_x,ahrs.dat.gyr_y,ahrs.dat.gyr_z,HAL_GetTick());
-            // sBSP_UART_Debug_Printf("%6.2f\n",ahrs.icm_temp);
-            // sBSP_UART_Debug_Printf("pitch: %6.2f, roll: %6.2f, yaw: %6.2f\n",ahrs.pitch,ahrs.roll,ahrs.yaw);
+            // //给互补滤波准备数据
+            // ahrs.input.acc_x  = ahrs.dat.acc_x; 
+            // ahrs.input.acc_y  = ahrs.dat.acc_y; 
+            // ahrs.input.acc_z  = ahrs.dat.acc_z; 
+            // ahrs.input.gyro_x = ahrs.dat.gyr_x;
+            // ahrs.input.gyro_y = ahrs.dat.gyr_y;
+            // ahrs.input.gyro_z = ahrs.dat.gyr_z;
+            //融合算法
+            // sLib_6AxisCompFilter(&ahrs.input, &ahrs.result);
+            // complementary_filter(&ahrs.input, &ahrs.result);
 
+            float dt = dt_ms / 1000.0f;
+            ekf_AltEst6(input_gyr,input_acc,2,dt,eul,quat,state);
+            // sBSP_UART_Debug_Printf("%u\n",dwt.get_us());
+            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.6f,%.6f,",\
+            //     ahrs.dat.pitch,ahrs.dat.roll,ahrs.dat.yaw,eul[0],eul[1],eul[2],bias[0],bias[1]);
+            // sBSP_UART_Debug_Printf("%u,%u\n",HAL_GetTick(),dwt.get_us());
+            
+
+            
+            // ahrs.dat.pitch = ahrs.result.pitch;
+            // ahrs.dat.roll  = ahrs.result.roll;
+            // ahrs.dat.yaw   = ahrs.result.yaw;
+            // ahrs.dat.q0    = ahrs.result.q0;
+            // ahrs.dat.q1    = ahrs.result.q1;
+            // ahrs.dat.q2    = ahrs.result.q2;
+            // ahrs.dat.q3    = ahrs.result.q3;
+
+            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.6f,%.6f,",\
+            eul[0],eul[1],eul[2],bias[0],bias[1]);
+            // sBSP_UART_Debug_Printf("%u,%u\n",HAL_GetTick(),dwt.get_us());
+
+            ahrs.output.pitch = eul[0];
+            ahrs.output.roll  = eul[1];
+            ahrs.output.yaw   = eul[2];
+            ahrs.output.q0    = quat[0];
+            ahrs.output.q1    = quat[1];
+            ahrs.output.q2    = quat[2]; 
+            ahrs.output.q3    = quat[3];
+
+            dwt.end();
+            // sBSP_UART_Debug_Printf("%u,%u\n",HAL_GetTick(),dwt.get_us());
+
+
+            // float yaw = atan2f(ahrs.dat.mag_y,ahrs.dat.mag_x) * RAD2DEG;
+            // float yaw = atan2f(ahrs.dat.mag_x,ahrs.dat.mag_y) * RAD2DEG;
+
+
+            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%u\n",ahrs.dat.mag_x,ahrs.dat.mag_y,ahrs.dat.mag_z,yaw,HAL_GetTick());
+            //把新获取到的数据通过队列发送给blc_ctrl算法
+            // xQueueSend(g_blc_ctrl_ahrs_queue,&ahrs.dat,200);
+            xQueueOverwrite(g_blc_ctrl_ahrs_queue,&ahrs.output); 
 
             
         }
@@ -439,16 +419,11 @@ void sAPP_AHRS_Task(void* param){
             Error_Handler();
         }
 
-        
-        if(xSemaphoreTake(ahrs.aekf_ae6_info.lock,200) == pdTRUE){
-            ahrs.aekf_ae6_info.trace_R = state[0];
-            ahrs.aekf_ae6_info.trace_P = state[1];
-            ahrs.aekf_ae6_info.chi_square = state[2];
-            ahrs.aekf_ae6_info.trace_acc_err = state[3];
-            ahrs.aekf_ae6_info.acc_norm = state[4];
-
-            xSemaphoreGive(ahrs.aekf_ae6_info.lock);
-        }
+        ahrs.ekf_altest6_info.trace_R = state[0];
+        ahrs.ekf_altest6_info.trace_P = state[1];
+        ahrs.ekf_altest6_info.chi_square = state[2];
+        ahrs.ekf_altest6_info.trace_acc_err = state[3];
+        ahrs.ekf_altest6_info.acc_norm = state[4];
 
         // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,",ahrs.dat.acc_x,ahrs.dat.acc_y,ahrs.dat.acc_z,ahrs.dat.gyr_x,ahrs.dat.gyr_y,ahrs.dat.gyr_z,ahrs.dat.mag_x,ahrs.dat.mag_y,ahrs.dat.mag_z);
         // sBSP_UART_Debug_Printf("%u\n",HAL_GetTick());
@@ -457,22 +432,12 @@ void sAPP_AHRS_Task(void* param){
     }
 }
 
-// if(input.gyro_x < 0.1 && input.gyro_z > -0.1){
-//     input.gyro_x = 0;
-// }
-// if(input.gyro_y < 0.1 && input.gyro_y > -0.1){
-//     input.gyro_y = 0;
-// }
-// if(input.gyro_z < 0.1 && input.gyro_z > -0.1){
-//     input.gyro_z = 0;
-// }
-
 
 
 void sAPP_AHRS_ICMDataReadyCbISR(){
     portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
     //通知数据就绪
-	xSemaphoreGiveFromISR(icm_data_ready_bin, &xHigherPriorityTaskWoken);
+	xSemaphoreGiveFromISR(ahrs.imu_data_ready,&xHigherPriorityTaskWoken);
     if(xHigherPriorityTaskWoken)portYIELD();
 }
 

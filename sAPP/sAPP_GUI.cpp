@@ -225,50 +225,50 @@ static void alt_est_info_init(ItemBase* parent){
 
 static float imu_data_update(uint32_t id){
     float tmp = 0;
-    if(xSemaphoreTake(ahrs.mutex,20) == pdTRUE){
+    if(xSemaphoreTake(ahrs.output.lock,20) == pdTRUE){
         if(id == ID_IMU_PITCH){
-            tmp = ahrs.dat.pitch;
+            tmp = ahrs.output.pitch;
         }
         else if(id == ID_IMU_ROLL){
-            tmp = ahrs.dat.roll;
+            tmp = ahrs.output.roll;
         }
         else if(id == ID_IMU_YAW){
-            tmp = ahrs.dat.yaw;
+            tmp = ahrs.output.yaw;
         }
         else if(id == ID_IMU_ACCX){
-            tmp = ahrs.dat.acc_x;
+            tmp = ahrs.output.acc_x;
         }
         else if(id == ID_IMU_ACCY){
-            tmp = ahrs.dat.acc_y;
+            tmp = ahrs.output.acc_y;
         }
         else if(id == ID_IMU_ACCZ){
-            tmp = ahrs.dat.acc_z;
+            tmp = ahrs.output.acc_z;
         }
         else if(id == ID_IMU_GYRX){
-            tmp = ahrs.dat.gyr_x;
+            tmp = ahrs.output.gyr_x;
         }
         else if(id == ID_IMU_GYRY){
-            tmp = ahrs.dat.gyr_y;
+            tmp = ahrs.output.gyr_y;
         }
         else if(id == ID_IMU_GYRZ){
-            tmp = ahrs.dat.gyr_z;
+            tmp = ahrs.output.gyr_z;
         }
         else if(id == ID_IMU_MAGX){
-            tmp = ahrs.dat.mag_x;
+            tmp = ahrs.output.mag_x;
         }
         else if(id == ID_IMU_MAGY){
-            tmp = ahrs.dat.mag_y;
+            tmp = ahrs.output.mag_y;
         }
         else if(id == ID_IMU_MAGZ){
-            tmp = ahrs.dat.mag_z;
+            tmp = ahrs.output.mag_z;
         }
         else if(id == ID_IMU_ICMTEMP){
-            tmp = ahrs.icm_temp;
+            tmp = ahrs.output.imu_temp;
         }
         else if(id == ID_IMU_LIS3TEMP){
-            tmp = ahrs.lis3_temp;
+            tmp = ahrs.output.mag_temp;
         }
-        xSemaphoreGive(ahrs.mutex);
+        xSemaphoreGive(ahrs.output.lock);
     }
     return tmp;
 }
@@ -340,23 +340,23 @@ static float battary_info_update(uint32_t id){
 static float alt_est_update(uint32_t id){
     float tmp = 0;
 
-    if(xSemaphoreTake(ahrs.aekf_ae6_info.lock,200) == pdTRUE){
+    if(xSemaphoreTake(ahrs.ekf_altest6_info.lock,200) == pdTRUE){
         if(id == ID_ALT_EST_R){
-            tmp = ahrs.aekf_ae6_info.trace_R;
+            tmp = ahrs.ekf_altest6_info.trace_R;
         }
         else if(id == ID_ALT_EST_P){
-            tmp = ahrs.aekf_ae6_info.trace_P;
+            tmp = ahrs.ekf_altest6_info.trace_P;
         }
         else if(id == ID_ALT_EST_CHI){
-            tmp = ahrs.aekf_ae6_info.chi_square;
+            tmp = ahrs.ekf_altest6_info.chi_square;
         }
         else if(id == ID_ALT_EST_EK){
-            tmp = ahrs.aekf_ae6_info.trace_acc_err;
+            tmp = ahrs.ekf_altest6_info.trace_acc_err;
         }
         else if(id == ID_ALT_EST_ACC_NORM){
-            tmp = ahrs.aekf_ae6_info.acc_norm;
+            tmp = ahrs.ekf_altest6_info.acc_norm;
         }
-        xSemaphoreGive(ahrs.aekf_ae6_info.lock);
+        xSemaphoreGive(ahrs.ekf_altest6_info.lock);
     }
     return tmp;
 }

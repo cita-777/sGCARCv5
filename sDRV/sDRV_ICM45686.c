@@ -565,12 +565,12 @@ int sDRV_ICM45686_Init(){
 
     //初始化配置:实时性+++
     sDRV_ICM45686_Conf_t icm_conf = {0};
-    icm_conf.gyro_fs           = SDRV_ICM45686_GYRO_UI_FS_SEL_1000DPS;
-    icm_conf.gyro_odr          = SDRV_ICM45686_GYRO_ODR_200HZ;
-    icm_conf.accel_fs          = SDRV_ICM45686_ACCEL_UI_FS_SEL_4G;
-    icm_conf.accel_odr         = SDRV_ICM45686_ACCEL_ODR_200HZ;
-    icm_conf.gyro_mode         = SDRV_ICM45686_GYRO_MODE_LN;
-    icm_conf.accel_mode        = SDRV_ICM45686_ACCEL_MODE_LN;
+    icm_conf.gyro_fs    = SDRV_ICM45686_GYRO_UI_FS_SEL_500DPS;
+    icm_conf.gyro_odr   = SDRV_ICM45686_GYRO_ODR_200HZ;
+    icm_conf.accel_fs   = SDRV_ICM45686_ACCEL_UI_FS_SEL_4G;
+    icm_conf.accel_odr  = SDRV_ICM45686_ACCEL_ODR_200HZ;
+    icm_conf.gyro_mode  = SDRV_ICM45686_GYRO_MODE_LN;
+    icm_conf.accel_mode = SDRV_ICM45686_ACCEL_MODE_LN;
     sDRV_ICM45686_SetConfig(&icm_conf); 
 
     return 0;
@@ -586,12 +586,12 @@ void sDRV_ICM45686_SetConfig(const sDRV_ICM45686_Conf_t* p_conf){
     //bank=0,上传配置
     // reg_modify(ADDR_REGBANKSEL,MSK_REGBANKSEL_BANKSEL,SDRV_ICM_REGBANKSEL_BANK0);
     
-    reg_modify(ADDR_GYRO_CONFIG0     ,MSK_GYRO_CONFIG0_GYRO_UI_FS_SEL         ,g_icm45686_conf.gyro_fs);
-    reg_modify(ADDR_GYRO_CONFIG0     ,MSK_GYRO_CONFIG0_GYRO_ODR               ,g_icm45686_conf.gyro_odr);
-    reg_modify(ADDR_ACCEL_CONFIG0    ,MSK_ACCEL_CONFIG0_ACCEL_UI_FS_SEL       ,g_icm45686_conf.accel_fs);
-    reg_modify(ADDR_ACCEL_CONFIG0    ,MSK_ACCEL_CONFIG0_ACCEL_ODR             ,g_icm45686_conf.accel_odr);
-    reg_modify(ADDR_PWR_MGMT0        ,MSK_PWR_MGMT0_GYRO_MODE                 ,g_icm45686_conf.gyro_mode);
-    reg_modify(ADDR_PWR_MGMT0        ,MSK_PWR_MGMT0_ACCEL_MODE                ,g_icm45686_conf.accel_mode);
+    reg_modify(ADDR_GYRO_CONFIG0 ,MSK_GYRO_CONFIG0_GYRO_UI_FS_SEL  ,g_icm45686_conf.gyro_fs);
+    reg_modify(ADDR_GYRO_CONFIG0 ,MSK_GYRO_CONFIG0_GYRO_ODR        ,g_icm45686_conf.gyro_odr);
+    reg_modify(ADDR_ACCEL_CONFIG0,MSK_ACCEL_CONFIG0_ACCEL_UI_FS_SEL,g_icm45686_conf.accel_fs);
+    reg_modify(ADDR_ACCEL_CONFIG0,MSK_ACCEL_CONFIG0_ACCEL_ODR      ,g_icm45686_conf.accel_odr);
+    reg_modify(ADDR_PWR_MGMT0    ,MSK_PWR_MGMT0_GYRO_MODE          ,g_icm45686_conf.gyro_mode);
+    reg_modify(ADDR_PWR_MGMT0    ,MSK_PWR_MGMT0_ACCEL_MODE         ,g_icm45686_conf.accel_mode);
 }
 
 
@@ -602,8 +602,7 @@ void sDRV_ICM45686_GetData(){
     uint8_t buf[14];
     read_regs(ADDR_ACCEL_DATA_X1_UI,buf,14);
 
-
-    g_icm45686.temp   = (float)((int16_t)((buf[13] << 8) | buf[12]) / 128 + 25);
+    g_icm45686.temp  = (float)((int16_t)((buf[13] << 8) | buf[12]) / 128 + 25);
     g_icm45686.acc_x = (float)(int16_t)((uint16_t)(buf[ 1] << 8) | (uint16_t)buf[ 0]);
     g_icm45686.acc_y = (float)(int16_t)((uint16_t)(buf[ 3] << 8) | (uint16_t)buf[ 2]);
 	g_icm45686.acc_z = (float)(int16_t)((uint16_t)(buf[ 5] << 8) | (uint16_t)buf[ 4]);
@@ -673,11 +672,6 @@ void sDRV_ICM45686_GetData(){
         g_icm45686.gyr_y *= (15.625f / 32768.0f);
         g_icm45686.gyr_z *= (15.625f / 32768.0f);
 	}
-    // #include "sBSP_UART.h"
-    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,",g_icm45686.acc_x,g_icm45686.acc_y,g_icm45686.acc_z);
-    // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f\n",g_icm45686.gyr_x,g_icm45686.gyr_y,g_icm45686.gyr_z);
-    // sBSP_UART_Debug_Printf("%.2f\n",g_icm45686.temp);
-
 }
 
 

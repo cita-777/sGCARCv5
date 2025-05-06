@@ -102,7 +102,7 @@ inline void sBSP_SPI_OLED_RecvBytes(uint8_t *pData,uint16_t Size){
 
 
 //SPI_BAUDRATEPRESCALER_2 ~ SPI_BAUDRATEPRESCALER_256
-void sBSP_SPI_IMU_Init(uint32_t SPI_BAUDRATE){
+int sBSP_SPI_IMU_Init(uint32_t SPI_BAUDRATE){
     IMU_SPI_HANDLE.Instance              = SPI2;
     IMU_SPI_HANDLE.Init.Mode             = SPI_MODE_MASTER;
     IMU_SPI_HANDLE.Init.Direction        = SPI_DIRECTION_2LINES;
@@ -117,8 +117,10 @@ void sBSP_SPI_IMU_Init(uint32_t SPI_BAUDRATE){
     IMU_SPI_HANDLE.Init.CRCPolynomial    = 10;
 
     if (HAL_SPI_Init(&IMU_SPI_HANDLE) != HAL_OK){
-        Error_Handler();
+        return -1;
     }
+
+    return 0;
 }
 
 void sBSP_SPI_IMU_SetEN(uint8_t en){

@@ -72,7 +72,7 @@ int sAPP_Car::initBoard(){
     //初始化铁电
     sAPP_ParamSave_Init();
     //初始化航姿参考系统
-    ahrs.init();
+    ahrs.init(AHRS::IMUType::ICM45686,AHRS::MAGType::LIS3MDLTR);
     //初始化INA219
     sDRV_INA219_Init();
 

@@ -24,7 +24,7 @@ void sBSP_SPI_OLED_RecvBytes(uint8_t *pData,uint16_t Size);
 
 
 /*IMU SPI interface*/
-void sBSP_SPI_IMU_Init(uint32_t SPI_BAUDRATE);
+int sBSP_SPI_IMU_Init(uint32_t SPI_BAUDRATE);
 void sBSP_SPI_IMU_SetEN(uint8_t en);
 void sBSP_SPI_IMU_SendByte(uint8_t byte);
 uint8_t sBSP_SPI_IMU_RecvByte();
