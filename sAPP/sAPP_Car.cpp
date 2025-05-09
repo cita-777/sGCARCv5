@@ -74,7 +74,21 @@ int sAPP_Car::initBoard(){
     //初始化航姿参考系统
     ahrs.init(AHRS::IMUType::ICM45686,AHRS::MAGType::LIS3MDLTR);
     //初始化INA219
-    sDRV_INA219_Init();
+    sDRV_INA219::CONFIG_t config = {
+        .bus_adc = sDRV_INA219::ADC_SETTING::SET_128SAMPLES_68D1MS,
+        .bvr = sDRV_INA219::BUS_VOLTAGE_RANGE::RANGE_16V,
+        .pga = sDRV_INA219::PGA_GAIN::GAIN_2_80MV,
+        .shunt_adc = sDRV_INA219::ADC_SETTING::SET_128SAMPLES_68D1MS,
+        .mode = sDRV_INA219::MODE::SHUNT_AND_BUS_VOLTAGE_CONTINUOUS,
+        .rshunt_ohm = 0.05, // 50mR
+    };
+
+
+
+    if(ina.init(&config) != 0){
+        sBSP_UART_Debug_Printf("INA219初始化失败!\n");
+        return -1;
+    }
 
     //创建car的数据的互斥锁
     mutex = xSemaphoreCreateMutex();
@@ -88,22 +102,26 @@ int sAPP_Car::initBoard(){
 
 extern"C" void sAPP_Car_InfoUpdateTask(void* param){
     for(;;){
+
+        ina.getData();
+        vTaskDelay(200);
+        
+
         if(xSemaphoreTake(car.mutex,200) == pdTRUE){
             car.coreClock = HAL_RCC_GetHCLKFreq();
             car.mcu_temp = sBSP_ADC_GetMCUTemp();
             car.mcu_volt = sBSP_ADC_GetVCC();
 
             //! 这里应该先获取I2C1总线的互斥锁,这里只先测试
-            car.batt_volt = sDRV_INA219_GetBusV();
-            car.batt_curr = sDRV_INA219_GetCurrA();
-            car.batt_power = sDRV_INA219_GetPwrW();
+            car.batt_volt = ina.getBusV();
+            car.batt_curr = ina.getCurrA();
+            car.batt_power = ina.getPowerW();
             xSemaphoreGive(car.mutex);
         }
         
         
         // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f\n", car.batt_volt, car.batt_curr,car.batt_power);
         // sBSP_UART_Debug_Printf("up!\n");
-        vTaskDelay(300);
     }
 }
 

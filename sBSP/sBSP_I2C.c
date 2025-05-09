@@ -342,6 +342,18 @@ inline int8_t sBSP_I2C1M_IsCplt(){
     return I2C1M_TxCpltFlag | I2C1M_RxCpltFlag;
 }
 
+bool sBSP_I2C1M_DevIsReady(uint16_t DevAddr){
+    //HAL库提供的函数,会自动发送一个读命令,如果没有ACK,则返回错误
+    //尝试5次
+    HAL_StatusTypeDef ret = HAL_I2C_IsDeviceReady(&hi2c1,DevAddr,5,I2C1_POT_MS);
+    if(ret == HAL_OK){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
 
 /**
   * @brief  I2C2主机发送一个字节

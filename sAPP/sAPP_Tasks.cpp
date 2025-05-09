@@ -118,12 +118,17 @@ static void imu_calib_acc_bias(void* param){
     const float bias_limit = 0.3f;
     if(fabs(imu_sbias.acc_x) > bias_limit || fabs(imu_sbias.acc_y) > bias_limit || fabs(imu_sbias.acc_z) > bias_limit){
         log_error("加速度计静态零偏数据超过阈值,请将主板放平后重试! 本次校准无效");
+        menu.setUnlock();
+        //提示用户
+        menu.createTipsBox("Acc Calib FAIL","Plase take the\nsystem on\nflat surface!");
         goto END;
     }
 
     //保存静态零偏数据到FeRAM
     if(sAPP_ParamSave_SaveAccSBias(imu_sbias.acc_x,imu_sbias.acc_y,imu_sbias.acc_z,temp) != 0){
         log_error("加速度计静态零偏数据保存失败!");
+        //提示用户
+        menu.createTipsBox("Acc Calib FAIL","Static bias\nsave fail!");
         goto END;
     }
 
@@ -131,6 +136,8 @@ static void imu_calib_acc_bias(void* param){
     ahrs.updateAccSBias(imu_sbias.acc_x,imu_sbias.acc_y,imu_sbias.acc_z);
 
     log_info("加速度计静态零偏校准完成,保存成功 OK");
+    menu.createTipsBox("Acc Calib OK","Static bias\nsave success!");
+
 
 END:
     menu.setUnlock();
@@ -155,12 +162,15 @@ static void imu_calib_gyr_bias(void* param){
     const float bias_limit = ahrs.getIMUType() == AHRS::IMUType::ICM45686 ? 0.3f : 0.5f;
     if(fabs(imu_sbias.gyr_x) > bias_limit || fabs(imu_sbias.gyr_y) > bias_limit || fabs(imu_sbias.gyr_z) > bias_limit){
         log_error("陀螺仪静态零偏数据超过阈值,可能是系统未处于静止状态或者陀螺仪性能不佳 本次校准无效");
+        menu.createTipsBox("Gyro Calib FAIL","Plase keep the\nsystem in a\nstatic state!");
+        
         goto END;
     }
 
     //保存静态零偏数据到FeRAM
     if(sAPP_ParamSave_SaveGyrSBias(imu_sbias.gyr_x,imu_sbias.gyr_y,imu_sbias.gyr_z,temp) != 0){
         log_error("陀螺仪静态零偏数据保存失败!");
+        menu.createTipsBox("Gyro Calib FAIL","Static bias\nsave fail!");
         goto END;
     }
 
@@ -168,6 +178,7 @@ static void imu_calib_gyr_bias(void* param){
     ahrs.updateGyrSBias(imu_sbias.gyr_x,imu_sbias.gyr_y,imu_sbias.gyr_z);
 
     log_info("陀螺仪静态零偏校准完成,保存成功 OK");
+    menu.createTipsBox("Gyro Calib OK","Static bias\nsave success!");
 
 END:
     menu.setUnlock();

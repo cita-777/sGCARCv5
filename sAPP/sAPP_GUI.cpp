@@ -108,7 +108,7 @@ void sAPP_GUI_Init(){
     auto* sys_settings = &EnterableItem::create(menu.getHome(),ID::SYS_SETTINGS).setTittle("Sys settings");
     
     /*IMU*/
-    auto* imu_data = &EnterableItem::create(menu.getHome(),ID::IMU).setTittle("IMU data");
+    auto* imu_data = &EnterableItem::create(menu.getHome(),ID::IMU).setTittle("IMU");
 
     auto* alt_est_info = &EnterableItem::create(menu.getHome(),ID::ALT_EST_INFO).setTittle("AltEst info");
     /*battary info*/

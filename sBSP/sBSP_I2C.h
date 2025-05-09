@@ -4,6 +4,7 @@ extern "C"{
 #endif
 
 #include "stm32f4xx_hal.h"
+#include "stdbool.h"
 
 /**
   * sBSP_F4_I2C.h
@@ -27,6 +28,8 @@ extern "C"{
   * 
   */
 
+
+extern I2C_HandleTypeDef hi2c1;
 
 
 /** @defgroup I2C_XferOptions_definition I2C XferOptions definition
@@ -65,6 +68,9 @@ HAL_StatusTypeDef sBSP_I2C1M_MemSendByte  (uint16_t dev_addr,uint16_t mem_addr,u
 HAL_StatusTypeDef sBSP_I2C1M_MemSendBytes (uint16_t dev_addr,uint16_t mem_addr,uint16_t addr_size,uint8_t* pData,uint16_t length);
 uint8_t           sBSP_I2C1M_MemReadByte  (uint16_t dev_addr,uint16_t mem_addr,uint16_t addr_size);
 HAL_StatusTypeDef sBSP_I2C1M_MemReadBytes (uint16_t dev_addr,uint16_t mem_addr,uint16_t addr_size,uint8_t* pData,uint16_t length);
+
+
+bool sBSP_I2C1M_DevIsReady(uint16_t DevAddr);
 
 //! 这个好像是发送完一帧的完成回调
 int8_t sBSP_I2C2M_IsTxCplt();

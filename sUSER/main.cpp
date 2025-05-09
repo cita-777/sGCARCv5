@@ -84,19 +84,12 @@ int main(){
     dwt.start();
     sAPP_GUI_Init();//创建36个项o0花费306us,o3花费66us
 
-    
-
-    // menu.curr = menu.curr->child;
     menu.operateEnter();
     dwt.end();
 
-    menu.printAllItem();
-
-    // sizeof(FloatValAdj);
+    // menu.printAllItem();
 
     // sDRV_AHT20_Init();
-
-
 
     // dwt.start();
     // dwt.end();
@@ -111,6 +104,7 @@ int main(){
     // sBSP_UART_Debug_Printf("menu id count:%u\n",menu.getItemCount());
     // sBSP_UART_Debug_Printf("menu 21 item text:%s\n",sLM::sLittleMenu::getNodeData(menu.getItemByID(21)).text);
     
+    
 
     setup();
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
@@ -119,7 +113,7 @@ int main(){
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
     sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
     vTaskStartScheduler();
-    // while(1);
+    while(1);
 }
 
 
