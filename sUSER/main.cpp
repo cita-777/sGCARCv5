@@ -122,12 +122,18 @@ int main(){
 
 
 void setup(){
-
+    
 }
 
 
 
 void loop(){
+    // if(xSemaphoreTake(car.mutex,200) == pdTRUE){
+    //     sBSP_UART_Top_Printf("%.2f,%.2f,%.2f\n",car.batt_volt,car.batt_curr,car.batt_power);
+    //     xSemaphoreGive(car.mutex);
+    // }
+    
+    delay(100);
     // sDRV_PS2_Handler();
     // sBSP_UART_Debug_Printf("0x%2X,0x%2X\n", ps2.leftX,ps2.leftY);
     // sBSP_UART_Debug_Printf("S:%2X,%2X,%2X,%2X,%u,%u,%u,%u:E\n", ps2.leftX,ps2.leftY,ps2.rightX,ps2.rightY,ps2.cir,ps2.rect,ps2.tri,ps2.x);
@@ -135,7 +141,7 @@ void loop(){
     // motor.setLM(100);
     // motor.setRM(100);
 
-    delay(30);
+    // delay(30);
 }
 
 

@@ -243,16 +243,31 @@ void sAPP_Tasks_ReadIMUCaliVal(){
 }
 
 void sAPP_Tasks_ProtectTask(void* param){
+    bool is_low_bat = false;
+    bool is_first_tip = true;
+
+    vTaskDelay(5000);
     for(;;){
         if(xSemaphoreTake(car.mutex,200) == pdTRUE){
             //电池电压过低保护
-            if(car.batt_volt < 11.5f){
-                __disable_irq();
-                sBSP_UART_Debug_Printf("[ERR ]电池电压过低:%.2fv\n",car.batt_volt);
-                Error_Handler();
+            if(car.batt_volt < 10.5f){
+                is_low_bat = true;
+                // sBSP_UART_Debug_Printf("[ERR ]电池电压过低:%.2fv\n",car.batt_volt);
+            }
+            //回差500mV,防止重复触发
+            else if(car.batt_volt > 11.0f){
+                is_low_bat = false;
+                is_first_tip = true;
             }
             xSemaphoreGive(car.mutex);
         }
+
+        if(is_low_bat && is_first_tip){
+            is_first_tip = false;
+            menu.createTipsBox("LOW BATT WARN","Battery voltage\nis too low!");
+
+        }
+
         vTaskDelay(500 / portTICK_PERIOD_MS);
     }
 }
@@ -269,11 +284,11 @@ void sAPP_Tasks_CreateAll(){
     xTaskCreate(sAPP_Tasks_OLEDHdr      , "OLED"         , 16384 / sizeof(int), NULL, 2, NULL);
     xTaskCreate(sAPP_Tasks_Devices      , "Devices"      , 1024 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Car_InfoUpdateTask , "CarInfoUp"    , 2048 / sizeof(int), NULL, 1, NULL);
-    // xTaskCreate(sAPP_Tasks_ProtectTask  , "Protect"      , 2048 / sizeof(int), NULL, 1, NULL);
+    xTaskCreate(sAPP_Tasks_ProtectTask  , "Protect"      , 2048 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_500ms        , "500ms"        , 1024 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_1000ms       , "1000ms"       , 1024 / sizeof(int), NULL, 1, NULL);
     // xTaskCreate(sAPP_Tasks_TaskMang     , "TaskMang"     , 2048 / sizeof(int), NULL, 1, NULL);
-    // xTaskCreate(sAPP_Tasks_LoopTask     , "Loop"         , 8192 / sizeof(int), NULL, 4, NULL);
+    xTaskCreate(sAPP_Tasks_LoopTask     , "Loop"         , 8192 / sizeof(int), NULL, 2, NULL);
 
 }
 
