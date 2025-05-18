@@ -383,8 +383,8 @@ void sAPP_AHRS_Task(void* param){
             float dt = dt_ms / 1000.0f;
             ekf_AltEst6(input_gyr,input_acc,2,dt,eul,quat,state);
             // sBSP_UART_Debug_Printf("%u\n",dwt.get_us());
-            // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%.2f,%.2f,%.6f,%.6f,",\
-            //     ahrs.dat.pitch,ahrs.dat.roll,ahrs.dat.yaw,eul[0],eul[1],eul[2],bias[0],bias[1]);
+            // sBSP_UART_Debug_Printf("%.3f,%.3f,%.3f,%u\n",ahrs.raw_data.gyr_x,ahrs.raw_data.gyr_y,ahrs.raw_data.gyr_z,HAL_GetTick());
+            // sBSP_UART_Debug_Printf("%.3f,%.3f,%.3f,%u\n",ahrs.raw_data.acc_x,ahrs.raw_data.acc_y,ahrs.raw_data.acc_z,HAL_GetTick());
             // sBSP_UART_Debug_Printf("%u,%u\n",HAL_GetTick(),dwt.get_us());
             
 

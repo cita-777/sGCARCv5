@@ -61,8 +61,6 @@ int sDRV_INA219::init(CONFIG_t* config,uint8_t dev_addr){
 
     HAL_Delay(10); // 等待配置完成
 
-    log_info("INA219初始化完成,地址 0x%04X",config_data);
-
     return 0;
 }
 

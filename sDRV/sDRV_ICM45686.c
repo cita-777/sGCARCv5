@@ -548,7 +548,9 @@ int sDRV_ICM45686_Init(){
     //检查通信是否正常
     uint8_t who_am_i = read_reg(ADDR_WHO_AM_I);
     if(who_am_i != 0xE9){
-        return who_am_i;
+        // return who_am_i;
+        //! 上面这个做法,如果读回WHO_AM_I是0,那也会返回正常初始化完成,这明显是不对的
+        return -1;
     }
 
     #ifdef USE_INT_GET_DATA
