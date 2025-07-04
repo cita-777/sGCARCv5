@@ -47,7 +47,7 @@ int AHRS::init(IMUType imu_type, MAGType mag_type)
 
 
     /*初始化通信接口*/
-    if (imu_type == IMUType::ICM45686 || imu_type == IMUType::ICM42688 || mag_type == MAGType::LIS3MDLTR)
+    if (imu_type == IMUType::ICM45686 || mag_type == MAGType::LIS3MDLTR)
     {
         // 11.25MBit/s
         if (sBSP_SPI_IMU_Init(SPI_BAUDRATEPRESCALER_4) != 0)
@@ -57,19 +57,8 @@ int AHRS::init(IMUType imu_type, MAGType mag_type)
     }
 
     /*初始化必要的6DoF器件*/
-    if (imu_type == IMUType::JY901S)
-    {
-        sDRV_JY901S_Init();
-        HAL_NVIC_SetPriority(USART3_IRQn, 4, 0);
-        HAL_NVIC_EnableIRQ(USART3_IRQn);
-    }
-    else if (imu_type == IMUType::ICM42688)
-    {
-        //! 暂时不可用
-        log_error("ICM42688 IMU不支持中断式获取数据,请使用ICM45686或JY901S\n");
-        Error_Handler();
-    }
-    else if (imu_type == IMUType::ICM45686)
+
+    if (imu_type == IMUType::ICM45686)
     {
         if (sDRV_ICM45686_Init() != 0)
         {
@@ -120,9 +109,7 @@ void AHRS::error_handler()
     /*打印IMU类型和MAG类型*/
     switch (imu_type)
     {
-    case IMUType::ICM42688: log_info("AHRS:IMU类型 ICM42688"); break;
     case IMUType::ICM45686: log_info("AHRS:IMU类型 ICM45686"); break;
-    case IMUType::JY901S: log_info("AHRS:IMU类型 JY901S"); break;
     default: Error_Handler(); break;
     }
 
@@ -220,37 +207,8 @@ void AHRS::getIMUData()
 {
     static int count;
 
-    if (imu_type == IMUType::JY901S)
-    {
-        sDRV_JY901S_Handler();
-        raw_data.acc_x = g_jy901s.acc_x;
-        raw_data.acc_y = g_jy901s.acc_y;
-        raw_data.acc_z = g_jy901s.acc_z;
-        raw_data.gyr_x = g_jy901s.gyr_x;
-        raw_data.gyr_y = g_jy901s.gyr_y;
-        raw_data.gyr_z = g_jy901s.gyr_z;
-        raw_data.mag_x = g_jy901s.mag_x;
-        raw_data.mag_y = g_jy901s.mag_y;
-        raw_data.mag_z = g_jy901s.mag_z;
-        output.pitch   = g_jy901s.pitch;
-        output.roll    = g_jy901s.roll;
-        output.yaw     = g_jy901s.yaw;
-        output.q0      = g_jy901s.q0;
-        output.q1      = g_jy901s.q1;
-        output.q2      = g_jy901s.q2;
-        output.q3      = g_jy901s.q3;
-    }
-    else if (imu_type == IMUType::ICM42688)
-    {
-        sDRV_ICM_GetData();
-        raw_data.acc_x = g_icm.acc_x;
-        raw_data.acc_y = g_icm.acc_y;
-        raw_data.acc_z = g_icm.acc_z;
-        raw_data.gyr_x = g_icm.gyro_x;
-        raw_data.gyr_y = g_icm.gyro_y;
-        raw_data.gyr_z = g_icm.gyro_z;
-    }
-    else if (imu_type == IMUType::ICM45686)
+
+    if (imu_type == IMUType::ICM45686)
     {
         sDRV_ICM45686_GetData();
         raw_data.acc_x    = g_icm45686.acc_x;
