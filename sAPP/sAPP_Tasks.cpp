@@ -389,8 +389,8 @@ void sAPP_Tasks_CreateAll()
     xTaskCreate(sAPP_Tasks_OLEDHdr, "OLED", 16384 / sizeof(int), NULL, 2, NULL);
     xTaskCreate(sAPP_Tasks_Devices, "Devices", 1024 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Car_InfoUpdateTask, "CarInfoUp", 2048 / sizeof(int), NULL, 1, NULL);
-    xTaskCreate(sAPP_Tasks_ProtectTask, "Protect", 2048 / sizeof(int), NULL, 1, NULL);
-    // 超声波测距任务
+    // xTaskCreate(sAPP_Tasks_ProtectTask, "Protect", 2048 / sizeof(int), NULL, 1, NULL);
+    //  超声波测距任务
     xTaskCreate(sAPP_Tasks_UltrasonicTask, "Ultrasonic", 1024 / sizeof(int), NULL, 4, NULL);
     // 语音识别任务
     xTaskCreate(sAPP_Tasks_VoiceRecognition, "VoiceRecog", 2048 / sizeof(int), NULL, 5, NULL);
