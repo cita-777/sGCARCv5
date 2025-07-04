@@ -2,7 +2,6 @@
 
 #include "main.h"
 #include "sDRV_HC_SR04.h"
-#include "sDRV_LED.hpp"
 #include "sDRV_YaHaboom_voice.h"
 #include "sDWTLib.hpp"
 
@@ -64,7 +63,7 @@ void sAPP_Tasks_UltrasonicTask(void* param)
             g_ultrasonic_distance_cm = distance;
             g_ultrasonic_data_valid  = true;
 
-            if (distance > 0 && distance <= 10)
+            if (distance > 0 && distance <= 5)
             {
                 BinOutDrv.startPulse(BOD_BUZZER_ID);
             }
@@ -391,11 +390,9 @@ void sAPP_Tasks_CreateAll()
     xTaskCreate(sAPP_Car_InfoUpdateTask, "CarInfoUp", 2048 / sizeof(int), NULL, 1, NULL);
     // xTaskCreate(sAPP_Tasks_ProtectTask, "Protect", 2048 / sizeof(int), NULL, 1, NULL);
     //  超声波测距任务
-    // xTaskCreate(sAPP_Tasks_UltrasonicTask, "Ultrasonic", 1024 / sizeof(int), NULL, 4, NULL);
+    xTaskCreate(sAPP_Tasks_UltrasonicTask, "Ultrasonic", 1024 / sizeof(int), NULL, 4, NULL);
     // 语音识别任务
-    // xTaskCreate(sAPP_Tasks_VoiceRecognition, "VoiceRecog", 2048 / sizeof(int), NULL, 5, NULL);
-    // DWT测试点灯任务
-    // xTaskCreate(sAPP_Tasks_DWT_LED_Test, "DWT_LED_Test", 1024 / sizeof(int), NULL, 1, NULL);
+    xTaskCreate(sAPP_Tasks_VoiceRecognition, "VoiceRecog", 2048 / sizeof(int), NULL, 5, NULL);
     xTaskCreate(sAPP_Tasks_500ms, "500ms", 1024 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_1000ms, "1000ms", 1024 / sizeof(int), NULL, 1, NULL);
     // xTaskCreate(sAPP_Tasks_TaskMang, "TaskMang", 2048 / sizeof(int), NULL, 1, NULL);
@@ -423,58 +420,7 @@ void sAPP_Tasks_StartCalibGyrBias()
     xTaskCreate(imu_calib_gyr_bias, "calibGyrBias", 1024 / sizeof(int), NULL, 2, NULL);
 }
 
-void sAPP_Tasks_DWT_LED_Test(void* param)
-{
-    uint32_t test_start_time, test_end_time, actual_delay_us;
 
-    // 初始化LED（使用默认引脚：PC13）
-    led.init();
-
-    sBSP_UART_Debug_Printf("DWT LED测试任务启动，开始测试DWT时钟精度...\n");
-
-    for (;;)
-    {
-        // 测试500ms延时
-        led.set(true);   // 点亮LED
-        sBSP_UART_Debug_Printf("LED点亮\n");
-
-        // 使用DWT测量实际延时时间
-        dwt.start();
-        dwt.delay_ms(500);
-        dwt.end();
-        actual_delay_us = dwt.get_us();
-
-        led.set(false);   // 熄灭LED
-        sBSP_UART_Debug_Printf("LED熄灭\n");
-
-        // 打印测量结果
-        sBSP_UART_Debug_Printf(
-            "DWT测试: 目标延时500ms, 实际延时%lu us (%.2f ms)\n", actual_delay_us, actual_delay_us / 1000.0f);
-
-        // 测试100us精确延时
-        dwt.start();
-        dwt.delay_us(100);
-        dwt.end();
-        actual_delay_us = dwt.get_us();
-
-        sBSP_UART_Debug_Printf("DWT测试: 目标延时100us, 实际延时%lu us\n", actual_delay_us);
-
-        // 再延时500ms
-        dwt.delay_ms(500);
-
-        // 测试LED闪烁功能
-        for (int i = 0; i < 5; i++)
-        {
-            led.toggle();
-            dwt.delay_ms(100);
-        }
-
-        sBSP_UART_Debug_Printf("DWT测试周期完成，等待下一次测试...\n");
-
-        // 等待2秒后重新开始测试
-        dwt.delay_ms(2000);
-    }
-}
 
 void sAPP_Tasks_PrintTaskMang()
 {
@@ -532,7 +478,7 @@ static bool           g_voice_data_valid = false;
 
 void sAPP_Tasks_VoiceRecognition(void* param)
 {
-    sBSP_UART_Debug_Printf("语音识别任务开始初始化...\n");
+    // sBSP_UART_Debug_Printf("语音识别任务开始初始化...\n");
 
     // 初始化语音模块
     if (sDRV_YaHaboom_Voice_Init() != 0)
@@ -606,13 +552,12 @@ void sAPP_Tasks_VoiceRecognition(void* param)
             }
             else
             {
-                // 如果还是收到初始化状态，记录但不处理
-                sBSP_UART_Debug_Printf("收到初始化状态，跳过处理\n");
+                // 如果还是收到初始化状态，不处理
             }
         }
 
         // 每300ms检查一次语音识别结果
-        vTaskDelay(300 / portTICK_PERIOD_MS);
+        vTaskDelay(5000 / portTICK_PERIOD_MS);
     }
 }
 

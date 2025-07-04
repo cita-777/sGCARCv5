@@ -27,7 +27,6 @@ void sAPP_Tasks_StartFormatFeRAM();
 void sAPP_Tasks_StartCalibrateIMU();
 
 
-void sAPP_Tasks_DWT_LED_Test(void* param);
 
 
 void           sAPP_Tasks_VoiceRecognition(void* param);
