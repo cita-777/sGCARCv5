@@ -391,9 +391,9 @@ void sAPP_Tasks_CreateAll()
     xTaskCreate(sAPP_Car_InfoUpdateTask, "CarInfoUp", 2048 / sizeof(int), NULL, 1, NULL);
     // xTaskCreate(sAPP_Tasks_ProtectTask, "Protect", 2048 / sizeof(int), NULL, 1, NULL);
     //  超声波测距任务
-    xTaskCreate(sAPP_Tasks_UltrasonicTask, "Ultrasonic", 1024 / sizeof(int), NULL, 4, NULL);
+    // xTaskCreate(sAPP_Tasks_UltrasonicTask, "Ultrasonic", 1024 / sizeof(int), NULL, 4, NULL);
     // 语音识别任务
-    xTaskCreate(sAPP_Tasks_VoiceRecognition, "VoiceRecog", 2048 / sizeof(int), NULL, 5, NULL);
+    // xTaskCreate(sAPP_Tasks_VoiceRecognition, "VoiceRecog", 2048 / sizeof(int), NULL, 5, NULL);
     // DWT测试点灯任务
     // xTaskCreate(sAPP_Tasks_DWT_LED_Test, "DWT_LED_Test", 1024 / sizeof(int), NULL, 1, NULL);
     xTaskCreate(sAPP_Tasks_500ms, "500ms", 1024 / sizeof(int), NULL, 1, NULL);
