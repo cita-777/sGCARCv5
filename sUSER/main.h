@@ -19,7 +19,7 @@
 #include "sBinOutDev.hpp"
 #include "sG2D.hpp"
 
-#include <WString.h>
+
 // #include <string>
 
 
@@ -37,7 +37,7 @@
 #include "sAPP_Tasks.hpp"
 
 #include "ekf_AltEst6.h"
-#include "rk4_AltEst3.h"
+
 
 
 
@@ -68,7 +68,6 @@
 #include "sDRV_LED.hpp"
 #include "sDRV_LIS3MDLTR.h"
 #include "sDRV_MB85RCxx.h"
-#include "sDRV_NTC.h"
 #include "sDRV_PS2.h"
 #include "sDRV_PwrLight.h"
 #include "sDRV_TrackTube8.h"

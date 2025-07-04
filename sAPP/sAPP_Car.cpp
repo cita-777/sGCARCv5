@@ -29,8 +29,7 @@ int sAPP_Car::initSys()
     dwt.init(coreClock);
     // 初始化RNG
     sBSP_RNG_Init();
-    // 初始化NTC读取温度
-    sDRV_NTC_Init();
+
     // 初始化调试串口
     sBSP_UART_Debug_Init(115200);
     // sBSP_UART_Debug_Init(512000);
@@ -73,10 +72,10 @@ int sAPP_Car::initBoard()
     ahrs.init(AHRS::IMUType::ICM45686, AHRS::MAGType::LIS3MDLTR);
     // 初始化INA219
     sDRV_INA219::CONFIG_t config = {
-        .bus_adc    = sDRV_INA219::ADC_SETTING::SET_128SAMPLES_68D1MS,
         .bvr        = sDRV_INA219::BUS_VOLTAGE_RANGE::RANGE_16V,
         .pga        = sDRV_INA219::PGA_GAIN::GAIN_2_80MV,
         .shunt_adc  = sDRV_INA219::ADC_SETTING::SET_128SAMPLES_68D1MS,
+        .bus_adc    = sDRV_INA219::ADC_SETTING::SET_128SAMPLES_68D1MS,
         .mode       = sDRV_INA219::MODE::SHUNT_AND_BUS_VOLTAGE_CONTINUOUS,
         .rshunt_ohm = 0.05,   // 50mR
     };
