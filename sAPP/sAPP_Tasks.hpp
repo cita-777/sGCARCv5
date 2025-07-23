@@ -32,3 +32,10 @@ void sAPP_Tasks_StartCalibrateIMU();
 void           sAPP_Tasks_VoiceRecognition(void* param);
 voice_result_t sAPP_Tasks_GetVoiceResult(void);
 bool           sAPP_Tasks_IsVoiceDataValid(void);
+
+
+void sAPP_Tasks_FallProtectTask(void* param);
+// 定时播报方向任务
+void sAPP_Tasks_DirectionReportTask(void* param);
+void sAPP_Tasks_StartDirectionReport(void);
+void sAPP_Tasks_StopDirectionReport(void);

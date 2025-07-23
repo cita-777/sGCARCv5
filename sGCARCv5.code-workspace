@@ -79,14 +79,14 @@
             "type_traits": "cpp",
             "utility": "cpp",
             "iterator": "cpp",
-            "memory_resource": "cpp"
+            "memory_resource": "cpp",
+            "execution": "cpp"
         },
         "[yaml]": {
             "editor.insertSpaces": true,
             "editor.tabSize": 4,
             "editor.autoIndent": "advanced"
         },
-
         "commentTranslate.source": "Google",
         "commentTranslate.targetLanguage": "zh-CN",
         "commentTranslate.hover.enabled": true,
@@ -107,5 +107,4 @@
             "marus25.cortex-debug"
         ]
     }
-
 }

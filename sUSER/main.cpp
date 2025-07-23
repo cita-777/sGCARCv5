@@ -78,11 +78,10 @@ void setup();
 int main()
 {
     car.initSys();
-    dbg_printf("----Sightseer's General CAR Controller----\n");
     dbg_printf(
         "%s 硬件版本:%s,特化版本:%s,软件版本:%s\n", APPNAME, HARDWARE_VERSION, SPECIAL_VERSION, SOFTWARE_VERSION);
     car.initBoard();
-    dbg_info("sGCARC初始化完成,系统剩余Heap:%u Bytes\n", (uint32_t)xPortGetFreeHeapSize());
+    dbg_info("初始化完成,系统剩余Heap:%u Bytes\n", (uint32_t)xPortGetFreeHeapSize());
 
     // 读取IMU静态零偏
     sAPP_Tasks_ReadIMUCaliVal();
@@ -100,7 +99,6 @@ int main()
 
     // menu.printAllItem();
 
-    // sDRV_AHT20_Init();
 
     // dwt.start();
     // dwt.end();
@@ -124,6 +122,7 @@ int main()
     sBSP_UART_Debug_Printf("Current free heap size: %u bytes\n", (unsigned int)xPortGetFreeHeapSize());
     sBSP_UART_Debug_Printf("FreeRTOS启动任务调度\n");
     vTaskStartScheduler();
+
     while (1);
 }
 
@@ -148,7 +147,7 @@ void loop()
     // sBSP_UART_Debug_Printf("0x%2X,0x%2X\n", ps2.leftX,ps2.leftY);
     // sBSP_UART_Debug_Printf("S:%2X,%2X,%2X,%2X,%u,%u,%u,%u:E\n",
     // ps2.leftX,ps2.leftY,ps2.rightX,ps2.rightY,ps2.cir,ps2.rect,ps2.tri,ps2.x);
-    // sBSP_UART_Debug_Printf("%.2f,%.2f\n",motor.getLRPM(),motor.getRRPM());
+    sBSP_UART_Debug_Printf("%.2f,%.2f\n", motor.getLRPM(), motor.getRRPM());
     // motor.setLM(100);
     // motor.setRM(100);
 

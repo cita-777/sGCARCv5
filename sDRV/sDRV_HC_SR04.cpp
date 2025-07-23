@@ -56,7 +56,7 @@ uint32_t sDRV_HC_SR04_Measure_Distance(void)
     {
         dwt.delay_us(1);
         timeout_counter++;
-        if (timeout_counter > 30000)   // 超时30ms
+        if (timeout_counter > 10000)   // 超时10ms
         {
             dbg_printf("等待Echo高电平超时\n");
             return 0;
@@ -72,7 +72,7 @@ uint32_t sDRV_HC_SR04_Measure_Distance(void)
     {
         dwt.delay_us(1);
         timeout_counter++;
-        if (timeout_counter > 30000)   // 超时30ms
+        if (timeout_counter > 10000)   // 超时10ms
         {
             dbg_printf("等待Echo低电平超时\n");
             dwt.end();
@@ -99,7 +99,7 @@ uint32_t sDRV_HC_SR04_Measure_Distance(void)
     distance = (time_us * 17) / 1000;
 
     // 距离合理性检查（HC-SR04有效测距范围2cm-400cm）
-    if (distance < 2 || distance > 400)
+    if (distance <= 0 || distance > 400)
     {
         dbg_printf("距离超出范围: %lu cm\n", distance);
         return 0;   // 超出有效范围返回0

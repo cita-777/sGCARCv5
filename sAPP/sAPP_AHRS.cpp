@@ -379,7 +379,7 @@ void sAPP_AHRS_Task(void* param)
             // sBSP_UART_Debug_Printf("%.2f,%.2f,%.2f,%.2f,%u\n",ahrs.dat.mag_x,ahrs.dat.mag_y,ahrs.dat.mag_z,yaw,HAL_GetTick());
             // 把新获取到的数据通过队列发送给blc_ctrl算法
             // xQueueSend(g_blc_ctrl_ahrs_queue,&ahrs.dat,200);
-            xQueueOverwrite(g_blc_ctrl_ahrs_queue, &ahrs.output);
+            // xQueueOverwrite(g_blc_ctrl_ahrs_queue, &ahrs.output);
         }
         // 如果等待200ms还没有获取到信号量则报错
         else
@@ -408,5 +408,5 @@ void sAPP_AHRS_ICMDataReadyCbISR()
     portBASE_TYPE xHigherPriorityTaskWoken = pdFALSE;
     // 通知数据就绪
     xSemaphoreGiveFromISR(ahrs.imu_data_ready, &xHigherPriorityTaskWoken);
-    if (xHigherPriorityTaskWoken) portYIELD();
+    if (xHigherPriorityTaskWoken) portYIELD();   // 立即触发任务切换
 }

@@ -1,5 +1,7 @@
 {
     "files.associations": {
-        "sdrv_flash.h": "c"
+        "sdrv_flash.h": "c",
+        "xstring": "cpp",
+        "xutility": "cpp"
     }
 }

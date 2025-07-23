@@ -1,4 +1,3 @@
-
 /*----------------------------------include-----------------------------------*/
 #include "sDRV_YaHaboom_voice.h"
 #include "FreeRTOS.h"
@@ -61,7 +60,10 @@ int8_t sDRV_YaHaboom_Voice_Broadcast(uint8_t data)
         return -1;
     }
 
-    sBSP_UART_Debug_Printf("YaHaboom Voice: 播报内容: 0x%02X\n", data);
+    // 根据代码显示中文内容
+    const char* content_str = get_voice_code_description(data);
+
+    sBSP_UART_Debug_Printf("YaHaboom Voice: 播报内容: %s (0x%02X)\n", content_str, data);
     return 0;
 }
 
@@ -104,16 +106,34 @@ voice_result_t sDRV_YaHaboom_Voice_ReadData(void)
 
     switch (rx_data)
     {
-    case VOICE_RECOGNIZE_RED: result = VOICE_RESULT_RED; break;
-    case VOICE_RECOGNIZE_BLUE: result = VOICE_RESULT_BLUE; break;
-    case VOICE_RECOGNIZE_GREEN: result = VOICE_RESULT_GREEN; break;
-    case VOICE_RECOGNIZE_YELLOW: result = VOICE_RESULT_YELLOW; break;
+    case VOICE_START_STRAIGHT_WALK: result = VOICE_RESULT_START_STRAIGHT_WALK; break;
+    case VOICE_START_DIRECTION_REPORT: result = VOICE_RESULT_START_DIRECTION_REPORT; break;
+    case VOICE_LOW_BATTERY_WARNING: result = VOICE_RESULT_LOW_BATTERY_WARNING; break;
+    case VOICE_QUERY_BATTERY_STATUS: result = VOICE_RESULT_QUERY_BATTERY_STATUS; break;
+    case VOICE_BATTERY_SUFFICIENT: result = VOICE_RESULT_BATTERY_SUFFICIENT; break;
+    case VOICE_FALL_DETECTED_ALARM: result = VOICE_RESULT_FALL_DETECTED_ALARM; break;
+    case VOICE_OBSTACLE_30CM_WARNING: result = VOICE_RESULT_OBSTACLE_30CM_WARNING; break;
+    case VOICE_OBSTACLE_10CM_ALARM: result = VOICE_RESULT_OBSTACLE_10CM_ALARM; break;
+    case VOICE_SELF_CHECK_PASS: result = VOICE_RESULT_SELF_CHECK_PASS; break;
+    case VOICE_SELF_CHECK_FAIL: result = VOICE_RESULT_SELF_CHECK_FAIL; break;
+    case VOICE_FACING_SOUTH: result = VOICE_RESULT_FACING_SOUTH; break;
+    case VOICE_FACING_NORTH: result = VOICE_RESULT_FACING_NORTH; break;
+    case VOICE_FACING_EAST: result = VOICE_RESULT_FACING_EAST; break;
+    case VOICE_FACING_WEST: result = VOICE_RESULT_FACING_WEST; break;
+    case VOICE_STOP_DIRECTION_REPORT: result = VOICE_RESULT_STOP_DIRECTION_REPORT; break;
     case VOICE_INIT: result = VOICE_RESULT_INIT; break;
     default:
         // 显示所有未知数据，包括0x00和0xFF
         if (rx_data != last_rx_data || same_count == 1)
         {
-            sBSP_UART_Debug_Printf("YaHaboom Voice: 未知数据: 0x%02X\n", rx_data);
+            const char* desc = "";
+            switch (rx_data)
+            {
+            case 0x00: desc = " (无数据)"; break;
+            case 0xFF: desc = " (默认值)"; break;
+            default: desc = " (未知指令)"; break;
+            }
+            sBSP_UART_Debug_Printf("YaHaboom Voice: 未知数据: 0x%02X%s\n", rx_data, desc);
         }
         break;
     }
@@ -122,18 +142,6 @@ voice_result_t sDRV_YaHaboom_Voice_ReadData(void)
     if (result != VOICE_RESULT_NONE && result != last_result)
     {
         last_result = result;
-
-        // 只在第一次识别时打印调试信息
-        switch (result)
-        {
-        case VOICE_RESULT_RED: sBSP_UART_Debug_Printf("YaHaboom Voice: 识别到红色\n"); break;
-        case VOICE_RESULT_BLUE: sBSP_UART_Debug_Printf("YaHaboom Voice: 识别到蓝色\n"); break;
-        case VOICE_RESULT_GREEN: sBSP_UART_Debug_Printf("YaHaboom Voice: 识别到绿色\n"); break;
-        case VOICE_RESULT_YELLOW: sBSP_UART_Debug_Printf("YaHaboom Voice: 识别到黄色\n"); break;
-        case VOICE_RESULT_INIT: sBSP_UART_Debug_Printf("YaHaboom Voice: 初始化完成\n"); break;
-        default: break;
-        }
-
         return result;
     }
     else if (result == VOICE_RESULT_NONE)
@@ -158,6 +166,123 @@ void sDRV_YaHaboom_Voice_Handler(void)
 
     // 简单的状态维护，具体处理逻辑在任务中完成
     // 这里可以添加一些状态检查或错误处理逻辑
+}
+
+/**
+ * @brief 播报开启直线行走模式
+ */
+void sDRV_YaHaboom_Voice_BroadcastStraightWalk(void)
+{
+    sDRV_YaHaboom_Voice_Broadcast(VOICE_START_STRAIGHT_WALK);
+}
+
+/**
+ * @brief 播报定时播报当前方向的开启/关闭
+ * @param enable true: 开启, false: 关闭
+ */
+void sDRV_YaHaboom_Voice_BroadcastDirectionReport(bool enable)
+{
+    if (enable)
+    {
+        sDRV_YaHaboom_Voice_Broadcast(VOICE_START_DIRECTION_REPORT);
+    }
+    else
+    {
+        sDRV_YaHaboom_Voice_Broadcast(VOICE_STOP_DIRECTION_REPORT);
+    }
+}
+
+/**
+ * @brief 播报电池状态
+ * @param is_low true: 电量不足, false: 电量充足
+ */
+void sDRV_YaHaboom_Voice_BroadcastBatteryStatus(bool is_low)
+{
+    if (is_low)
+    {
+        sDRV_YaHaboom_Voice_Broadcast(VOICE_LOW_BATTERY_WARNING);
+    }
+    else
+    {
+        sDRV_YaHaboom_Voice_Broadcast(VOICE_BATTERY_SUFFICIENT);
+    }
+}
+
+/**
+ * @brief 播报障碍物警告
+ * @param distance_cm 障碍物距离(厘米)
+ */
+void sDRV_YaHaboom_Voice_BroadcastObstacleWarning(uint8_t distance_cm)
+{
+    if (distance_cm <= 10)
+    {
+        sDRV_YaHaboom_Voice_Broadcast(VOICE_OBSTACLE_10CM_ALARM);
+    }
+    else if (distance_cm <= 30)
+    {
+        sDRV_YaHaboom_Voice_Broadcast(VOICE_OBSTACLE_30CM_WARNING);
+    }
+}
+
+/**
+ * @brief 播报自检结果
+ * @param pass true: 自检通过, false: 自检失败
+ */
+void sDRV_YaHaboom_Voice_BroadcastSelfCheck(bool pass)
+{
+    if (pass)
+    {
+        sDRV_YaHaboom_Voice_Broadcast(VOICE_SELF_CHECK_PASS);
+    }
+    else
+    {
+        sDRV_YaHaboom_Voice_Broadcast(VOICE_SELF_CHECK_FAIL);
+    }
+}
+
+/**
+ * @brief 播报当前朝向
+ * @param direction 方向: 0-南, 1-北, 2-东, 3-西
+ */
+void sDRV_YaHaboom_Voice_BroadcastDirection(uint8_t direction)
+{
+    switch (direction)
+    {
+    case 0: sDRV_YaHaboom_Voice_Broadcast(VOICE_FACING_SOUTH); break;
+    case 1: sDRV_YaHaboom_Voice_Broadcast(VOICE_FACING_NORTH); break;
+    case 2: sDRV_YaHaboom_Voice_Broadcast(VOICE_FACING_EAST); break;
+    case 3: sDRV_YaHaboom_Voice_Broadcast(VOICE_FACING_WEST); break;
+    default: break;
+    }
+}
+
+/**
+ * @brief 获取语音代码的中文描述
+ * @param code 语音代码
+ * @return 中文描述字符串
+ */
+static const char* get_voice_code_description(uint8_t code)
+{
+    switch (code)
+    {
+    case VOICE_START_STRAIGHT_WALK: return "开启直线行走模式";
+    case VOICE_START_DIRECTION_REPORT: return "开启定时播报当前方向";
+    case VOICE_LOW_BATTERY_WARNING: return "当前电量不足,请及时充电";
+    case VOICE_QUERY_BATTERY_STATUS: return "现在电量状况";
+    case VOICE_BATTERY_SUFFICIENT: return "当前电量充足";
+    case VOICE_FALL_DETECTED_ALARM: return "检测到跌落,开启报警";
+    case VOICE_OBSTACLE_30CM_WARNING: return "前方障碍物不足三十厘米,注意安全";
+    case VOICE_OBSTACLE_10CM_ALARM: return "前方障碍物不足十厘米,开启报警";
+    case VOICE_SELF_CHECK_PASS: return "自检通过,智能导盲助手已启动";
+    case VOICE_SELF_CHECK_FAIL: return "自检失败,请进行维修";
+    case VOICE_FACING_SOUTH: return "目前朝向南方";
+    case VOICE_FACING_NORTH: return "目前朝向北方";
+    case VOICE_FACING_EAST: return "目前朝向东方";
+    case VOICE_FACING_WEST: return "目前朝向西方";
+    case VOICE_STOP_DIRECTION_REPORT: return "关闭定时播报当前方向";
+    case VOICE_INIT: return "初始化语音";
+    default: return "未知内容";
+    }
 }
 
 /*------------------------------------test------------------------------------*/
