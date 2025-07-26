@@ -93,11 +93,29 @@ enum ID : std::uint32_t
     IMU_MAG_TYPE,
     IMU_MAG_STATE,
 
+    // 电机控制相关ID
+    MOTOR_CTRL,
+    MOTOR_LEFT_POWER,
+    MOTOR_RIGHT_POWER,
+    MOTOR_RESET_DISTANCE,
+
     COUNT,
 };
 
+using namespace sLM;
 
+// 电机控制全局变量
+static int g_left_motor_power  = 0;   // 左电机功率 -100到100
+static int g_right_motor_power = 0;   // 右电机功率 -100到100
 
+static void sys_setting_init(ItemBase* parent);
+static void battary_info_init(ItemBase* parent);
+static void imu_menu_init(ItemBase* parent);
+static void motor_ctrl_init(ItemBase* parent);
+
+// 电机控制回调函数声明
+static void motor_power_change_cb(IntValAdj* item, uint32_t id, int value);
+static void motor_button_cb(ItemBase* item, uint32_t id);
 
 void sAPP_GUI_Init()
 {
@@ -125,10 +143,14 @@ void sAPP_GUI_Init()
         .setContext("Power Light", "%d%%", 0, 20, 20)
         .setConstraint(ConstraintType::RANGE, 100, 0);
 
+    /*motor control*/
+    auto* motor_ctrl = &EnterableItem::create(menu.getHome(), ID::MOTOR_CTRL).setTittle("Motor Control");
+
     // 创建里面的菜单项
     sys_setting_init(sys_settings);
     battary_info_init(battary_info);
     imu_menu_init(imu_data);
+    motor_ctrl_init(motor_ctrl);
 
     alt_est_info_init(alt_est_info);
 }
@@ -537,4 +559,53 @@ const char* string_val_show_update(uint32_t id)
         }
     }
     return "";
+}
+
+// 电机控制菜单初始化
+static void motor_ctrl_init(ItemBase* parent)
+{
+    // 左电机功率调节
+    IntValAdj::create(parent, ID::MOTOR_LEFT_POWER)
+        .setCallback(motor_power_change_cb, CallBackMethod::CHANGE)
+        .setContext("Left Motor", "%d%%", 0, 5, 5)
+        .setConstraint(ConstraintType::RANGE, 100, -100);
+
+    // 右电机功率调节
+    IntValAdj::create(parent, ID::MOTOR_RIGHT_POWER)
+        .setCallback(motor_power_change_cb, CallBackMethod::CHANGE)
+        .setContext("Right Motor", "%d%%", 0, 5, 5)
+        .setConstraint(ConstraintType::RANGE, 100, -100);
+
+    // 重置距离按钮
+    ButtonItem::create(parent, ID::MOTOR_RESET_DISTANCE)
+        .setContext("Reset Distance", "PRESS")
+        .setCallback(motor_button_cb);
+}
+
+// 电机功率变化回调
+static void motor_power_change_cb(IntValAdj* item, uint32_t id, int value)
+{
+    if (id == ID::MOTOR_LEFT_POWER)
+    {
+        g_left_motor_power = value;
+        motor.setLM((float)value);
+        sBSP_UART_Debug_Printf("左电机功率设置为: %d%%\n", value);
+    }
+    else if (id == ID::MOTOR_RIGHT_POWER)
+    {
+        g_right_motor_power = value;
+        motor.setRM((float)value);
+        sBSP_UART_Debug_Printf("右电机功率设置为: %d%%\n", value);
+    }
+}
+
+// 电机按钮回调
+static void motor_button_cb(ItemBase* item, uint32_t id)
+{
+    if (id == ID::MOTOR_RESET_DISTANCE)
+    {
+        sDRV_GMR_ResetDistance();
+        sBSP_UART_Debug_Printf("距离计数已重置\n");
+        menu.createTipsBox("Distance Reset", "Distance counters\nhave been reset!");
+    }
 }
