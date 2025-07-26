@@ -6,8 +6,12 @@
 #include "sAPP_Motor.hpp"
 // 删除了超声波和语音相关的头文件包含
 #include "sBSP_TIM.h"
+#include "sDBG_Debug.h"
+#include "sDRV_PwrLight.h"
+#include "sDRV_zdt_motor.h"
 #include "sDWTLib.hpp"
 #include <math.h>
+
 
 // 方向播报任务相关变量已删除
 
@@ -47,6 +51,126 @@ void sAPP_Tasks_Devices(void* param)
 
 
 // 超声波测距相关功能已删除 - 差速两轮小车不需要
+
+// 步进电机测试任务
+void sAPP_Tasks_StepperMotorTest(void* param)
+{
+    dbg_printf("[INFO] 步进电机测试任务启动\n");
+
+    // 确保PwrLight供电
+    sDRV_PL_SetBrightness(100.0f);
+    dbg_printf("[INFO] PwrLight设置为100%%，步进电机供电正常\n");
+
+    // 创建步进电机实例
+    static sDRV_ZDTMotor stepper_motor(1, 115200, 0x6B);
+    dbg_printf("[INFO] 步进电机实例创建完成\n");
+
+    // 等待一段时间让系统稳定
+    vTaskDelay(2000 / portTICK_PERIOD_MS);
+
+    for (;;)
+    {
+        dbg_printf("[INFO] =====步进电机UART通信测试=====\n");
+
+        // 测试UART3通信 - 发送简单命令
+        dbg_printf("[INFO] 测试UART3通信...\n");
+
+        // 手动发送测试数据
+        unsigned char test_cmd[] = {0x01, 0x3A, 0x6B};   // 地址1 + 获取使能状态命令 + 校验码
+        sBSP_UART_Motor_SendBytes(test_cmd, 3);
+        dbg_printf("[INFO] 发送测试命令: 0x01 0x3A 0x6B\n");
+
+        // 检查UART3硬件状态
+        extern UART_HandleTypeDef uart3;
+        dbg_printf("[INFO] UART3状态检查:\n");
+        dbg_printf("  - Instance: %s\n", (uart3.Instance == USART3) ? "USART3" : "错误");
+        dbg_printf("  - BaudRate: %u\n", uart3.Init.BaudRate);
+        dbg_printf("  - State: %d\n", uart3.gState);
+
+        vTaskDelay(100 / portTICK_PERIOD_MS);
+
+        // 测试步进电机基本命令 - 异步方式
+        dbg_printf("[INFO] 测试步进电机使能状态查询...\n");
+        stepper_motor.get_en_status();
+        // 等待一段时间让异步接收完成
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        if (stepper_motor.is_recv_complete())
+        {
+            dbg_printf("[INFO] 使能状态返回值: 0x%02X\n", stepper_motor.get_recv_result());
+        }
+        else
+        {
+            dbg_printf("[WARN] 使能状态查询无响应\n");
+        }
+
+        dbg_printf("[INFO] 测试步进电机编码器值查询...\n");
+        stepper_motor.get_encoder_value();
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        if (stepper_motor.is_recv_complete())
+        {
+            dbg_printf("[INFO] 编码器值返回值: %u\n", stepper_motor.get_recv_result());
+        }
+        else
+        {
+            dbg_printf("[WARN] 编码器值查询无响应\n");
+        }
+
+        dbg_printf("[INFO] 测试步进电机位置查询...\n");
+        stepper_motor.get_motor_position();
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        if (stepper_motor.is_recv_complete())
+        {
+            dbg_printf("[INFO] 电机位置返回值: %u\n", stepper_motor.get_recv_result());
+        }
+        else
+        {
+            dbg_printf("[WARN] 电机位置查询无响应\n");
+        }
+
+        // 测试控制命令 - 异步方式
+        dbg_printf("[INFO] 测试步进电机使能命令...\n");
+        stepper_motor.ctrl_en(1);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        if (stepper_motor.is_recv_complete())
+        {
+            dbg_printf("[INFO] 使能命令返回值: 0x%02X\n", stepper_motor.get_recv_result());
+        }
+        else
+        {
+            dbg_printf("[WARN] 使能命令无响应\n");
+        }
+        vTaskDelay(1000 / portTICK_PERIOD_MS);
+
+        dbg_printf("[INFO] 测试步进电机速度模式...\n");
+        stepper_motor.ctrl_speed_mode(1, 10, 5);   // 低速测试
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        if (stepper_motor.is_recv_complete())
+        {
+            dbg_printf("[INFO] 速度模式命令返回值: 0x%02X\n", stepper_motor.get_recv_result());
+        }
+        else
+        {
+            dbg_printf("[WARN] 速度模式命令无响应\n");
+        }
+        vTaskDelay(3000 / portTICK_PERIOD_MS);
+
+        dbg_printf("[INFO] 测试步进电机停止...\n");
+        stepper_motor.ctrl_en(0);
+        vTaskDelay(200 / portTICK_PERIOD_MS);
+        if (stepper_motor.is_recv_complete())
+        {
+            dbg_printf("[INFO] 停止命令返回值: 0x%02X\n", stepper_motor.get_recv_result());
+        }
+        else
+        {
+            dbg_printf("[WARN] 停止命令无响应\n");
+        }
+
+        // 每10秒执行一次测试
+        dbg_printf("[INFO] 测试完成，等待下一轮...\n");
+        vTaskDelay(10000 / portTICK_PERIOD_MS);
+    }
+}
 
 
 
@@ -376,6 +500,9 @@ void sAPP_Tasks_CreateAll()
 
     // 电机控制任务 - 差速两轮小车核心功能
     // xTaskCreate(sAPP_Tasks_MotorControlTask, "MotorCtrl", 2048 / sizeof(int), NULL, 4, NULL);
+
+    // 步进电机测试任务
+    xTaskCreate(sAPP_Tasks_StepperMotorTest, "StepperTest", 4096 / sizeof(int), NULL, 2, NULL);
 }
 
 

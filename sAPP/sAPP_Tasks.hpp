@@ -13,6 +13,9 @@ void sAPP_Tasks_PrintTaskMang();
 // 差速两轮小车电机控制任务
 void sAPP_Tasks_MotorControlTask(void* param);
 
+// 步进电机测试任务
+void sAPP_Tasks_StepperMotorTest(void* param);
+
 // IMU校准相关函数 - 保留
 void sAPP_Tasks_StartCalibAccBias();
 void sAPP_Tasks_StartCalibGyrBias();

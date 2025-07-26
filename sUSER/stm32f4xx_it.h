@@ -2,7 +2,7 @@
 #define __STM32F4xx_IT_H
 
 #ifdef __cplusplus
- extern "C" {
+extern "C" {
 #endif
 
 #include "stm32f4xx_hal.h"
@@ -18,6 +18,7 @@ void DebugMon_Handler(void);
 
 void USART1_IRQHandler(void);
 void USART3_IRQHandler(void);
+
 void USART6_IRQHandler(void);
 
 

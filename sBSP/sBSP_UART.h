@@ -1,34 +1,43 @@
 #pragma once
 #ifdef __cplusplus
-extern "C"{
+extern "C" {
 #endif
 
-#include "stm32f4xx_hal.h"
 #include "sDBG_Debug.h"
+#include "stm32f4xx_hal.h"
 
 
 
 
 
-typedef void(*sBSP_UART_RecvEndCb_t)(char* pReciData,uint16_t length);
+typedef void (*sBSP_UART_RecvEndCb_t)(char* pReciData, uint16_t length);
 
 
 
 
-int sBSP_UART_Debug_Init(uint32_t bandrate);
+int  sBSP_UART_Debug_Init(uint32_t bandrate);
 void sBSP_UART_Debug_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb);
-void sBSP_UART_Debug_Printf(const char *fmt,...);
-void sBSP_UART_Debug_SendBytes(uint8_t* pData,uint16_t length);
+void sBSP_UART_Debug_Printf(const char* fmt, ...);
+void sBSP_UART_Debug_SendBytes(uint8_t* pData, uint16_t length);
 
-int sBSP_UART_IMU_Init(uint32_t bandrate);
+int  sBSP_UART_Motor_Init(uint32_t bandrate);
+void sBSP_UART_Motor_SendByte(uint8_t byte);
+void sBSP_UART_Motor_SendBytes(uint8_t* pData, uint16_t length);
+void sBSP_UART_Motor_Printf(const char* fmt, ...);
+void sBSP_UART_Motor_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb);
+
+// IMU UART3函数已禁用 - UART3现在用于步进电机
+/*
+int  sBSP_UART_IMU_Init(uint32_t bandrate);
 void sBSP_UART_IMU_SendByte(uint8_t byte);
-void sBSP_UART_IMU_SendBytes(uint8_t* pData,uint16_t length);
+void sBSP_UART_IMU_SendBytes(uint8_t* pData, uint16_t length);
 
-void sBSP_UART_IMU_Printf(const char *fmt,...);
+void sBSP_UART_IMU_Printf(const char* fmt, ...);
 void sBSP_UART_IMU_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb);
+*/
 
-int sBSP_UART_Top_Init(uint32_t bandrate);
-void sBSP_UART_Top_Printf(const char *fmt,...);
+int  sBSP_UART_Top_Init(uint32_t bandrate);
+void sBSP_UART_Top_Printf(const char* fmt, ...);
 void sBSP_UART_Top_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb);
 
 
@@ -36,4 +45,3 @@ void sBSP_UART_Top_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb);
 #ifdef __cplusplus
 }
 #endif
-

@@ -109,11 +109,11 @@
 #define DEBUG_RX_Pin GPIO_PIN_10
 #define DEBUG_RX_GPIO_Port GPIOA
 
-/*UART3 WIT_IMU*/
-#define WIT_IMU_TX_Pin GPIO_PIN_10
-#define WIT_IMU_TX_GPIO_Port GPIOB
-#define WIT_IMU_RX_Pin GPIO_PIN_11
-#define WIT_IMU_RX_GPIO_Port GPIOB
+/*UART3 步进电机*/
+#define MOTOR_TX_Pin GPIO_PIN_10
+#define MOTOR_TX_GPIO_Port GPIOB
+#define MOTOR_RX_Pin GPIO_PIN_11
+#define MOTOR_RX_GPIO_Port GPIOB
 
 /*UART6 Top*/
 #define TOP_TX_Pin GPIO_PIN_6

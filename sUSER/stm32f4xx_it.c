@@ -9,6 +9,8 @@ extern DMA_HandleTypeDef hdma2_stream0;
 
 extern UART_HandleTypeDef uart3;
 
+
+
 extern UART_HandleTypeDef uart6;
 
 extern TIM_HandleTypeDef htim6;
@@ -69,12 +71,19 @@ void USART3_IRQHandler(void)
     HAL_UART_IRQHandler(&uart3);
 }
 
+
+
 void USART6_IRQHandler(void)
 {
     HAL_UART_IRQHandler(&uart6);
 }
 
 
+
+void DMA1_Stream1_IRQHandler(void)
+{
+    HAL_DMA_IRQHandler(&hdma_usart3_rx);
+}
 
 void DMA2_Stream0_IRQHandler(void)
 {
