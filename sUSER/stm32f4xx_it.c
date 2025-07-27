@@ -8,6 +8,7 @@ extern DMA_HandleTypeDef  hdma_usart1_tx;
 extern DMA_HandleTypeDef hdma2_stream0;
 
 extern UART_HandleTypeDef uart3;
+extern DMA_HandleTypeDef  hdma_usart3_rx;
 
 
 

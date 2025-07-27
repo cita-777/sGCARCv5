@@ -534,15 +534,15 @@ uint8_t sDRV_ZDTMotor::ctrl_pos_mode(uint8_t direction, uint16_t speed, uint8_t 
     // 使用数组方式发送位置模式命令
     unsigned char params[] = {
         direction,
-        (speed >> 8) & 0xFF,
-        speed & 0xFF,   // 速度2字节
+        static_cast<unsigned char>((speed >> 8) & 0xFF),
+        static_cast<unsigned char>(speed & 0xFF),   // 速度2字节
         acceleration,
-        (pulse_count >> 24) & 0xFF,
-        (pulse_count >> 16) & 0xFF,
-        (pulse_count >> 8) & 0xFF,
-        pulse_count & 0xFF,   // 脉冲数4字节
-        relative_mode,        // 相对/绝对模式标志
-        0x00                  // 多机同步标志
+        static_cast<unsigned char>((pulse_count >> 24) & 0xFF),
+        static_cast<unsigned char>((pulse_count >> 16) & 0xFF),
+        static_cast<unsigned char>((pulse_count >> 8) & 0xFF),
+        static_cast<unsigned char>(pulse_count & 0xFF),   // 脉冲数4字节
+        relative_mode,                                    // 相对/绝对模式标志
+        0x00                                              // 多机同步标志
     };
     send_data_array(CMD_CTRL_POS_MODE, params, sizeof(params));
     return RT_WAITING;   // 返回等待状态
