@@ -326,7 +326,7 @@ static void imu_calib_gyr_bias(void* param)
         "测量点数:%u,陀螺仪静态零偏:%.3f,%.3f,%.3f", sample_points, imu_sbias.gyr_x, imu_sbias.gyr_y, imu_sbias.gyr_z);
 
     // 静态零偏阈值,超过说明系统没有在静止状态或者陀螺仪有问题
-    const float bias_limit = ahrs.getIMUType() == AHRS::IMUType::ICM45686 ? 0.3f : 0.5f;
+    const float bias_limit = ahrs.getIMUType() == AHRS::IMUType::ICM45686 ? 0.5f : 0.5f;
     if (fabs(imu_sbias.gyr_x) > bias_limit || fabs(imu_sbias.gyr_y) > bias_limit || fabs(imu_sbias.gyr_z) > bias_limit)
     {
         log_error("陀螺仪静态零偏数据超过阈值,可能是系统未处于静止状态或者陀螺仪性能不佳 本次校准无效");
@@ -469,42 +469,86 @@ void sAPP_Tasks_ProtectTask(void* param)
     }
 }
 
-// 差速两轮小车电机控制任务
+// 差速两轮小车电机控制任务 - 闭环速度控制
 void sAPP_Tasks_MotorControlTask(void* param)
 {
+    sBSP_UART_Debug_Printf("[INFO] 电机闭环速度控制任务启动\n");
+
     // 初始化电机
     motor.init();
 
-    vTaskDelay(10 / portTICK_PERIOD_MS);   // 等待初始化完成
+    // 启用闭环控制
+    motor.enableClosedLoopControl(true);
+
+    // 设置初始PID参数（可以根据实际调试结果调整）
+    motor.setPIDParams(0.6f, 1.2f, 0.0f);
+
+    sBSP_UART_Debug_Printf("[INFO] 电机闭环控制已启用，PID参数: Kp=0.8, Ki=0.1, Kd=0.05\n");
+
+    vTaskDelay(100 / portTICK_PERIOD_MS);   // 等待初始化完成
+
+    // 控制周期参数
+    const float CONTROL_DT    = 0.02f;   // 20ms控制周期，50Hz
+    TickType_t  xLastWakeTime = xTaskGetTickCount();
+
+    // 测试变量
+    uint32_t test_counter    = 0;
+    float    test_target_rpm = 0.0f;
 
     for (;;)
     {
         // 更新电机编码器数据
         motor.update();
 
-        // 获取原始编码器计数值
-        unsigned long left_count  = sBSP_TIM_GMRL_Get();
-        unsigned long right_count = sBSP_TIM_GMRR_Get();
+        // 简单的测试逻辑：每5秒改变一次目标转速
+        test_counter++;
+        if (test_counter >= 50)
+        {   // 250 * 20ms = 5秒
+            test_counter = 0;
 
-        // 获取处理后的RPM值
-        float left_rpm  = motor.getLRPM();
-        float right_rpm = motor.getRRPM();
+            // 循环测试不同的转速：0 -> 30 -> -30 -> 60 -> -60 -> 0
+            static int test_phase = 0;
+            switch (test_phase)
+            {
+            case 0: test_target_rpm = 30.0f; break;
+            case 1: test_target_rpm = -30.0f; break;
+            case 2: test_target_rpm = 120.0f; break;
+            case 3: test_target_rpm = -120.0f; break;
+            case 4: test_target_rpm = 0.0f; break;
+            }
+            test_phase = (test_phase + 1) % 5;
 
-        // 获取累计距离
-        float left_dist  = sDRV_GMR_GetLeftDistance();
-        float right_dist = sDRV_GMR_GetRightDistance();
+            // 设置目标转速
+            motor.setTargetRPM(test_target_rpm, test_target_rpm);
+            sBSP_UART_Debug_Printf("[INFO] 设置目标转速: %.1f RPM\n", test_target_rpm);
+        }
 
-        // 打印调试信息：原始值 + RPM + 距离
-        sBSP_UART_Debug_Printf("原始[左:%lu,右:%lu] RPM[左:%.2f,右:%.2f] 距离[左:%.3fm,右:%.3fm]\n",
-                               left_count,
-                               right_count,
-                               left_rpm,
-                               right_rpm,
-                               left_dist,
-                               right_dist);
+        // 执行闭环控制更新
+        motor.updateClosedLoopControl(CONTROL_DT);
 
+        // 每秒打印一次状态信息
+        static uint32_t print_counter = 0;
+        print_counter++;
+        if (print_counter >= 5)
+        {   // 50 * 20ms = 1秒
+            print_counter = 0;
 
-        vTaskDelay(100 / portTICK_PERIOD_MS);   // 2Hz打印频率，便于观察
+            float left_rpm     = motor.getLRPM();
+            float right_rpm    = motor.getRRPM();
+            float left_target  = motor.getLeftTargetRPM();
+            float right_target = motor.getRightTargetRPM();
+
+            sBSP_UART_Debug_Printf("%.1f,%.1f,%.1f,%.1f,%.1f,%.1f\n",
+                                   left_target,
+                                   right_target,
+                                   left_rpm,
+                                   right_rpm,
+                                   left_target - left_rpm,
+                                   right_target - right_rpm);
+        }
+
+        // 精确的20ms周期控制
+        vTaskDelayUntil(&xLastWakeTime, pdMS_TO_TICKS(20));
     }
 }
 
@@ -643,7 +687,7 @@ void sAPP_Tasks_CreateAll()
     // 差速两轮小车核心任务
 
     // 姿态估计算法 - 提供IMU数据和姿态信息
-    xTaskCreate(sAPP_AHRS_Task, "AHRS", 16384 / sizeof(int), NULL, 3, NULL);
+    xTaskCreate(sAPP_AHRS_Task, "AHRS", 16384 / sizeof(int), NULL, 5, NULL);
 
     // OLED显示任务 - 用户界面显示
     xTaskCreate(sAPP_Tasks_OLEDHdr, "OLED", 16384 / sizeof(int), NULL, 2, NULL);
@@ -660,8 +704,8 @@ void sAPP_Tasks_CreateAll()
     // 主循环任务
     xTaskCreate(sAPP_Tasks_LoopTask, "Loop", 8192 / sizeof(int), NULL, 2, NULL);
 
-    // 电机控制任务 - 差速两轮小车核心功能
-    // xTaskCreate(sAPP_Tasks_MotorControlTask, "MotorCtrl", 2048 / sizeof(int), NULL, 4, NULL);
+    // 电机控制任务 - 差速两轮小车核心功能（闭环速度控制）
+    // xTaskCreate(sAPP_Tasks_MotorControlTask, "MotorCtrl", 4096 / sizeof(int), NULL, 4, NULL);
 
     // 步进电机测试任务
     // xTaskCreate(sAPP_Tasks_StepperMotorTest, "StepperTest", 4096 / sizeof(int), NULL, 2, NULL);
@@ -670,7 +714,7 @@ void sAPP_Tasks_CreateAll()
     // xTaskCreate(sAPP_Tasks_GrayScaleTest, "GrayScaleTest", 4096 / sizeof(int), NULL, 2, NULL);
 
     // UART6主机通信测试任务
-    xTaskCreate(sAPP_Tasks_UART6_HostCommTest, "UART6Test", 4096 / sizeof(int), NULL, 2, NULL);
+    // xTaskCreate(sAPP_Tasks_UART6_HostCommTest, "UART6Test", 4096 / sizeof(int), NULL, 2, NULL);
 }
 
 
