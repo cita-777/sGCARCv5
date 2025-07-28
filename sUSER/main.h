@@ -69,6 +69,7 @@
 #include "sDRV_PS2.h"
 #include "sDRV_PwrLight.h"
 #include "sDRV_TrackTube8.h"
+#include "sDRV_UART6_HostComm.h"
 #include "sDRV_YaHaboom_voice.h"
 
 /*BSP*/

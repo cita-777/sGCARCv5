@@ -24,3 +24,12 @@ void sAPP_Tasks_ReadIMUCaliVal();
 // FeRAM和IMU校准相关 - 保留
 void sAPP_Tasks_StartFormatFeRAM();
 void sAPP_Tasks_StartCalibrateIMU();
+
+// 灰度传感器测试任务
+void sAPP_Tasks_GrayScaleTest(void* param);
+
+// UART6主机通信测试任务
+void sAPP_Tasks_UART6_HostCommTest(void* param);
+
+// UART6主机通信测试任务
+void sAPP_Tasks_UART6_HostCommTest(void* param);

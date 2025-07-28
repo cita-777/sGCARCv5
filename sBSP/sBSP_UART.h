@@ -37,6 +37,8 @@ void sBSP_UART_IMU_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb);
 */
 
 int  sBSP_UART_Top_Init(uint32_t bandrate);
+void sBSP_UART_Top_SendByte(uint8_t byte);
+void sBSP_UART_Top_SendBytes(uint8_t* pData, uint16_t length);
 void sBSP_UART_Top_Printf(const char* fmt, ...);
 void sBSP_UART_Top_RecvBegin(sBSP_UART_RecvEndCb_t recv_cb);
 

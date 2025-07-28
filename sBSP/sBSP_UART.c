@@ -250,6 +250,16 @@ int sBSP_UART_Top_Init(uint32_t bandrate)
     return 0;
 }
 
+inline void sBSP_UART_Top_SendByte(uint8_t byte)
+{
+    HAL_UART_Transmit(&uart6, &byte, 1, uart6_blocking_ms);
+}
+
+inline void sBSP_UART_Top_SendBytes(uint8_t* pData, uint16_t length)
+{
+    HAL_UART_Transmit(&uart6, pData, length, uart6_blocking_ms);
+}
+
 void sBSP_UART_Top_Printf(const char* fmt, ...)
 {
     va_list ap;

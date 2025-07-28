@@ -576,6 +576,11 @@
               <FilePath>sDRV/sDRV_MB85RCxx.c</FilePath>
             </File>
             <File>
+              <FileName>sDRV_GrayScale.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>sDRV/sDRV_GrayScale.c</FilePath>
+            </File>
+            <File>
               <FileName>sDRV_NTC.c</FileName>
               <FileType>1</FileType>
               <FilePath>sDRV/sDRV_NTC.c</FilePath>
@@ -594,6 +599,11 @@
               <FileName>sDRV_TrackTube8.c</FileName>
               <FileType>1</FileType>
               <FilePath>sDRV/sDRV_TrackTube8.c</FilePath>
+            </File>
+            <File>
+              <FileName>sDRV_UART6_HostComm.cpp</FileName>
+              <FileType>8</FileType>
+              <FilePath>sDRV/sDRV_UART6_HostComm.cpp</FilePath>
             </File>
           </Files>
         </Group>
