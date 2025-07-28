@@ -1,5 +1,12 @@
 #include "sAPP_Motor.hpp"
+#include "FreeRTOS.h"
 #include "sBSP_UART.h"
+#include "semphr.h"
+
+// 声明数学函数
+extern "C" {
+float fabsf(float x);
+}
 
 sAPP_Motor motor;
 
@@ -13,6 +20,23 @@ sAPP_Motor::sAPP_Motor()
     m_closed_loop_enabled = false;
     m_left_target_rpm     = 0.0f;
     m_right_target_rpm    = 0.0f;
+
+    // 初始化PD航向控制参数
+    m_heading_control_enabled = false;
+    m_heading_kp              = 0.5f;
+    m_heading_kd              = 0.1f;
+    m_target_heading_deg      = 0.0f;
+    m_prev_heading_error      = 0.0f;
+
+    // 初始化距离控制参数
+    m_distance_control_enabled = false;
+    m_target_distance_m        = 0.0f;
+    m_start_distance_left      = 0.0f;
+    m_start_distance_right     = 0.0f;
+
+    // 初始化运动状态
+    m_movement_mode     = MODE_MANUAL;
+    m_movement_complete = false;
 }
 
 sAPP_Motor::~sAPP_Motor() {}
@@ -148,6 +172,55 @@ void sAPP_Motor::updateClosedLoopControl(float dt_s)
         return;
     }
 
+    // 更新距离控制状态
+    updateDistanceControl();
+
+    // 计算航向校正
+    float heading_correction = calculateHeadingCorrection(dt_s);
+
+    // 根据运动模式应用航向校正
+    float left_rpm_adjustment  = 0.0f;
+    float right_rpm_adjustment = 0.0f;
+
+    if (m_heading_control_enabled)
+    {
+        // 航向校正：正值表示需要左转，负值表示需要右转
+        left_rpm_adjustment  = -heading_correction;   // 左轮减速
+        right_rpm_adjustment = heading_correction;    // 右轮加速
+
+        // 对于转向模式，需要特殊处理
+        if (m_movement_mode == MODE_TURN_TO_HEADING)
+        {
+            float heading_error = getHeadingError();
+            if (fabsf(heading_error) < 2.0f)
+            {   // 2度精度
+                stop();
+                m_movement_complete = true;
+                return;
+            }
+
+            // 动态调整转向方向
+            if (heading_error > 0)
+            {
+                // 需要左转
+                sLib_PosPIDSetTarget(&m_left_pid, -30.0f);
+                sLib_PosPIDSetTarget(&m_right_pid, 30.0f);
+            }
+            else
+            {
+                // 需要右转
+                sLib_PosPIDSetTarget(&m_left_pid, 30.0f);
+                sLib_PosPIDSetTarget(&m_right_pid, -30.0f);
+            }
+        }
+        else
+        {
+            // 对于其他模式，在基础转速上应用航向校正
+            sLib_PosPIDSetTarget(&m_left_pid, m_left_target_rpm + left_rpm_adjustment);
+            sLib_PosPIDSetTarget(&m_right_pid, m_right_target_rpm + right_rpm_adjustment);
+        }
+    }
+
     // 更新左右电机的闭环控制
     updateLeftMotorControl(dt_s);
     updateRightMotorControl(dt_s);
@@ -242,4 +315,258 @@ void sAPP_Motor::stop()
         setLM(0.0f);
         setRM(0.0f);
     }
+    m_movement_mode     = MODE_MANUAL;
+    m_movement_complete = true;
+}
+
+// ==================== PD航向控制相关方法 ====================
+
+void sAPP_Motor::enableHeadingControl(bool enable)
+{
+    m_heading_control_enabled = enable;
+    if (enable)
+    {
+        // 重置PD控制器状态
+        m_prev_heading_error = 0.0f;
+        // 设置当前航向为目标航向
+        m_target_heading_deg = getCurrentHeading();
+    }
+}
+
+bool sAPP_Motor::isHeadingControlEnabled()
+{
+    return m_heading_control_enabled;
+}
+
+void sAPP_Motor::setHeadingPDParams(float kp, float kd)
+{
+    m_heading_kp = kp;
+    m_heading_kd = kd;
+}
+
+void sAPP_Motor::setTargetHeading(float target_heading_deg)
+{
+    m_target_heading_deg = normalizeAngle(target_heading_deg);
+    m_prev_heading_error = 0.0f;   // 重置微分项
+}
+
+float sAPP_Motor::getTargetHeading()
+{
+    return m_target_heading_deg;
+}
+
+float sAPP_Motor::getCurrentHeading()
+{
+    // 获取AHRS数据
+    if (xSemaphoreTake(ahrs.output.lock, 10) == pdTRUE)
+    {
+        float current_yaw = ahrs.output.yaw;
+        xSemaphoreGive(ahrs.output.lock);
+        return current_yaw;
+    }
+    return 0.0f;   // 如果无法获取数据，返回0
+}
+
+// ==================== 距离控制相关方法 ====================
+
+void sAPP_Motor::enableDistanceControl(bool enable)
+{
+    m_distance_control_enabled = enable;
+    if (enable)
+    {
+        // 记录起始距离
+        m_start_distance_left  = sDRV_GMR_GetLeftDistance();
+        m_start_distance_right = sDRV_GMR_GetRightDistance();
+    }
+}
+
+bool sAPP_Motor::isDistanceControlEnabled()
+{
+    return m_distance_control_enabled;
+}
+
+void sAPP_Motor::setTargetDistance(float target_distance_m)
+{
+    m_target_distance_m = target_distance_m;
+    // 重新记录起始距离
+    m_start_distance_left  = sDRV_GMR_GetLeftDistance();
+    m_start_distance_right = sDRV_GMR_GetRightDistance();
+}
+
+float sAPP_Motor::getTargetDistance()
+{
+    return m_target_distance_m;
+}
+
+float sAPP_Motor::getCurrentDistance()
+{
+    return getAverageDistance() - (m_start_distance_left + m_start_distance_right) / 2.0f;
+}
+
+void sAPP_Motor::resetDistance()
+{
+    sDRV_GMR_ResetDistance();
+    m_start_distance_left  = 0.0f;
+    m_start_distance_right = 0.0f;
+}
+
+// ==================== 高级运动控制方法 ====================
+
+void sAPP_Motor::moveForwardWithHeading(float rpm, float target_heading_deg)
+{
+    m_movement_mode     = MODE_FORWARD_HEADING;
+    m_movement_complete = false;
+
+    setTargetHeading(target_heading_deg);
+    enableHeadingControl(true);
+
+    // 设置基础前进速度
+    setTargetRPM(rpm, rpm);
+}
+
+void sAPP_Motor::moveDistance(float rpm, float distance_m)
+{
+    m_movement_mode     = MODE_DISTANCE;
+    m_movement_complete = false;
+
+    setTargetDistance(distance_m);
+    enableDistanceControl(true);
+
+    // 设置前进速度
+    if (distance_m > 0)
+    {
+        setTargetRPM(rpm, rpm);
+    }
+    else
+    {
+        setTargetRPM(-rpm, -rpm);
+    }
+}
+
+void sAPP_Motor::moveDistanceWithHeading(float rpm, float distance_m, float target_heading_deg)
+{
+    m_movement_mode     = MODE_DISTANCE_HEADING;
+    m_movement_complete = false;
+
+    setTargetDistance(distance_m);
+    setTargetHeading(target_heading_deg);
+    enableDistanceControl(true);
+    enableHeadingControl(true);
+
+    // 设置前进速度
+    if (distance_m > 0)
+    {
+        setTargetRPM(rpm, rpm);
+    }
+    else
+    {
+        setTargetRPM(-rpm, -rpm);
+    }
+}
+
+void sAPP_Motor::turnToHeading(float target_heading_deg, float turn_rpm)
+{
+    m_movement_mode     = MODE_TURN_TO_HEADING;
+    m_movement_complete = false;
+
+    setTargetHeading(target_heading_deg);
+    enableHeadingControl(true);
+
+    // 初始转向方向判断
+    float current_heading = getCurrentHeading();
+    float angle_diff      = getAngleDifference(target_heading_deg, current_heading);
+
+    if (angle_diff > 0)
+    {
+        // 需要左转
+        setTargetRPM(-turn_rpm, turn_rpm);
+    }
+    else
+    {
+        // 需要右转
+        setTargetRPM(turn_rpm, -turn_rpm);
+    }
+}
+
+// ==================== 控制状态查询方法 ====================
+
+bool sAPP_Motor::isMovementComplete()
+{
+    return m_movement_complete;
+}
+
+float sAPP_Motor::getHeadingError()
+{
+    float current_heading = getCurrentHeading();
+    return getAngleDifference(m_target_heading_deg, current_heading);
+}
+
+float sAPP_Motor::getDistanceError()
+{
+    return m_target_distance_m - getCurrentDistance();
+}
+
+// ==================== 内部辅助方法实现 ====================
+
+float sAPP_Motor::calculateHeadingCorrection(float dt_s)
+{
+    if (!m_heading_control_enabled)
+    {
+        return 0.0f;
+    }
+
+    float current_heading = getCurrentHeading();
+    float error           = getAngleDifference(m_target_heading_deg, current_heading);
+
+    // PD控制器计算
+    float derivative = (error - m_prev_heading_error) / dt_s;
+    float output     = m_heading_kp * error + m_heading_kd * derivative;
+
+    // 更新上一次误差
+    m_prev_heading_error = error;
+
+    // 限制输出范围
+    if (output > 50.0f) output = 50.0f;
+    if (output < -50.0f) output = -50.0f;
+
+    return output;
+}
+
+float sAPP_Motor::normalizeAngle(float angle_deg)
+{
+    while (angle_deg > 180.0f) angle_deg -= 360.0f;
+    while (angle_deg < -180.0f) angle_deg += 360.0f;
+    return angle_deg;
+}
+
+float sAPP_Motor::getAngleDifference(float target_deg, float current_deg)
+{
+    float diff = target_deg - current_deg;
+    return normalizeAngle(diff);
+}
+
+void sAPP_Motor::updateDistanceControl()
+{
+    if (!m_distance_control_enabled)
+    {
+        return;
+    }
+
+    float current_distance = getCurrentDistance();
+    float distance_error   = m_target_distance_m - current_distance;
+
+    // 检查是否到达目标距离
+    if (fabsf(distance_error) < 0.05f)
+    {   // 5cm精度
+        if (m_movement_mode == MODE_DISTANCE || m_movement_mode == MODE_DISTANCE_HEADING)
+        {
+            stop();
+            m_movement_complete = true;
+        }
+    }
+}
+
+float sAPP_Motor::getAverageDistance()
+{
+    return (sDRV_GMR_GetLeftDistance() + sDRV_GMR_GetRightDistance()) / 2.0f;
 }

@@ -4,6 +4,7 @@
 #include "sAPP_AHRS.hpp"
 #include "sAPP_Car.hpp"
 #include "sAPP_Motor.hpp"
+#include "sAPP_PDControlTest.hpp"
 // 删除了超声波和语音相关的头文件包含
 #include "sBSP_TIM.h"
 #include "sDBG_Debug.h"
@@ -706,6 +707,12 @@ void sAPP_Tasks_CreateAll()
 
     // 电机控制任务 - 差速两轮小车核心功能（闭环速度控制）
     // xTaskCreate(sAPP_Tasks_MotorControlTask, "MotorCtrl", 4096 / sizeof(int), NULL, 4, NULL);
+
+    // PD控制系统测试任务 - 验证航向控制和距离控制功能
+    xTaskCreate(sAPP_Tasks_PDControlTest, "PDTest", 4096 / sizeof(int), NULL, 3, NULL);
+
+    // 简化PD控制演示任务 - 可选择启用
+    // xTaskCreate(sAPP_Tasks_SimplePDDemo, "PDDemo", 4096 / sizeof(int), NULL, 3, NULL);
 
     // 步进电机测试任务
     // xTaskCreate(sAPP_Tasks_StepperMotorTest, "StepperTest", 4096 / sizeof(int), NULL, 2, NULL);
